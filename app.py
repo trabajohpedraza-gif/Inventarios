@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 
 # ============================================================
-# CONFIGURACIÓN DE LA PÁGINA
+# CONFIGURACIÓN
 # ============================================================
 
 st.set_page_config(
@@ -15,82 +15,106 @@ st.set_page_config(
 )
 
 # ============================================================
+# PALETA CORPORATIVA
+# ============================================================
+
+AZUL = "#064B9B"
+AZUL_OSCURO = "#003B7A"
+NARANJA = "#F58220"
+GRIS_FONDO = "#F5F6F8"
+GRIS_BORDE = "#E5E7EB"
+GRIS_TEXTO = "#6B7280"
+BLANCO = "#FFFFFF"
+
+# ============================================================
+# LOGO
+# ============================================================
+
+LOGO_URL = (
+    "https://encrypted-tbn0.gstatic.com/images?"
+    "q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
+)
+
+# ============================================================
 # ESTILOS
 # ============================================================
 
-st.markdown("""
-<style>
+st.markdown(
+    f"""
+    <style>
 
-    /* Fondo general */
-    .stApp {
-        background-color: #f5f6f8;
-    }
+    /* ========================================================
+       FONDO
+       ======================================================== */
 
-    /* Sidebar */
-    section[data-testid="stSidebar"] {
-        background-color: #ffffff;
-        border-right: 1px solid #e5e7eb;
-    }
+    .stApp {{
+        background-color: {GRIS_FONDO};
+    }}
 
-    /* Título principal */
-    .titulo {
+    /* ========================================================
+       SIDEBAR
+       ======================================================== */
+
+    section[data-testid="stSidebar"] {{
+        background-color: {BLANCO};
+        border-right: 1px solid {GRIS_BORDE};
+    }}
+
+    /* ========================================================
+       TITULO
+       ======================================================== */
+
+    .titulo-principal {{
+        color: {AZUL};
         font-size: 32px;
         font-weight: 700;
-        color: #064b9b;
         margin-bottom: 0px;
-    }
+    }}
 
-    .subtitulo {
+    .subtitulo {{
+        color: {GRIS_TEXTO};
         font-size: 15px;
-        color: #6b7280;
-        margin-top: 0px;
+        margin-top: 4px;
         margin-bottom: 25px;
-    }
+    }}
 
-    /* Tarjetas KPI */
-    .kpi {
-        background-color: white;
-        padding: 20px;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-        min-height: 120px;
-    }
+    /* ========================================================
+       LINEA CORPORATIVA
+       ======================================================== */
 
-    .kpi-titulo {
-        font-size: 14px;
-        color: #6b7280;
-        margin-bottom: 8px;
-    }
-
-    .kpi-valor {
-        font-size: 28px;
-        font-weight: 700;
-        color: #064b9b;
-    }
-
-    .kpi-sub {
-        font-size: 12px;
-        color: #6b7280;
+    .linea-naranja {{
+        height: 4px;
+        background-color: {NARANJA};
+        border-radius: 5px;
         margin-top: 5px;
-    }
-
-    /* Separador */
-    .separador {
-        margin-top: 15px;
         margin-bottom: 20px;
-        border-bottom: 2px solid #f58220;
-    }
+    }}
 
-</style>
-""", unsafe_allow_html=True)
+    /* ========================================================
+       CONTENEDORES
+       ======================================================== */
 
+    div[data-testid="stVerticalBlockBorderWrapper"] {{
+        background-color: {BLANCO};
+        border-radius: 12px;
+    }}
+
+    /* ========================================================
+       SIDEBAR TEXTOS
+       ======================================================== */
+
+    section[data-testid="stSidebar"] .stMarkdown p {{
+        color: {GRIS_TEXTO};
+    }}
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # ============================================================
 # DATOS TEMPORALES
 # ============================================================
-# Estos datos son únicamente para visualizar el diseño.
-# Posteriormente serán reemplazados por la base real.
 
 np.random.seed(10)
 
@@ -110,7 +134,7 @@ referencias = [
 areas = [
     "Mantenimiento",
     "Operaciones",
-    "Administrativa",
+    "Financiera",
     "RRHH"
 ]
 
@@ -121,7 +145,10 @@ df = pd.DataFrame({
     "Valor Unitario": np.random.randint(10000, 500000, 200)
 })
 
-df["Valor Inventario"] = df["Cantidad"] * df["Valor Unitario"]
+df["Valor Inventario"] = (
+    df["Cantidad"] *
+    df["Valor Unitario"]
+)
 
 # ============================================================
 # SIDEBAR
@@ -129,32 +156,45 @@ df["Valor Inventario"] = df["Cantidad"] * df["Valor Unitario"]
 
 with st.sidebar:
 
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            padding:10px 0 20px 0;
-        ">
-            <div style="
-                font-size:26px;
-                font-weight:700;
-                color:#064b9b;
-            ">
-                📦 ALDC
-            </div>
+    # --------------------------------------------------------
+    # LOGO
+    # --------------------------------------------------------
 
+    try:
+
+        st.image(
+            LOGO_URL,
+            width=180
+        )
+
+    except Exception:
+
+        st.markdown(
+            f"""
             <div style="
-                font-size:13px;
-                color:#6b7280;
+                text-align:center;
+                font-size:28px;
+                font-weight:700;
+                color:{AZUL};
             ">
-                Gestión de Inventarios
+                ALDC
             </div>
-        </div>
-        """,
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown(
+        "<p style='text-align:center;'>"
+        "Gestión de Inventarios"
+        "</p>",
         unsafe_allow_html=True
     )
 
     st.divider()
+
+    # --------------------------------------------------------
+    # NAVEGACIÓN
+    # --------------------------------------------------------
 
     pagina = st.radio(
         "Navegación",
@@ -171,7 +211,7 @@ with st.sidebar:
     st.divider()
 
     st.caption("Inventarios ALDC")
-    st.caption("Versión inicial")
+    st.caption("Versión 0.1")
 
 
 # ============================================================
@@ -180,15 +220,22 @@ with st.sidebar:
 
 if pagina == "🏠 Dashboard":
 
-    st.markdown(
-        '<div class="titulo">Inventarios ALDC</div>',
-        unsafe_allow_html=True
-    )
+    # ========================================================
+    # ENCABEZADO
+    # ========================================================
 
     st.markdown(
-        '<div class="subtitulo">'
-        'Dashboard de control y análisis de inventarios'
-        '</div>',
+        f"""
+        <div class="titulo-principal">
+            Inventarios ALDC
+        </div>
+
+        <div class="subtitulo">
+            Dashboard de control y análisis de inventarios
+        </div>
+
+        <div class="linea-naranja"></div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -196,139 +243,163 @@ if pagina == "🏠 Dashboard":
     # FILTROS
     # ========================================================
 
-    st.markdown("### 🔎 Filtros")
+    st.subheader("🔎 Filtros")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
+
         area_filtro = st.multiselect(
             "Área",
-            options=sorted(df["Área"].unique()),
-            default=[]
+            options=sorted(
+                df["Área"].unique()
+            )
         )
 
     with col2:
+
         referencia_filtro = st.multiselect(
             "Referencia",
-            options=sorted(df["Referencia"].unique()),
-            default=[]
+            options=sorted(
+                df["Referencia"].unique()
+            )
         )
 
     with col3:
-        cantidad_min = st.number_input(
-            "Cantidad mínima",
-            min_value=0,
-            value=0
+
+        st.write("")
+        st.caption(
+            "Seleccione uno o varios filtros "
+            "para actualizar el dashboard."
         )
 
-    # Aplicación de filtros
+    # ========================================================
+    # FILTRAR DATAFRAME
+    # ========================================================
 
     df_filtrado = df.copy()
 
     if area_filtro:
+
         df_filtrado = df_filtrado[
-            df_filtrado["Área"].isin(area_filtro)
+            df_filtrado["Área"].isin(
+                area_filtro
+            )
         ]
 
     if referencia_filtro:
+
         df_filtrado = df_filtrado[
-            df_filtrado["Referencia"].isin(referencia_filtro)
+            df_filtrado["Referencia"].isin(
+                referencia_filtro
+            )
         ]
 
-    df_filtrado = df_filtrado[
-        df_filtrado["Cantidad"] >= cantidad_min
-    ]
+    # ========================================================
+    # CALCULAR KPIs
+    # ========================================================
 
-    st.markdown(
-        '<div class="separador"></div>',
-        unsafe_allow_html=True
+    total_referencias = (
+        df_filtrado["Referencia"]
+        .nunique()
     )
+
+    total_unidades = (
+        df_filtrado["Cantidad"]
+        .sum()
+    )
+
+    valor_total = (
+        df_filtrado["Valor Inventario"]
+        .sum()
+    )
+
+    if len(df_filtrado) > 0:
+
+        stock_promedio = (
+            df_filtrado["Cantidad"]
+            .mean()
+        )
+
+    else:
+
+        stock_promedio = 0
 
     # ========================================================
     # KPIs
     # ========================================================
 
-    total_referencias = df_filtrado["Referencia"].nunique()
-
-    total_unidades = df_filtrado["Cantidad"].sum()
-
-    valor_total = df_filtrado["Valor Inventario"].sum()
-
-    stock_promedio = df_filtrado["Cantidad"].mean()
+    st.subheader("📌 Indicadores principales")
 
     c1, c2, c3, c4 = st.columns(4)
 
+    # --------------------------------------------------------
+    # KPI 1
+    # --------------------------------------------------------
+
     with c1:
-        st.markdown(
-            f"""
-            <div class="kpi">
-                <div class="kpi-titulo">
-                    Referencias
-                </div>
-                <div class="kpi-valor">
-                    {total_referencias:,.0f}
-                </div>
-                <div class="kpi-sub">
-                    Referencias en inventario
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+
+        with st.container(border=True):
+
+            st.metric(
+                label="Referencias",
+                value=f"{total_referencias:,.0f}"
+            )
+
+            st.caption(
+                "Referencias en inventario"
+            )
+
+    # --------------------------------------------------------
+    # KPI 2
+    # --------------------------------------------------------
 
     with c2:
-        st.markdown(
-            f"""
-            <div class="kpi">
-                <div class="kpi-titulo">
-                    Unidades
-                </div>
-                <div class="kpi-valor">
-                    {total_unidades:,.0f}
-                </div>
-                <div class="kpi-sub">
-                    Existencias actuales
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+
+        with st.container(border=True):
+
+            st.metric(
+                label="Unidades",
+                value=f"{total_unidades:,.0f}"
+            )
+
+            st.caption(
+                "Existencias actuales"
+            )
+
+    # --------------------------------------------------------
+    # KPI 3
+    # --------------------------------------------------------
 
     with c3:
-        st.markdown(
-            f"""
-            <div class="kpi">
-                <div class="kpi-titulo">
-                    Valor inventario
-                </div>
-                <div class="kpi-valor">
-                    ${valor_total:,.0f}
-                </div>
-                <div class="kpi-sub">
-                    Valor estimado
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+
+        with st.container(border=True):
+
+            st.metric(
+                label="Valor inventario",
+                value=f"${valor_total:,.0f}"
+            )
+
+            st.caption(
+                "Valor estimado"
+            )
+
+    # --------------------------------------------------------
+    # KPI 4
+    # --------------------------------------------------------
 
     with c4:
-        st.markdown(
-            f"""
-            <div class="kpi">
-                <div class="kpi-titulo">
-                    Stock promedio
-                </div>
-                <div class="kpi-valor">
-                    {stock_promedio:,.1f}
-                </div>
-                <div class="kpi-sub">
-                    Unidades por registro
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+
+        with st.container(border=True):
+
+            st.metric(
+                label="Stock promedio",
+                value=f"{stock_promedio:,.1f}"
+            )
+
+            st.caption(
+                "Unidades por registro"
+            )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -338,35 +409,60 @@ if pagina == "🏠 Dashboard":
 
     col1, col2 = st.columns(2)
 
-    # --------------------------------------------------------
+    # ========================================================
     # INVENTARIO POR ÁREA
-    # --------------------------------------------------------
+    # ========================================================
 
     with col1:
 
-        st.markdown("### 📊 Inventario por área")
+        st.subheader("📊 Inventario por área")
 
         datos_area = (
             df_filtrado
-            .groupby("Área", as_index=False)["Cantidad"]
+            .groupby(
+                "Área",
+                as_index=False
+            )["Cantidad"]
             .sum()
-            .sort_values("Cantidad", ascending=False)
+            .sort_values(
+                "Cantidad",
+                ascending=False
+            )
         )
 
         fig_area = px.bar(
             datos_area,
             x="Área",
             y="Cantidad",
-            text_auto=True,
-            title=""
+            text_auto=True
+        )
+
+        fig_area.update_traces(
+            marker_color=AZUL,
+            textposition="outside"
         )
 
         fig_area.update_layout(
             height=380,
-            margin=dict(l=20, r=20, t=20, b=20),
+            margin=dict(
+                l=20,
+                r=20,
+                t=20,
+                b=20
+            ),
             xaxis_title="",
             yaxis_title="Cantidad",
-            showlegend=False
+            showlegend=False,
+            plot_bgcolor=BLANCO,
+            paper_bgcolor=BLANCO
+        )
+
+        fig_area.update_xaxes(
+            showgrid=False
+        )
+
+        fig_area.update_yaxes(
+            gridcolor=GRIS_BORDE
         )
 
         st.plotly_chart(
@@ -374,17 +470,20 @@ if pagina == "🏠 Dashboard":
             use_container_width=True
         )
 
-    # --------------------------------------------------------
-    # VALOR POR REFERENCIA
-    # --------------------------------------------------------
+    # ========================================================
+    # VALOR DEL INVENTARIO
+    # ========================================================
 
     with col2:
 
-        st.markdown("### 💰 Valor del inventario")
+        st.subheader("💰 Valor del inventario")
 
         datos_ref = (
             df_filtrado
-            .groupby("Referencia", as_index=False)["Valor Inventario"]
+            .groupby(
+                "Referencia",
+                as_index=False
+            )["Valor Inventario"]
             .sum()
             .sort_values(
                 "Valor Inventario",
@@ -397,16 +496,35 @@ if pagina == "🏠 Dashboard":
             datos_ref,
             x="Referencia",
             y="Valor Inventario",
-            text_auto=".2s",
-            title=""
+            text_auto=".2s"
+        )
+
+        fig_valor.update_traces(
+            marker_color=NARANJA,
+            textposition="outside"
         )
 
         fig_valor.update_layout(
             height=380,
-            margin=dict(l=20, r=20, t=20, b=20),
+            margin=dict(
+                l=20,
+                r=20,
+                t=20,
+                b=20
+            ),
             xaxis_title="",
             yaxis_title="Valor",
-            showlegend=False
+            showlegend=False,
+            plot_bgcolor=BLANCO,
+            paper_bgcolor=BLANCO
+        )
+
+        fig_valor.update_xaxes(
+            showgrid=False
+        )
+
+        fig_valor.update_yaxes(
+            gridcolor=GRIS_BORDE
         )
 
         st.plotly_chart(
@@ -415,20 +533,29 @@ if pagina == "🏠 Dashboard":
         )
 
     # ========================================================
-    # TABLA RESUMEN
+    # TABLA
     # ========================================================
 
-    st.markdown("### 📋 Resumen de inventario")
+    st.subheader("📋 Resumen de inventario")
 
     resumen = (
         df_filtrado
         .groupby(
-            ["Área", "Referencia"],
+            [
+                "Área",
+                "Referencia"
+            ],
             as_index=False
         )
         .agg(
-            Cantidad=("Cantidad", "sum"),
-            Valor=("Valor Inventario", "sum")
+            Cantidad=(
+                "Cantidad",
+                "sum"
+            ),
+            Valor=(
+                "Valor Inventario",
+                "sum"
+            )
         )
         .sort_values(
             "Valor",
@@ -450,19 +577,23 @@ if pagina == "🏠 Dashboard":
 elif pagina == "📦 Inventarios":
 
     st.markdown(
-        '<div class="titulo">📦 Inventarios</div>',
-        unsafe_allow_html=True
-    )
+        f"""
+        <div class="titulo-principal">
+            📦 Inventarios
+        </div>
 
-    st.markdown(
-        '<div class="subtitulo">'
-        'Consulta de existencias y movimientos'
-        '</div>',
+        <div class="subtitulo">
+            Consulta de existencias y movimientos
+        </div>
+
+        <div class="linea-naranja"></div>
+        """,
         unsafe_allow_html=True
     )
 
     st.info(
-        "Esta sección se conectará posteriormente con la base real de inventarios."
+        "Esta sección se conectará posteriormente "
+        "con la base real de inventarios."
     )
 
     st.dataframe(
@@ -479,36 +610,46 @@ elif pagina == "📦 Inventarios":
 elif pagina == "📊 Análisis":
 
     st.markdown(
-        '<div class="titulo">📊 Análisis</div>',
+        f"""
+        <div class="titulo-principal">
+            📊 Análisis
+        </div>
+
+        <div class="subtitulo">
+            Análisis dinámico del comportamiento del inventario
+        </div>
+
+        <div class="linea-naranja"></div>
+        """,
         unsafe_allow_html=True
     )
 
-    st.markdown(
-        '<div class="subtitulo">'
-        'Análisis dinámico del comportamiento del inventario'
-        '</div>',
-        unsafe_allow_html=True
-    )
+    col1, col2 = st.columns(2)
 
-    variable = st.selectbox(
-        "Seleccione la variable a analizar",
-        [
-            "Cantidad",
-            "Valor Inventario",
-            "Valor Unitario"
-        ]
-    )
+    with col1:
 
-    agrupacion = st.selectbox(
-        "Agrupar por",
-        [
-            "Área",
-            "Referencia"
-        ]
-    )
+        variable = st.selectbox(
+            "Seleccione la variable a analizar",
+            [
+                "Cantidad",
+                "Valor Inventario",
+                "Valor Unitario"
+            ]
+        )
+
+    with col2:
+
+        agrupacion = st.selectbox(
+            "Agrupar por",
+            [
+                "Área",
+                "Referencia"
+            ]
+        )
 
     datos = (
-        df.groupby(
+        df
+        .groupby(
             agrupacion,
             as_index=False
         )[variable]
@@ -526,10 +667,16 @@ elif pagina == "📊 Análisis":
         text_auto=True
     )
 
+    fig.update_traces(
+        marker_color=AZUL
+    )
+
     fig.update_layout(
         height=500,
         xaxis_title="",
-        yaxis_title=variable
+        yaxis_title=variable,
+        plot_bgcolor=BLANCO,
+        paper_bgcolor=BLANCO
     )
 
     st.plotly_chart(
@@ -545,14 +692,17 @@ elif pagina == "📊 Análisis":
 elif pagina == "🚨 Alertas":
 
     st.markdown(
-        '<div class="titulo">🚨 Alertas</div>',
-        unsafe_allow_html=True
-    )
+        f"""
+        <div class="titulo-principal">
+            🚨 Alertas
+        </div>
 
-    st.markdown(
-        '<div class="subtitulo">'
-        'Identificación de situaciones que requieren atención'
-        '</div>',
+        <div class="subtitulo">
+            Identificación de situaciones que requieren atención
+        </div>
+
+        <div class="linea-naranja"></div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -562,16 +712,23 @@ elif pagina == "🚨 Alertas":
         "stock crítico y referencias de baja rotación."
     )
 
-    # Ejemplo temporal
-
     stock_alto = (
-        df.groupby("Referencia", as_index=False)["Cantidad"]
+        df
+        .groupby(
+            "Referencia",
+            as_index=False
+        )["Cantidad"]
         .sum()
-        .sort_values("Cantidad", ascending=False)
+        .sort_values(
+            "Cantidad",
+            ascending=False
+        )
         .head(5)
     )
 
-    st.markdown("### 🔴 Referencias con mayor cantidad")
+    st.subheader(
+        "🔴 Referencias con mayor cantidad"
+    )
 
     st.dataframe(
         stock_alto,
@@ -587,14 +744,17 @@ elif pagina == "🚨 Alertas":
 elif pagina == "📋 Detalle":
 
     st.markdown(
-        '<div class="titulo">📋 Detalle</div>',
-        unsafe_allow_html=True
-    )
+        f"""
+        <div class="titulo-principal">
+            📋 Detalle
+        </div>
 
-    st.markdown(
-        '<div class="subtitulo">'
-        'Consulta detallada de los registros'
-        '</div>',
+        <div class="subtitulo">
+            Consulta detallada de los registros
+        </div>
+
+        <div class="linea-naranja"></div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -612,20 +772,36 @@ elif pagina == "📋 Detalle":
 elif pagina == "⚙️ Configuración":
 
     st.markdown(
-        '<div class="titulo">⚙️ Configuración</div>',
+        f"""
+        <div class="titulo-principal">
+            ⚙️ Configuración
+        </div>
+
+        <div class="subtitulo">
+            Configuración general del aplicativo
+        </div>
+
+        <div class="linea-naranja"></div>
+        """,
         unsafe_allow_html=True
     )
 
-    st.markdown(
-        '<div class="subtitulo">'
-        'Configuración general del aplicativo'
-        '</div>',
-        unsafe_allow_html=True
+    st.subheader(
+        "Información del aplicativo"
     )
 
-    st.markdown("### Información del aplicativo")
+    st.write(
+        "**Nombre:** Inventarios ALDC"
+    )
 
-    st.write("**Nombre:** Inventarios ALDC")
-    st.write("**Versión:** 0.1")
-    st.write("**Plataforma:** Streamlit")
-    st.write("**Estado:** Desarrollo")
+    st.write(
+        "**Versión:** 0.1"
+    )
+
+    st.write(
+        "**Plataforma:** Streamlit"
+    )
+
+    st.write(
+        "**Estado:** Desarrollo"
+    )
