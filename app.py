@@ -667,17 +667,19 @@ st.markdown("<br>", unsafe_allow_html=True)
     #
     # ========================================================
 
-    st.markdown(
+       st.markdown(
         "<div class='section-title'>Stock por antigüedad</div>",
         unsafe_allow_html=True
     )
-
 
     if COL_ANTIGUEDAD in df_filtrado.columns:
 
         df_edad = (
             df_filtrado
-            .groupby(COL_ANTIGUEDAD, as_index=False)[COL_STOCK]
+            .groupby(
+                COL_ANTIGUEDAD,
+                as_index=False
+            )[COL_STOCK]
             .sum()
         )
 
