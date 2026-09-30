@@ -591,194 +591,194 @@ if pagina == "📊Dashboard":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-# ============================================================
-# PALETA INSTITUCIONAL POR ÁREA
-# ============================================================
-
-COLORES_AREA = {
-    "Mantenimiento": "#064B9B",   # Azul institucional
-    "Operaciones": "#F58220",      # Naranja institucional
-    "RRHH": "#16A34A",             # Verde
-    "Sin asignar": "#6B7280"       # Gris
-}
-
-
-# ============================================================
-# GRAFICO 1. VALOR DEL INVENTARIO POR ANTIGÜEDAD Y ÁREA
-# ============================================================
-
-st.markdown(
-    """
-    <div style="
-        text-align: center;
-        font-size: 20px;
-        font-weight: 700;
-        color: #003B7A;
-        margin-top: 10px;
-        margin-bottom: 15px;
-    ">
-        Valor del inventario por antigüedad y área
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-
-if (
-    COL_ANTIGUEDAD in df_filtrado.columns
-    and COL_COSTE in df_filtrado.columns
-    and "AREA" in df_filtrado.columns
-):
-
-    # --------------------------------------------------------
-    # ORDEN PERSONALIZADO DE ANTIGÜEDAD
-    # --------------------------------------------------------
-
-    ORDEN_ANTIGUEDAD = [
-        "Entre 0 y 3 meses",
-        "Entre 4 y 6 meses",
-        "Entre 7 y 12 meses",
-        "Mayor a 12 meses"
-    ]
-
-
-    # --------------------------------------------------------
-    # AGRUPAR POR ÁREA + ANTIGÜEDAD
-    # --------------------------------------------------------
-
-    df_valor_edad = (
-        df_filtrado
-        .groupby(
-            ["AREA", COL_ANTIGUEDAD],
-            as_index=False
+        # ============================================================
+        # PALETA INSTITUCIONAL POR ÁREA
+        # ============================================================
+        
+        COLORES_AREA = {
+            "Mantenimiento": "#064B9B",   # Azul institucional
+            "Operaciones": "#F58220",      # Naranja institucional
+            "RRHH": "#16A34A",             # Verde
+            "Sin asignar": "#6B7280"       # Gris
+        }
+        
+        
+        # ============================================================
+        # GRAFICO 1. VALOR DEL INVENTARIO POR ANTIGÜEDAD Y ÁREA
+        # ============================================================
+        
+        st.markdown(
+            """
+            <div style="
+                text-align: center;
+                font-size: 20px;
+                font-weight: 700;
+                color: #003B7A;
+                margin-top: 10px;
+                margin-bottom: 15px;
+            ">
+                Valor del inventario por antigüedad y área
+            </div>
+            """,
+            unsafe_allow_html=True
         )
-        .agg(
-            Valor_Inventario=(COL_COSTE, "sum"),
-            Cantidad_Stock=(COL_STOCK, "sum")
-        )
-    )
-
-
-    # --------------------------------------------------------
-    # ORDENAR ANTIGÜEDAD
-    # --------------------------------------------------------
-
-    df_valor_edad[COL_ANTIGUEDAD] = pd.Categorical(
-        df_valor_edad[COL_ANTIGUEDAD],
-        categories=ORDEN_ANTIGUEDAD,
-        ordered=True
-    )
-
-    df_valor_edad = (
-        df_valor_edad
-        .sort_values(COL_ANTIGUEDAD)
-    )
-
-
-    # --------------------------------------------------------
-    # GRÁFICO
-    # --------------------------------------------------------
-
-    fig_valor_edad = px.bar(
-        df_valor_edad,
-        x=COL_ANTIGUEDAD,
-        y="Valor_Inventario",
-        color="AREA",
-        color_discrete_map=COLORES_AREA,
-        custom_data=[
-            "Cantidad_Stock",
-            "Valor_Inventario",
-            "AREA"
-        ]
-    )
-
-
-    # --------------------------------------------------------
-    # PERSONALIZAR HOVER
-    # --------------------------------------------------------
-
-    fig_valor_edad.update_traces(
-        hovertemplate=
-            "<b>%{customdata[2]}</b><br>"
-            "Antigüedad: %{x}<br>"
-            "Cantidad: %{customdata[0]:,.0f}<br>"
-            "Valor inventario: $%{customdata[1]:,.0f}"
-            "<extra></extra>"
-    )
-
-
-    # --------------------------------------------------------
-    # DISEÑO
-    # --------------------------------------------------------
-
-    fig_valor_edad.update_layout(
-
-        barmode="group",
-
-        # Títulos de ejes
-        xaxis_title="Antigüedad",
-        yaxis_title="Valor del inventario",
-
-        # Fondo
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-
-        # Leyenda
-        legend_title_text="Área",
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="center",
-            x=0.5
-        ),
-
-        # Separación de barras
-        bargap=0.25,
-
-        # # Título centrado
-        # title=dict(
-        #     text="Valor del inventario según antigüedad y área",
-        #     x=0.5,
-        #     xanchor="center",
-        #     font=dict(
-        #         size=20,
-        #         color="#003B7A"
-        #     )
-        # ),
-
-        # Eje X
-        xaxis=dict(
-            categoryorder="array",
-            categoryarray=ORDEN_ANTIGUEDAD,
-            tickangle=0
-        ),
-
-        # Eje Y
-        yaxis=dict(
-            tickformat=",.0f",
-            gridcolor="#E5E7EB",
-            zerolinecolor="#E5E7EB"
-        ),
-
-        # Márgenes
-        margin=dict(
-            l=70,
-            r=30,
-            t=100,
-            b=70
-        )
-    )
-
-
-    # --------------------------------------------------------
-    # MOSTRAR
-    # --------------------------------------------------------
-
-    st.plotly_chart(
-        fig_valor_edad,
-        use_container_width=True
-    )
+        
+        
+        if (
+            COL_ANTIGUEDAD in df_filtrado.columns
+            and COL_COSTE in df_filtrado.columns
+            and "AREA" in df_filtrado.columns
+        ):
+        
+            # --------------------------------------------------------
+            # ORDEN PERSONALIZADO DE ANTIGÜEDAD
+            # --------------------------------------------------------
+        
+            ORDEN_ANTIGUEDAD = [
+                "Entre 0 y 3 meses",
+                "Entre 4 y 6 meses",
+                "Entre 7 y 12 meses",
+                "Mayor a 12 meses"
+            ]
+        
+        
+            # --------------------------------------------------------
+            # AGRUPAR POR ÁREA + ANTIGÜEDAD
+            # --------------------------------------------------------
+        
+            df_valor_edad = (
+                df_filtrado
+                .groupby(
+                    ["AREA", COL_ANTIGUEDAD],
+                    as_index=False
+                )
+                .agg(
+                    Valor_Inventario=(COL_COSTE, "sum"),
+                    Cantidad_Stock=(COL_STOCK, "sum")
+                )
+            )
+        
+        
+            # --------------------------------------------------------
+            # ORDENAR ANTIGÜEDAD
+            # --------------------------------------------------------
+        
+            df_valor_edad[COL_ANTIGUEDAD] = pd.Categorical(
+                df_valor_edad[COL_ANTIGUEDAD],
+                categories=ORDEN_ANTIGUEDAD,
+                ordered=True
+            )
+        
+            df_valor_edad = (
+                df_valor_edad
+                .sort_values(COL_ANTIGUEDAD)
+            )
+        
+        
+            # --------------------------------------------------------
+            # GRÁFICO
+            # --------------------------------------------------------
+        
+            fig_valor_edad = px.bar(
+                df_valor_edad,
+                x=COL_ANTIGUEDAD,
+                y="Valor_Inventario",
+                color="AREA",
+                color_discrete_map=COLORES_AREA,
+                custom_data=[
+                    "Cantidad_Stock",
+                    "Valor_Inventario",
+                    "AREA"
+                ]
+            )
+        
+        
+            # --------------------------------------------------------
+            # PERSONALIZAR HOVER
+            # --------------------------------------------------------
+        
+            fig_valor_edad.update_traces(
+                hovertemplate=
+                    "<b>%{customdata[2]}</b><br>"
+                    "Antigüedad: %{x}<br>"
+                    "Cantidad: %{customdata[0]:,.0f}<br>"
+                    "Valor inventario: $%{customdata[1]:,.0f}"
+                    "<extra></extra>"
+            )
+        
+        
+            # --------------------------------------------------------
+            # DISEÑO
+            # --------------------------------------------------------
+        
+            fig_valor_edad.update_layout(
+        
+                barmode="group",
+        
+                # Títulos de ejes
+                xaxis_title="Antigüedad",
+                yaxis_title="Valor del inventario",
+        
+                # Fondo
+                plot_bgcolor="white",
+                paper_bgcolor="white",
+        
+                # Leyenda
+                legend_title_text="Área",
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="center",
+                    x=0.5
+                ),
+        
+                # Separación de barras
+                bargap=0.25,
+        
+                # # Título centrado
+                # title=dict(
+                #     text="Valor del inventario según antigüedad y área",
+                #     x=0.5,
+                #     xanchor="center",
+                #     font=dict(
+                #         size=20,
+                #         color="#003B7A"
+                #     )
+                # ),
+        
+                # Eje X
+                xaxis=dict(
+                    categoryorder="array",
+                    categoryarray=ORDEN_ANTIGUEDAD,
+                    tickangle=0
+                ),
+        
+                # Eje Y
+                yaxis=dict(
+                    tickformat=",.0f",
+                    gridcolor="#E5E7EB",
+                    zerolinecolor="#E5E7EB"
+                ),
+        
+                # Márgenes
+                margin=dict(
+                    l=70,
+                    r=30,
+                    t=100,
+                    b=70
+                )
+            )
+        
+        
+            # --------------------------------------------------------
+            # MOSTRAR
+            # --------------------------------------------------------
+        
+            st.plotly_chart(
+                fig_valor_edad,
+                use_container_width=True
+            )
 
     # ========================================================
     # GRÁFICO 3 - INVENTARIO POR BODEGA
