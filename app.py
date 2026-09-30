@@ -325,14 +325,7 @@ with st.sidebar:
                 color: #003B7A;
             ">
                 Inventarios ALDC
-            </div>
 
-            # <div style="
-            #     font-size: 12px;
-            #     color: #6B7280;
-            # ">
-            #     Análisis de inventarios
-            # </div>
         </div>
         """,
         unsafe_allow_html=True
