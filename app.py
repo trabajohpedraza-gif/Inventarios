@@ -1,4 +1,6 @@
 import os
+from datetime import datetime, timedelta
+
 import pandas as pd
 import streamlit as st
 import plotly.express as px
@@ -31,16 +33,46 @@ VERDE = "#16A34A"
 ROJO = "#DC2626"
 AMARILLO = "#F59E0B"
 
-LOGO_URL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
+
+# ============================================================
+# LOGO
+# ============================================================
+
+LOGO_URL = (
+    "https://encrypted-tbn0.gstatic.com/images?"
+    "q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
+)
+
+
 # ============================================================
 # AUTENTICACIÓN
 # ============================================================
 
-USUARIOS = {
-    "admin": "ALDC2026",
-    "inventarios": "Inventarios2026"
-}
+# ------------------------------------------------------------
+# CARGAR USUARIOS DESDE STREAMLIT SECRETS
+# ------------------------------------------------------------
 
+try:
+
+    USUARIOS = dict(
+        st.secrets["usuarios"]
+    )
+
+except Exception:
+
+    USUARIOS = {}
+
+
+# ------------------------------------------------------------
+# TIEMPO MÁXIMO DE SESIÓN
+# ------------------------------------------------------------
+
+TIEMPO_SESION_MINUTOS = 30
+
+
+# ============================================================
+# FUNCIÓN LOGIN
+# ============================================================
 
 def login():
 
@@ -49,21 +81,24 @@ def login():
         unsafe_allow_html=True
     )
 
-    # ==========================================
+    # ========================================================
     # LOGO CENTRADO
-    # ==========================================
+    # ========================================================
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns(
+        [1, 2, 1]
+    )
 
     with col2:
+
         st.image(
             LOGO_URL,
             width=180
         )
 
-    # ==========================================
+    # ========================================================
     # TÍTULO
-    # ==========================================
+    # ========================================================
 
     st.markdown(
         f"""
@@ -78,9 +113,9 @@ def login():
         unsafe_allow_html=True
     )
 
-    # ==========================================
+    # ========================================================
     # SUBTÍTULO
-    # ==========================================
+    # ========================================================
 
     st.markdown(
         """
@@ -96,11 +131,13 @@ def login():
         unsafe_allow_html=True
     )
 
-    # ==========================================
+    # ========================================================
     # FORMULARIO CENTRADO
-    # ==========================================
+    # ========================================================
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns(
+        [1, 2, 1]
+    )
 
     with col2:
 
@@ -122,18 +159,30 @@ def login():
             use_container_width=True
         ):
 
-            if usuario in USUARIOS and USUARIOS[usuario] == contraseña:
+            if (
+                usuario in USUARIOS
+                and USUARIOS[usuario] == contraseña
+            ):
 
                 st.session_state["autenticado"] = True
+
                 st.session_state["usuario"] = usuario
+
+                st.session_state["inicio_sesion"] = (
+                    datetime.now()
+                )
 
                 st.rerun()
 
             else:
-                st.error("Usuario o contraseña incorrectos.")
+
+                st.error(
+                    "Usuario o contraseña incorrectos."
+                )
+
 
 # ============================================================
-# VALIDAR SESIÓN
+# INICIALIZAR SESIÓN
 # ============================================================
 
 if "autenticado" not in st.session_state:
@@ -141,11 +190,66 @@ if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
 
+# ============================================================
+# VALIDAR TIEMPO DE SESIÓN
+# ============================================================
+
+if st.session_state["autenticado"]:
+
+    inicio_sesion = st.session_state.get(
+        "inicio_sesion"
+    )
+
+    if inicio_sesion is None:
+
+        st.session_state["autenticado"] = False
+
+        st.session_state.pop(
+            "usuario",
+            None
+        )
+
+    else:
+
+        tiempo_transcurrido = (
+            datetime.now() - inicio_sesion
+        )
+
+        if tiempo_transcurrido >= timedelta(
+            minutes=TIEMPO_SESION_MINUTOS
+        ):
+
+            st.session_state["autenticado"] = False
+
+            st.session_state.pop(
+                "usuario",
+                None
+            )
+
+            st.session_state.pop(
+                "inicio_sesion",
+                None
+            )
+
+            st.warning(
+                "La sesión ha expirado. "
+                "Por favor, inicia sesión nuevamente."
+            )
+
+            st.stop()
+
+
+# ============================================================
+# MOSTRAR LOGIN SI NO ESTÁ AUTENTICADO
+# ============================================================
+
 if not st.session_state["autenticado"]:
 
     login()
 
     st.stop()
+
+
 # ============================================================
 # ESTILOS
 # ============================================================
@@ -255,7 +359,9 @@ st.markdown(
 # CARGA DEL ARCHIVO
 # ============================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
 
 ARCHIVO_EXCEL = os.path.join(
     BASE_DIR,
@@ -372,10 +478,15 @@ else:
 # ============================================================
 
 COLUMNAS_TEXTO = [
+
     "Bodega",
+
     "Codigo Articulo",
+
     "Articulo",
+
     "MESES",
+
     "AREA"
 ]
 
@@ -539,27 +650,26 @@ def formato_numero(valor):
 
 with st.sidebar:
 
-    LOGO_ALDC = (
-        "https://encrypted-tbn0.gstatic.com/images?"
-        "q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
+    LOGO_ALDC = LOGO_URL
+
+    # --------------------------------------------------------
+    # LOGO
+    # --------------------------------------------------------
+
+    col_logo1, col_logo2, col_logo3 = st.columns(
+        [1, 2, 1]
     )
 
-    st.image(
-        LOGO_ALDC,
-        width=150
-    )
+    with col_logo2:
 
-    st.markdown(
-        """
-        <div style="
-            text-align: center;
-            margin-top: -10px;
-            margin-bottom: 20px;
-        ">
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+        st.image(
+            LOGO_ALDC,
+            width=150
+        )
+
+    # --------------------------------------------------------
+    # MENÚ
+    # --------------------------------------------------------
 
     st.markdown("### Menú")
 
@@ -574,6 +684,43 @@ with st.sidebar:
         ],
         label_visibility="collapsed"
     )
+
+    # --------------------------------------------------------
+    # INFORMACIÓN DEL USUARIO
+    # --------------------------------------------------------
+
+    st.markdown("---")
+
+    st.caption(
+        f"Usuario: **{st.session_state.get('usuario', '')}**"
+    )
+
+    # --------------------------------------------------------
+    # CERRAR SESIÓN
+    # --------------------------------------------------------
+
+    if st.button(
+        "🚪 Cerrar sesión",
+        use_container_width=True
+    ):
+
+        st.session_state["autenticado"] = False
+
+        st.session_state.pop(
+            "usuario",
+            None
+        )
+
+        st.session_state.pop(
+            "inicio_sesion",
+            None
+        )
+
+        st.rerun()
+
+    # --------------------------------------------------------
+    # DESCRIPCIÓN
+    # --------------------------------------------------------
 
     st.markdown("---")
 
@@ -597,8 +744,11 @@ st.markdown(
 # ============================================================
 
 areas = [
+
     area
+
     for area in ORDEN_AREAS
+
     if area in df["AREA"].dropna().unique()
 ]
 
@@ -621,6 +771,7 @@ with col1:
 
 df_area = df.copy()
 
+
 if area_seleccionada != "Todas":
 
     df_area = df_area[
@@ -628,8 +779,10 @@ if area_seleccionada != "Todas":
     ]
 
 
-# Ordenar las bodegas según el orden numérico definido en MAPA_BODEGAS
-orden_bodegas = list(MAPA_BODEGAS.keys())
+orden_bodegas = list(
+    MAPA_BODEGAS.keys()
+)
+
 
 bodegas_existentes = (
     df_area["Bodega"]
@@ -640,24 +793,35 @@ bodegas_existentes = (
     .tolist()
 )
 
+
 bodegas = [
+
     bodega
+
     for bodega in orden_bodegas
+
     if bodega in bodegas_existentes
 ]
 
-# Por si aparece alguna bodega en el Excel que no esté en MAPA_BODEGAS
+
 bodegas_no_mapeadas = [
+
     bodega
+
     for bodega in bodegas_existentes
+
     if bodega not in orden_bodegas
 ]
+
 
 bodegas.extend(
     sorted(bodegas_no_mapeadas)
 )
 
-bodegas_opciones = ["Todas"] + bodegas
+
+bodegas_opciones = [
+    "Todas"
+] + bodegas
 
 
 with col2:
@@ -667,11 +831,13 @@ with col2:
         bodegas_opciones
     )
 
+
 # ============================================================
 # FILTRO 3 - ARTÍCULO
 # ============================================================
 
 df_bodega = df_area.copy()
+
 
 if bodega_seleccionada != "Todas":
 
@@ -682,6 +848,7 @@ if bodega_seleccionada != "Todas":
 
 
 articulos = sorted(
+
     df_bodega["Articulo"]
     .dropna()
     .astype(str)
@@ -689,7 +856,10 @@ articulos = sorted(
     .tolist()
 )
 
-articulos_opciones = ["Todos"] + articulos
+
+articulos_opciones = [
+    "Todos"
+] + articulos
 
 
 with col3:
@@ -706,6 +876,7 @@ with col3:
 
 df_articulo = df_bodega.copy()
 
+
 if articulo_seleccionado != "Todos":
 
     df_articulo = df_articulo[
@@ -717,6 +888,7 @@ if articulo_seleccionado != "Todos":
 if COL_ANTIGUEDAD in df.columns:
 
     antiguedades_existentes = (
+
         df_articulo[COL_ANTIGUEDAD]
         .dropna()
         .astype(str)
@@ -725,14 +897,22 @@ if COL_ANTIGUEDAD in df.columns:
     )
 
     antiguedades = [
+
         edad
+
         for edad in ORDEN_ANTIGUEDAD
+
         if edad in antiguedades_existentes
     ]
 
     antiguedades += [
+
         edad
-        for edad in sorted(antiguedades_existentes)
+
+        for edad in sorted(
+            antiguedades_existentes
+        )
+
         if edad not in antiguedades
     ]
 
@@ -741,7 +921,9 @@ else:
     antiguedades = []
 
 
-antiguedades_opciones = ["Todas"] + antiguedades
+antiguedades_opciones = [
+    "Todas"
+] + antiguedades
 
 
 with col4:
@@ -757,6 +939,7 @@ with col4:
 # ============================================================
 
 df_filtrado = df_articulo.copy()
+
 
 if antiguedad_seleccionada != "Todas":
 
@@ -785,7 +968,9 @@ st.markdown("---")
 
 if pagina == "📊Dashboard":
 
-    st.title("Dashboard de Inventarios")
+    st.title(
+        "Dashboard de Inventarios"
+    )
 
     st.caption(
         "Vista general del comportamiento del inventario."
@@ -796,30 +981,47 @@ if pagina == "📊Dashboard":
     # ========================================================
 
     stock_total = (
+
         df_filtrado[COL_STOCK].sum()
+
         if COL_STOCK in df_filtrado.columns
+
         else 0
     )
+
 
     coste_inventario = (
+
         df_filtrado[COL_COSTE].sum()
+
         if COL_COSTE in df_filtrado.columns
+
         else 0
     )
+
 
     rotacion = (
+
         df_filtrado[COL_ROTACION].mean()
+
         if COL_ROTACION in df_filtrado.columns
+
         else 0
     )
+
 
     dias = (
+
         df_filtrado[COL_DIAS].mean()
+
         if COL_DIAS in df_filtrado.columns
+
         else 0
     )
 
+
     k1, k2, k3, k4 = st.columns(4)
+
 
     with k1:
 
@@ -828,12 +1030,14 @@ if pagina == "📊Dashboard":
             value=formato_numero(stock_total)
         )
 
+
     with k2:
 
         st.metric(
             label="💰 Coste Promedio inventario",
             value=formato_moneda(coste_inventario)
         )
+
 
     with k3:
 
@@ -842,6 +1046,7 @@ if pagina == "📊Dashboard":
             value=formato_numero(rotacion)
         )
 
+
     with k4:
 
         st.metric(
@@ -849,14 +1054,15 @@ if pagina == "📊Dashboard":
             value=formato_numero(dias)
         )
 
+
     st.markdown(
         "<br>",
         unsafe_allow_html=True
     )
 
+
     # ========================================================
     # GRÁFICO 1
-    # VALOR DEL INVENTARIO POR ANTIGÜEDAD Y ÁREA
     # ========================================================
 
     st.markdown(
@@ -875,47 +1081,88 @@ if pagina == "📊Dashboard":
         unsafe_allow_html=True
     )
 
+
     if (
+
         COL_ANTIGUEDAD in df_filtrado.columns
+
         and COL_COSTE in df_filtrado.columns
+
         and "AREA" in df_filtrado.columns
+
     ):
 
         df_valor_edad = (
+
             df_filtrado
+
             .groupby(
-                ["AREA", COL_ANTIGUEDAD],
+                [
+                    "AREA",
+                    COL_ANTIGUEDAD
+                ],
                 as_index=False,
                 observed=True
             )
+
             .agg(
-                Valor_Inventario=(COL_COSTE, "sum"),
-                Cantidad_Stock=(COL_STOCK, "sum")
+                Valor_Inventario=(
+                    COL_COSTE,
+                    "sum"
+                ),
+
+                Cantidad_Stock=(
+                    COL_STOCK,
+                    "sum"
+                )
             )
         )
 
-        df_valor_edad[COL_ANTIGUEDAD] = pd.Categorical(
-            df_valor_edad[COL_ANTIGUEDAD],
+
+        df_valor_edad[
+            COL_ANTIGUEDAD
+        ] = pd.Categorical(
+
+            df_valor_edad[
+                COL_ANTIGUEDAD
+            ],
+
             categories=ORDEN_ANTIGUEDAD,
+
             ordered=True
         )
+
 
         df_valor_edad["AREA"] = pd.Categorical(
+
             df_valor_edad["AREA"],
+
             categories=ORDEN_AREAS,
+
             ordered=True
         )
 
+
         df_valor_edad = df_valor_edad.sort_values(
-            ["AREA", COL_ANTIGUEDAD]
+            [
+                "AREA",
+                COL_ANTIGUEDAD
+            ]
         )
 
+
         fig_valor_edad = px.bar(
+
             df_valor_edad,
+
             x=COL_ANTIGUEDAD,
+
             y="Valor_Inventario",
+
             color="AREA",
+
             color_discrete_map=COLORES_AREA,
+
             custom_data=[
                 "Cantidad_Stock",
                 "Valor_Inventario",
@@ -923,14 +1170,22 @@ if pagina == "📊Dashboard":
             ]
         )
 
+
         fig_valor_edad.update_traces(
+
             hovertemplate=
+
                 "<b>%{customdata[2]}</b><br>"
+
                 "Antigüedad: %{x}<br>"
+
                 "Cantidad: %{customdata[0]:,.0f}<br>"
+
                 "Valor inventario: $%{customdata[1]:,.0f}"
+
                 "<extra></extra>"
         )
+
 
         fig_valor_edad.update_layout(
 
@@ -947,45 +1202,63 @@ if pagina == "📊Dashboard":
             legend_title_text="Área",
 
             legend=dict(
+
                 orientation="h",
+
                 yanchor="bottom",
+
                 y=1.02,
+
                 xanchor="center",
+
                 x=0.5
             ),
 
             bargap=0.25,
 
             xaxis=dict(
+
                 categoryorder="array",
+
                 categoryarray=ORDEN_ANTIGUEDAD,
+
                 tickangle=0
             ),
 
             yaxis=dict(
+
                 tickprefix="$ ",
+
                 tickformat=",.0f",
+
                 gridcolor="#E5E7EB",
+
                 zerolinecolor="#E5E7EB"
             ),
 
             margin=dict(
+
                 l=70,
+
                 r=30,
+
                 t=100,
+
                 b=70
             )
         )
 
+
         st.plotly_chart(
+
             fig_valor_edad,
+
             use_container_width=True
         )
 
 
     # ========================================================
     # GRÁFICO 2
-    # INVENTARIO POR BODEGA, ÁREA Y ANTIGÜEDAD
     # ========================================================
 
     st.markdown(
@@ -1004,106 +1277,171 @@ if pagina == "📊Dashboard":
         unsafe_allow_html=True
     )
 
+
     if (
+
         "Bodega" in df_filtrado.columns
+
         and "AREA" in df_filtrado.columns
+
         and COL_ANTIGUEDAD in df_filtrado.columns
+
         and COL_COSTE in df_filtrado.columns
+
     ):
 
-        # ----------------------------------------------------
-        # AGRUPAR
-        # ----------------------------------------------------
-
         df_bodega_grafico = (
+
             df_filtrado
+
             .groupby(
-                ["AREA", "Bodega", COL_ANTIGUEDAD],
+
+                [
+                    "AREA",
+                    "Bodega",
+                    COL_ANTIGUEDAD
+                ],
+
                 as_index=False,
+
                 observed=True
             )
+
             .agg(
-                Stock=(COL_STOCK, "sum"),
-                Coste=(COL_COSTE, "sum")
+
+                Stock=(
+                    COL_STOCK,
+                    "sum"
+                ),
+
+                Coste=(
+                    COL_COSTE,
+                    "sum"
+                )
             )
         )
 
-        # ----------------------------------------------------
-        # ORDEN DE ÁREAS
-        # ----------------------------------------------------
 
         df_bodega_grafico["AREA"] = pd.Categorical(
+
             df_bodega_grafico["AREA"],
+
             categories=ORDEN_AREAS,
+
             ordered=True
         )
 
-        # ----------------------------------------------------
-        # ORDEN DE ANTIGÜEDAD
-        # ----------------------------------------------------
 
-        df_bodega_grafico[COL_ANTIGUEDAD] = pd.Categorical(
-            df_bodega_grafico[COL_ANTIGUEDAD],
+        df_bodega_grafico[
+            COL_ANTIGUEDAD
+        ] = pd.Categorical(
+
+            df_bodega_grafico[
+                COL_ANTIGUEDAD
+            ],
+
             categories=ORDEN_ANTIGUEDAD,
+
             ordered=True
         )
 
-        # ----------------------------------------------------
-        # ORDENAR BODEGAS
-        # ----------------------------------------------------
 
         orden_bodegas_df = (
+
             df_bodega_grafico
+
             .groupby(
-                ["AREA", "Bodega"],
+
+                [
+                    "AREA",
+                    "Bodega"
+                ],
+
                 observed=True,
+
                 as_index=False
             )["Coste"]
+
             .sum()
+
             .sort_values(
-                ["AREA", "Coste"],
-                ascending=[True, False]
+
+                [
+                    "AREA",
+                    "Coste"
+                ],
+
+                ascending=[
+                    True,
+                    False
+                ]
             )
         )
 
+
         orden_bodegas = (
-            orden_bodegas_df["Bodega"]
-            .tolist()
+            orden_bodegas_df[
+                "Bodega"
+            ].tolist()
         )
 
-        # ----------------------------------------------------
-        # TEXTOS PARA HOVER
-        # ----------------------------------------------------
 
-        df_bodega_grafico["AREA_TEXTO"] = (
-            df_bodega_grafico["AREA"]
+        df_bodega_grafico[
+            "AREA_TEXTO"
+        ] = (
+
+            df_bodega_grafico[
+                "AREA"
+            ]
+
             .astype(str)
-            .replace("nan", "Sin asignar")
+
+            .replace(
+                "nan",
+                "Sin asignar"
+            )
         )
 
-        df_bodega_grafico["ANTIGUEDAD_TEXTO"] = (
-            df_bodega_grafico[COL_ANTIGUEDAD]
+
+        df_bodega_grafico[
+            "ANTIGUEDAD_TEXTO"
+        ] = (
+
+            df_bodega_grafico[
+                COL_ANTIGUEDAD
+            ]
+
             .astype(str)
-            .replace("nan", "")
+
+            .replace(
+                "nan",
+                ""
+            )
         )
 
-        # ----------------------------------------------------
-        # IDENTIFICADOR ÁREA + ANTIGÜEDAD
-        # ----------------------------------------------------
 
-        df_bodega_grafico["AREA_ANTIGUEDAD"] = (
-            df_bodega_grafico["AREA_TEXTO"]
+        df_bodega_grafico[
+            "AREA_ANTIGUEDAD"
+        ] = (
+
+            df_bodega_grafico[
+                "AREA_TEXTO"
+            ]
+
             + " | "
-            + df_bodega_grafico["ANTIGUEDAD_TEXTO"]
+
+            + df_bodega_grafico[
+                "ANTIGUEDAD_TEXTO"
+            ]
         )
 
-        # ----------------------------------------------------
-        # PALETA
-        # ----------------------------------------------------
 
         PALETA_GRAFICO = {}
 
-        for area, colores in COLORES_AREA_ANTIGUEDAD.items():
+
+        for area, colores in (
+            COLORES_AREA_ANTIGUEDAD.items()
+        ):
 
             for antiguedad, color in colores.items():
 
@@ -1111,45 +1449,55 @@ if pagina == "📊Dashboard":
                     f"{area} | {antiguedad}"
                 ] = color
 
-        # ----------------------------------------------------
-        # GRÁFICO
-        # ----------------------------------------------------
 
         fig_bodega = px.bar(
+
             df_bodega_grafico,
+
             x="Bodega",
+
             y="Coste",
+
             color="AREA_ANTIGUEDAD",
+
             color_discrete_map=PALETA_GRAFICO,
+
             category_orders={
                 "Bodega": orden_bodegas
             },
+
             custom_data=[
+
                 "AREA_TEXTO",
+
                 "Bodega",
+
                 "Stock",
+
                 "Coste",
+
                 "ANTIGUEDAD_TEXTO"
             ]
         )
 
-        # ----------------------------------------------------
-        # HOVER
-        # ----------------------------------------------------
 
         fig_bodega.update_traces(
+
             hovertemplate=
+
                 "<b>%{customdata[1]}</b><br>"
+
                 "Área: %{customdata[0]}<br>"
+
                 "Antigüedad: %{customdata[4]}<br>"
+
                 "Cantidad: %{customdata[2]:,.0f}<br>"
+
                 "Valor inventario: $%{customdata[3]:,.0f}"
+
                 "<extra></extra>"
         )
 
-        # ----------------------------------------------------
-        # CONFIGURACIÓN DEL GRÁFICO
-        # ----------------------------------------------------
 
         fig_bodega.update_layout(
 
@@ -1162,15 +1510,22 @@ if pagina == "📊Dashboard":
             yaxis_title="Valor del inventario ($)",
 
             xaxis=dict(
+
                 categoryorder="array",
+
                 categoryarray=orden_bodegas,
+
                 tickangle=-45
             ),
 
             yaxis=dict(
+
                 tickprefix="$ ",
+
                 tickformat=",.0f",
+
                 gridcolor="#E5E7EB",
+
                 zerolinecolor="#E5E7EB"
             ),
 
@@ -1181,117 +1536,173 @@ if pagina == "📊Dashboard":
             bargap=0.25,
 
             margin=dict(
+
                 l=90,
+
                 r=30,
+
                 t=30,
+
                 b=140
             )
         )
 
-        # ====================================================
-        # ÁREAS PRESENTES
-        # ====================================================
 
         areas_presentes = [
+
             area
+
             for area in ORDEN_AREAS
-            if area in df_bodega_grafico["AREA_TEXTO"].unique()
+
+            if area in
+            df_bodega_grafico[
+                "AREA_TEXTO"
+            ].unique()
         ]
 
-        # ====================================================
-        # LEYENDA DE ÁREAS
-        # ====================================================
 
         elementos_leyenda = []
+
 
         for area in areas_presentes:
 
             color = COLORES_AREA.get(
+
                 area,
+
                 "#6B7280"
             )
 
+
             elemento = (
+
                 '<span style="'
+
                 'display:inline-flex;'
+
                 'align-items:center;'
+
                 'margin-right:20px;'
+
                 'color:#374151;'
+
                 'white-space:nowrap;'
+
                 '">'
+
                 '<span style="'
+
                 'display:inline-block;'
+
                 'width:12px;'
+
                 'height:12px;'
+
                 'border-radius:3px;'
+
                 f'background-color:{color};'
+
                 'margin-right:6px;'
+
                 '"></span>'
+
                 f'{area}'
+
                 '</span>'
             )
 
-            elementos_leyenda.append(elemento)
+
+            elementos_leyenda.append(
+                elemento
+            )
+
 
         leyenda_areas = "".join(
             elementos_leyenda
         )
 
-        # ====================================================
-        # LEYENDA DE ANTIGÜEDAD
-        # ====================================================
 
         elementos_antiguedad = []
 
+
         for antiguedad in ORDEN_ANTIGUEDAD:
 
-            color = COLORES_AREA_ANTIGUEDAD[
-                "Mantenimiento"
-            ][antiguedad]
+            color = (
+                COLORES_AREA_ANTIGUEDAD[
+                    "Mantenimiento"
+                ][
+                    antiguedad
+                ]
+            )
+
 
             if antiguedad == "Entre 0 y 3 meses":
+
                 nombre = "0–3 meses"
 
             elif antiguedad == "Entre 4 y 6 meses":
+
                 nombre = "4–6 meses"
 
             elif antiguedad == "Entre 7 y 12 meses":
+
                 nombre = "7–12 meses"
 
             else:
+
                 nombre = "Mayor a 12 meses"
 
+
             elemento = (
+
                 '<span style="'
+
                 'display:inline-flex;'
+
                 'align-items:center;'
+
                 'margin-right:15px;'
+
                 'color:#6B7280;'
+
                 'white-space:nowrap;'
+
                 '">'
+
                 '<span style="'
+
                 'display:inline-block;'
+
                 'width:12px;'
+
                 'height:12px;'
+
                 'border-radius:3px;'
+
                 f'background-color:{color};'
+
                 'margin-right:5px;'
+
                 '"></span>'
+
                 f'{nombre}'
+
                 '</span>'
             )
 
-            elementos_antiguedad.append(elemento)
+
+            elementos_antiguedad.append(
+                elemento
+            )
+
 
         leyenda_antiguedad = "".join(
             elementos_antiguedad
         )
 
-        # ====================================================
-        # MOSTRAR LEYENDAS
-        # ====================================================
 
         st.markdown(
+
             f"""
             <div style="
                 text-align:center;
@@ -1310,10 +1721,13 @@ if pagina == "📊Dashboard":
                 {leyenda_areas}
             </div>
             """,
+
             unsafe_allow_html=True
         )
 
+
         st.markdown(
+
             f"""
             <div style="
                 text-align:center;
@@ -1332,15 +1746,15 @@ if pagina == "📊Dashboard":
                 {leyenda_antiguedad}
             </div>
             """,
+
             unsafe_allow_html=True
         )
 
-        # ----------------------------------------------------
-        # MOSTRAR GRÁFICO
-        # ----------------------------------------------------
 
         st.plotly_chart(
+
             fig_bodega,
+
             use_container_width=True
         )
 
@@ -1357,93 +1771,154 @@ elif pagina == "📦Inventarios":
         "Comportamiento del inventario por bodega y artículo."
     )
 
+
     if "Bodega" in df_filtrado.columns:
 
         inventario_bodega = (
+
             df_filtrado
+
             .groupby(
                 "Bodega",
                 as_index=False
             )
+
             .agg(
-                Stock=(COL_STOCK, "sum"),
-                Coste=(COL_COSTE, "sum")
+
+                Stock=(
+                    COL_STOCK,
+                    "sum"
+                ),
+
+                Coste=(
+                    COL_COSTE,
+                    "sum"
+                )
             )
         )
+
 
         # ----------------------------------------------------
         # STOCK
         # ----------------------------------------------------
 
         fig = px.bar(
+
             inventario_bodega,
+
             x="Bodega",
+
             y="Stock",
+
             title="Stock por bodega"
         )
 
+
         fig.update_layout(
+
             xaxis_title="Bodega",
+
             yaxis_title="Stock",
+
             plot_bgcolor="white",
+
             paper_bgcolor="white"
         )
 
+
         st.plotly_chart(
+
             fig,
+
             use_container_width=True
         )
+
 
         # ----------------------------------------------------
         # COSTE
         # ----------------------------------------------------
 
         fig_coste = px.bar(
+
             inventario_bodega,
+
             x="Bodega",
+
             y="Coste",
+
             title="Valor del inventario por bodega"
         )
 
+
         fig_coste.update_layout(
+
             xaxis_title="Bodega",
+
             yaxis_title="Valor",
+
             plot_bgcolor="white",
+
             paper_bgcolor="white"
         )
 
+
         st.plotly_chart(
+
             fig_coste,
+
             use_container_width=True
         )
+
 
     # ========================================================
     # TABLA POR BODEGA
     # ========================================================
 
     st.markdown(
+
         "<div class='section-title'>Resumen por bodega</div>",
+
         unsafe_allow_html=True
     )
+
 
     if "Bodega" in df_filtrado.columns:
 
         tabla_bodega = (
+
             df_filtrado
+
             .groupby(
                 "Bodega",
                 as_index=False
             )
+
             .agg(
-                Stock=(COL_STOCK, "sum"),
-                Coste=(COL_COSTE, "sum"),
-                Articulos=("Articulo", "nunique")
+
+                Stock=(
+                    COL_STOCK,
+                    "sum"
+                ),
+
+                Coste=(
+                    COL_COSTE,
+                    "sum"
+                ),
+
+                Articulos=(
+                    "Articulo",
+                    "nunique"
+                )
             )
         )
 
+
         st.dataframe(
+
             tabla_bodega,
+
             use_container_width=True,
+
             hide_index=True
         )
 
@@ -1460,300 +1935,507 @@ elif pagina == "📈Análisis":
         "Análisis del movimiento y rotación del inventario."
     )
 
+
     MESES_NOMBRES = [
 
         "JUNIO",
+
         "JULIO",
+
         "AGOSTO",
+
         "SEPTIEMBRE",
+
         "OCTUBRE",
+
         "NOVIEMBRE",
+
         "DICIEMBRE",
+
         "ENERO",
+
         "FEBRERO",
+
         "MARZO",
+
         "ABRIL",
+
         "MAYO"
     ]
+
 
     MOVIMIENTO_MENSUAL = {
 
         "JUNIO": {
+
             "entrada": "ENTRADA",
+
             "salida": "SALIDA",
+
             "costo_entrada": "COSTO ENTRADA",
+
             "costo_salida": "COSTO SALIDA",
+
             "neto": "NETO",
+
             "rotacion": "ROTACION"
         },
 
+
         "JULIO": {
+
             "entrada": "ENTRADA2",
+
             "salida": "SALIDA3",
+
             "costo_entrada": "COSTO ENTRADA4",
+
             "costo_salida": "COSTO SALIDA5",
+
             "neto": "NETO6",
+
             "rotacion": "ROTACION 68"
         },
 
+
         "AGOSTO": {
+
             "entrada": "ENTRADA8",
+
             "salida": "SALIDA9",
+
             "costo_entrada": "COSTO ENTRADA10",
+
             "costo_salida": "COSTO SALIDA11",
+
             "neto": "NETO12",
+
             "rotacion": "ROTACION 69"
         },
 
+
         "SEPTIEMBRE": {
+
             "entrada": "ENTRADA14",
+
             "salida": "SALIDA15",
+
             "costo_entrada": "COSTO ENTRADA16",
+
             "costo_salida": "COSTO SALIDA17",
+
             "neto": "NETO18",
+
             "rotacion": "ROTACION 70"
         },
 
+
         "OCTUBRE": {
+
             "entrada": "ENTRADA20",
+
             "salida": "SALIDA21",
+
             "costo_entrada": "COSTO ENTRADA22",
+
             "costo_salida": "COSTO SALIDA23",
+
             "neto": "NETO24",
+
             "rotacion": "ROTACION 71"
         },
 
+
         "NOVIEMBRE": {
+
             "entrada": "ENTRADA26",
+
             "salida": "SALIDA27",
+
             "costo_entrada": "COSTO ENTRADA28",
+
             "costo_salida": "COSTO SALIDA29",
+
             "neto": "NETO30",
+
             "rotacion": "ROTACION 72"
         },
 
+
         "DICIEMBRE": {
+
             "entrada": "ENTRADA32",
+
             "salida": "SALIDA33",
+
             "costo_entrada": "COSTO ENTRADA34",
+
             "costo_salida": "COSTO SALIDA35",
+
             "neto": "NETO36",
+
             "rotacion": "ROTACION 73"
         },
 
+
         "ENERO": {
+
             "entrada": "ENTRADA38",
+
             "salida": "SALIDA39",
+
             "costo_entrada": "COSTO ENTRADA40",
+
             "costo_salida": "COSTO SALIDA41",
+
             "neto": "NETO42",
+
             "rotacion": "ROTACION 74"
         },
 
+
         "FEBRERO": {
+
             "entrada": "ENTRADA44",
+
             "salida": "SALIDA45",
+
             "costo_entrada": "COSTO ENTRADA46",
+
             "costo_salida": "COSTO SALIDA47",
+
             "neto": "NETO48",
+
             "rotacion": "ROTACION 75"
         },
 
+
         "MARZO": {
+
             "entrada": "ENTRADA50",
+
             "salida": "SALIDA51",
+
             "costo_entrada": "COSTO ENTRADA52",
+
             "costo_salida": "COSTO SALIDA53",
+
             "neto": "NETO54",
+
             "rotacion": "ROTACION 76"
         },
 
+
         "ABRIL": {
+
             "entrada": "ENTRADA56",
+
             "salida": "SALIDA57",
+
             "costo_entrada": "COSTO ENTRADA58",
+
             "costo_salida": "COSTO SALIDA59",
+
             "neto": "NETO60",
+
             "rotacion": "ROTACION 77"
         },
 
+
         "MAYO": {
+
             "entrada": "ENTRADA62",
+
             "salida": "SALIDA63",
+
             "costo_entrada": "COSTO ENTRADA64",
+
             "costo_salida": "COSTO SALIDA65",
+
             "neto": "NETO66",
+
             "rotacion": "ROTACION 78"
         }
     }
 
+
     datos_mensuales = []
+
 
     for mes in MESES_NOMBRES:
 
         columnas = MOVIMIENTO_MENSUAL[mes]
+
 
         datos_mensuales.append({
 
             "Mes": mes,
 
             "Entradas": (
-                df_filtrado[columnas["entrada"]].sum()
-                if columnas["entrada"] in df_filtrado.columns
+
+                df_filtrado[
+                    columnas["entrada"]
+                ].sum()
+
+                if columnas["entrada"]
+                in df_filtrado.columns
+
                 else 0
             ),
 
             "Salidas": (
-                df_filtrado[columnas["salida"]].sum()
-                if columnas["salida"] in df_filtrado.columns
+
+                df_filtrado[
+                    columnas["salida"]
+                ].sum()
+
+                if columnas["salida"]
+                in df_filtrado.columns
+
                 else 0
             ),
 
             "Costo entradas": (
-                df_filtrado[columnas["costo_entrada"]].sum()
-                if columnas["costo_entrada"] in df_filtrado.columns
+
+                df_filtrado[
+                    columnas["costo_entrada"]
+                ].sum()
+
+                if columnas["costo_entrada"]
+                in df_filtrado.columns
+
                 else 0
             ),
 
             "Costo salidas": (
-                df_filtrado[columnas["costo_salida"]].sum()
-                if columnas["costo_salida"] in df_filtrado.columns
+
+                df_filtrado[
+                    columnas["costo_salida"]
+                ].sum()
+
+                if columnas["costo_salida"]
+                in df_filtrado.columns
+
                 else 0
             ),
 
             "Neto": (
-                df_filtrado[columnas["neto"]].sum()
-                if columnas["neto"] in df_filtrado.columns
+
+                df_filtrado[
+                    columnas["neto"]
+                ].sum()
+
+                if columnas["neto"]
+                in df_filtrado.columns
+
                 else 0
             ),
 
             "Rotacion": (
-                df_filtrado[columnas["rotacion"]].mean()
-                if columnas["rotacion"] in df_filtrado.columns
+
+                df_filtrado[
+                    columnas["rotacion"]
+                ].mean()
+
+                if columnas["rotacion"]
+                in df_filtrado.columns
+
                 else 0
             )
         })
 
+
     df_mensual = pd.DataFrame(
         datos_mensuales
     )
+
 
     # ========================================================
     # ENTRADAS Y SALIDAS
     # ========================================================
 
     st.markdown(
+
         "<div class='section-title'>Entradas y salidas mensuales</div>",
+
         unsafe_allow_html=True
     )
 
+
     fig_movimiento = px.line(
+
         df_mensual,
+
         x="Mes",
-        y=["Entradas", "Salidas"],
+
+        y=[
+            "Entradas",
+            "Salidas"
+        ],
+
         markers=True,
+
         title="Movimiento mensual de inventario"
     )
 
+
     fig_movimiento.update_layout(
+
         xaxis_title="Mes",
+
         yaxis_title="Cantidad",
+
         plot_bgcolor="white",
+
         paper_bgcolor="white"
     )
 
+
     st.plotly_chart(
+
         fig_movimiento,
+
         use_container_width=True
     )
+
 
     # ========================================================
     # COSTOS
     # ========================================================
 
     st.markdown(
+
         "<div class='section-title'>Costos de entradas y salidas</div>",
+
         unsafe_allow_html=True
     )
 
+
     fig_costos = px.line(
+
         df_mensual,
+
         x="Mes",
+
         y=[
             "Costo entradas",
             "Costo salidas"
         ],
+
         markers=True,
+
         title="Movimiento de costos"
     )
 
+
     fig_costos.update_layout(
+
         xaxis_title="Mes",
+
         yaxis_title="Valor",
+
         plot_bgcolor="white",
+
         paper_bgcolor="white"
     )
 
+
     st.plotly_chart(
+
         fig_costos,
+
         use_container_width=True
     )
+
 
     # ========================================================
     # NETO
     # ========================================================
 
     st.markdown(
+
         "<div class='section-title'>Movimiento neto</div>",
+
         unsafe_allow_html=True
     )
 
+
     fig_neto = px.bar(
+
         df_mensual,
+
         x="Mes",
+
         y="Neto",
+
         text_auto=".2f",
+
         title="Movimiento neto mensual"
     )
 
+
     fig_neto.update_layout(
+
         xaxis_title="Mes",
+
         yaxis_title="Neto",
+
         plot_bgcolor="white",
+
         paper_bgcolor="white"
     )
 
+
     st.plotly_chart(
+
         fig_neto,
+
         use_container_width=True
     )
+
 
     # ========================================================
     # ROTACIÓN
     # ========================================================
 
     st.markdown(
+
         "<div class='section-title'>Rotación mensual</div>",
+
         unsafe_allow_html=True
     )
 
+
     fig_rotacion = px.line(
+
         df_mensual,
+
         x="Mes",
+
         y="Rotacion",
+
         markers=True,
+
         title="Rotación mensual"
     )
 
+
     fig_rotacion.update_layout(
+
         xaxis_title="Mes",
+
         yaxis_title="Rotación",
+
         plot_bgcolor="white",
+
         paper_bgcolor="white"
     )
 
+
     st.plotly_chart(
+
         fig_rotacion,
+
         use_container_width=True
     )
 
@@ -1770,108 +2452,188 @@ elif pagina == "⚠️Alertas":
         "Identificación de inventarios con mayor antigüedad."
     )
 
+
     if COL_ANTIGUEDAD in df_filtrado.columns:
 
         df_alertas = df_filtrado[
-            df_filtrado[COL_ANTIGUEDAD]
+
+            df_filtrado[
+                COL_ANTIGUEDAD
+            ]
+
             .astype(str)
+
             .str.contains(
+
                 "Mayor a 12 meses",
+
                 case=False,
+
                 na=False
             )
+
         ].copy()
 
+
         stock_alerta = (
-            df_alertas[COL_STOCK].sum()
+
+            df_alertas[
+                COL_STOCK
+            ].sum()
+
             if COL_STOCK in df_alertas.columns
+
             else 0
         )
+
 
         valor_alerta = (
-            df_alertas[COL_COSTE].sum()
+
+            df_alertas[
+                COL_COSTE
+            ].sum()
+
             if COL_COSTE in df_alertas.columns
+
             else 0
         )
 
+
         a1, a2, a3 = st.columns(3)
+
 
         with a1:
 
             st.metric(
+
                 "Artículos alertados",
-                f"{len(df_alertas):,}".replace(",", ".")
+
+                f"{len(df_alertas):,}"
+                .replace(",", ".")
             )
+
 
         with a2:
 
             st.metric(
+
                 "Stock",
-                formato_numero(stock_alerta)
+
+                formato_numero(
+                    stock_alerta
+                )
             )
+
 
         with a3:
 
             st.metric(
+
                 "Valor inventario",
-                formato_moneda(valor_alerta)
+
+                formato_moneda(
+                    valor_alerta
+                )
             )
 
+
         st.markdown("---")
+
 
         if len(df_alertas) > 0:
 
             top_alertas = (
+
                 df_alertas
+
                 .sort_values(
+
                     COL_COSTE,
+
                     ascending=False
                 )
+
                 .head(15)
             )
 
+
             fig_alertas = px.bar(
+
                 top_alertas,
+
                 x=COL_COSTE,
+
                 y="Articulo",
+
                 orientation="h",
-                title="Artículos con mayor valor y antigüedad"
+
+                title=(
+                    "Artículos con mayor valor "
+                    "y antigüedad"
+                )
             )
 
+
             fig_alertas.update_layout(
+
                 xaxis_title="Valor inventario",
+
                 yaxis_title="Artículo",
+
                 plot_bgcolor="white",
+
                 paper_bgcolor="white"
             )
 
+
             st.plotly_chart(
+
                 fig_alertas,
+
                 use_container_width=True
             )
 
+
             st.dataframe(
+
                 df_alertas[
+
                     [
                         "Bodega",
+
                         "Codigo Articulo",
+
                         "Articulo",
+
                         COL_STOCK,
+
                         COL_COSTE,
+
                         COL_ANTIGUEDAD
                     ]
-                ].sort_values(
+
+                ]
+
+                .sort_values(
+
                     COL_COSTE,
+
                     ascending=False
                 ),
+
                 use_container_width=True,
+
                 hide_index=True
             )
+
 
         else:
 
             st.success(
-                "No se encontraron artículos con antigüedad superior a 12 meses para los filtros seleccionados."
+
+                "No se encontraron artículos "
+                "con antigüedad superior a 12 meses "
+                "para los filtros seleccionados."
             )
 
 
@@ -1881,67 +2643,105 @@ elif pagina == "⚠️Alertas":
 
 elif pagina == "📋Detalle":
 
-    st.title("Detalle del inventario")
+    st.title(
+        "Detalle del inventario"
+    )
 
     st.caption(
-        "Detalle de los registros incluidos en los filtros seleccionados."
+        "Detalle de los registros incluidos "
+        "en los filtros seleccionados."
     )
+
 
     # ========================================================
     # TOP 15 ARTÍCULOS
     # ========================================================
 
     if (
+
         COL_COSTE in df_filtrado.columns
+
         and "Articulo" in df_filtrado.columns
+
     ):
 
         top_articulos = (
+
             df_filtrado
+
             .groupby(
+
                 [
                     "Articulo",
                     "Bodega"
                 ],
+
                 as_index=False
             )[COL_COSTE]
+
             .sum()
+
             .sort_values(
+
                 COL_COSTE,
+
                 ascending=False
             )
+
             .head(15)
         )
 
+
         fig_top = px.bar(
+
             top_articulos,
+
             x=COL_COSTE,
+
             y="Articulo",
+
             color="Bodega",
+
             orientation="h",
-            title="Top 15 artículos por valor de inventario"
+
+            title=(
+                "Top 15 artículos "
+                "por valor de inventario"
+            )
         )
 
+
         fig_top.update_layout(
+
             xaxis_title="Valor inventario",
+
             yaxis_title="Artículo",
+
             plot_bgcolor="white",
+
             paper_bgcolor="white"
         )
 
+
         st.plotly_chart(
+
             fig_top,
+
             use_container_width=True
         )
+
 
     # ========================================================
     # TABLA DETALLADA
     # ========================================================
 
     st.markdown(
+
         "<div class='section-title'>Detalle</div>",
+
         unsafe_allow_html=True
     )
+
 
     columnas_detalle = [
 
@@ -1964,6 +2764,7 @@ elif pagina == "📋Detalle":
         COL_ANTIGUEDAD
     ]
 
+
     columnas_disponibles = [
 
         columna
@@ -1973,29 +2774,42 @@ elif pagina == "📋Detalle":
         if columna in df_filtrado.columns
     ]
 
+
     df_detalle = df_filtrado[
         columnas_disponibles
     ].copy()
 
+
     st.dataframe(
+
         df_detalle,
+
         use_container_width=True,
+
         hide_index=True
     )
+
 
     # ========================================================
     # DESCARGA CSV
     # ========================================================
 
     csv = df_detalle.to_csv(
+
         index=False,
+
         encoding="utf-8-sig"
     )
 
+
     st.download_button(
+
         label="⬇️ Descargar detalle en CSV",
+
         data=csv,
+
         file_name="detalle_inventarios_aldc.csv",
+
         mime="text/csv"
     )
 
@@ -2007,5 +2821,6 @@ elif pagina == "📋Detalle":
 st.markdown("---")
 
 st.caption(
-    "Inventarios ALDC | Herramienta de análisis y seguimiento de inventarios"
+    "Inventarios ALDC | Herramienta de análisis "
+    "y seguimiento de inventarios"
 )
