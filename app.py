@@ -47,7 +47,7 @@ def login():
         f"""
         <div style="
             max-width:450px;
-            margin:80px auto 0 auto;
+            margin:80px auto 20px auto;
             background:white;
             padding:35px;
             border-radius:15px;
@@ -55,21 +55,22 @@ def login():
             box-shadow:0 4px 15px rgba(0,0,0,0.08);
             text-align:center;
         ">
-
-            <h1 style="
+            <div style="
+                font-size:32px;
+                font-weight:700;
                 color:{AZUL_OSCURO};
-                margin-bottom:5px;
+                margin-bottom:8px;
             ">
                 Inventarios ALDC
-            </h1>
+            </div>
 
-            <p style="
+            <div style="
                 color:{GRIS_TEXTO};
+                font-size:15px;
                 margin-bottom:25px;
             ">
                 Acceso al sistema de inventarios
-            </p>
-
+            </div>
         </div>
         """,
         unsafe_allow_html=True
@@ -81,13 +82,15 @@ def login():
 
         usuario = st.text_input(
             "Usuario",
-            placeholder="Ingrese su usuario"
+            placeholder="Ingrese su usuario",
+            key="login_usuario"
         )
 
         contraseña = st.text_input(
             "Contraseña",
             type="password",
-            placeholder="Ingrese su contraseña"
+            placeholder="Ingrese su contraseña",
+            key="login_contraseña"
         )
 
         ingresar = st.button(
@@ -97,10 +100,7 @@ def login():
 
         if ingresar:
 
-            if (
-                usuario in USUARIOS
-                and USUARIOS[usuario] == contraseña
-            ):
+            if usuario in USUARIOS and USUARIOS[usuario] == contraseña:
 
                 st.session_state["autenticado"] = True
                 st.session_state["usuario"] = usuario
