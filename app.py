@@ -835,7 +835,6 @@ if pagina == "📊Dashboard":
             fig_valor_edad,
             use_container_width=True
         )
-
     # ========================================================
     # GRÁFICO 2
     # INVENTARIO POR BODEGA, ÁREA Y ANTIGÜEDAD
@@ -864,6 +863,10 @@ if pagina == "📊Dashboard":
         and COL_COSTE in df_filtrado.columns
     ):
 
+        # ----------------------------------------------------
+        # AGRUPAR
+        # ----------------------------------------------------
+
         df_bodega_grafico = (
             df_filtrado
             .groupby(
@@ -878,7 +881,7 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # CATEGORÍAS
+        # ORDEN DE ÁREAS
         # ----------------------------------------------------
 
         df_bodega_grafico["AREA"] = pd.Categorical(
@@ -886,6 +889,10 @@ if pagina == "📊Dashboard":
             categories=ORDEN_AREAS,
             ordered=True
         )
+
+        # ----------------------------------------------------
+        # ORDEN DE ANTIGÜEDAD
+        # ----------------------------------------------------
 
         df_bodega_grafico[COL_ANTIGUEDAD] = pd.Categorical(
             df_bodega_grafico[COL_ANTIGUEDAD],
@@ -895,7 +902,7 @@ if pagina == "📊Dashboard":
 
         # ----------------------------------------------------
         # ORDENAR BODEGAS
-        # Mayor a menor valor dentro de cada área
+        # Mayor valor primero dentro de cada área
         # ----------------------------------------------------
 
         orden_bodegas_df = (
@@ -918,7 +925,7 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # IDENTIFICADOR ÁREA + ANTIGÜEDAD
+        # TEXTOS PARA HOVER
         # ----------------------------------------------------
 
         df_bodega_grafico["AREA_TEXTO"] = (
@@ -933,6 +940,10 @@ if pagina == "📊Dashboard":
             .replace("nan", "")
         )
 
+        # ----------------------------------------------------
+        # IDENTIFICADOR INTERNO PARA LOS COLORES
+        # ----------------------------------------------------
+
         df_bodega_grafico["AREA_ANTIGUEDAD"] = (
             df_bodega_grafico["AREA_TEXTO"]
             + " | "
@@ -940,7 +951,7 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # CONSTRUIR PALETA PARA PLOTLY
+        # PALETA
         # ----------------------------------------------------
 
         PALETA_GRAFICO = {}
@@ -990,14 +1001,13 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # DISEÑO
+        # OCULTAR LEYENDA ORIGINAL
         # ----------------------------------------------------
 
         fig_bodega.update_layout(
+            showlegend=False,
 
             barmode="stack",
-
-
 
             xaxis_title="Bodega",
 
@@ -1020,31 +1030,96 @@ if pagina == "📊Dashboard":
 
             paper_bgcolor="white",
 
-            legend_title_text="Área / Antigüedad",
-
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="center",
-                x=0.5
-            ),
-
             bargap=0.25,
 
             margin=dict(
                 l=90,
                 r=30,
-                t=110,
+                t=150,
                 b=140
             )
         )
+
+        # ====================================================
+        # LEYENDA PERSONALIZADA
+        # ====================================================
+
+        st.markdown(
+            """
+            <div style="
+                text-align: center;
+                margin-top: -5px;
+                margin-bottom: 15px;
+                font-size: 13px;
+                color: #6B7280;
+            ">
+
+                <b style="color:#003B7A;">Área:</b>
+
+                <span style="color:#064B9B;">
+                    ● Mantenimiento
+                </span>
+
+                &nbsp;&nbsp;
+
+                <span style="color:#F58220;">
+                    ● Operaciones
+                </span>
+
+                &nbsp;&nbsp;
+
+                <span style="color:#16A34A;">
+                    ● RRHH
+                </span>
+
+                &nbsp;&nbsp;
+
+                <span style="color:#7C3AED;">
+                    ● Calidad
+                </span>
+
+                &nbsp;&nbsp;
+
+                <span style="color:#6B7280;">
+                    ● Sin asignar
+                </span>
+
+                <br>
+
+                <span style="
+                    display:inline-block;
+                    margin-top:7px;
+                    color:#6B7280;
+                ">
+                    <b style="color:#003B7A;">
+                        Antigüedad:
+                    </b>
+
+                    0–3 meses
+                    →
+                    4–6 meses
+                    →
+                    7–12 meses
+                    →
+                    Mayor a 12 meses
+                    <span style="font-size:12px;">
+                        (de claro a oscuro)
+                    </span>
+                </span>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # ----------------------------------------------------
+        # MOSTRAR GRÁFICO
+        # ----------------------------------------------------
 
         st.plotly_chart(
             fig_bodega,
             use_container_width=True
         )
-
 
 # ============================================================
 # PÁGINA: INVENTARIOS
