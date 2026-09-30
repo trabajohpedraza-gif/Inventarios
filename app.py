@@ -45,35 +45,64 @@ USUARIOS = {
 def login():
 
     st.markdown(
-        f"""
-        <div style="
-            text-align:center;
-            margin-top:60px;
-        ">
-        """,
+        "<div style='height:60px;'></div>",
         unsafe_allow_html=True
     )
+
+    # ==========================================
+    # LOGO CENTRADO
+    # ==========================================
 
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-
-        # Logo
         st.image(
             LOGO_URL,
             width=180
         )
 
-        # Título
-        st.markdown(
-            f"<h1 style='text-align:center; color:{AZUL_OSCURO};'>Inventarios ALDC</h1>",
-            unsafe_allow_html=True
-        )
+    # ==========================================
+    # TÍTULO
+    # ==========================================
 
-        # Subtítulo
-        st.caption("Acceso al sistema de inventarios")
+    st.markdown(
+        f"""
+        <h1 style="
+            text-align:center;
+            color:{AZUL_OSCURO};
+            margin-bottom:5px;
+        ">
+            Inventarios ALDC
+        </h1>
+        """,
+        unsafe_allow_html=True
+    )
 
-        st.markdown("---")
+    # ==========================================
+    # SUBTÍTULO
+    # ==========================================
+
+    st.markdown(
+        """
+        <div style="
+            text-align:center;
+            color:#6B7280;
+            font-size:15px;
+            margin-bottom:25px;
+        ">
+            Acceso al sistema de inventarios
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # ==========================================
+    # FORMULARIO CENTRADO
+    # ==========================================
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
 
         usuario = st.text_input(
             "Usuario",
