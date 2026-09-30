@@ -198,7 +198,7 @@ MAPA_BODEGAS = {
 
     "[5] - INSUMOS DE MANTENIMIENTO": "Mantenimiento",
 
-    "[7] - HERRAMIENTAS": "Mantenimiento",
+    "[7] - HERRAMIENTAS": "Operaciones",
 
     "[8] - LLANTAS": "Mantenimiento",
 
