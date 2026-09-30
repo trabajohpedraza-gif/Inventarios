@@ -44,14 +44,10 @@ st.markdown(
         background-color: {GRIS_FONDO};
     }}
 
-    /* SIDEBAR */
-
     section[data-testid="stSidebar"] {{
         background-color: {BLANCO};
         border-right: 1px solid {GRIS_BORDE};
     }}
-
-    /* Logo */
 
     .logo-container {{
         padding: 10px 5px 20px 5px;
@@ -77,8 +73,6 @@ st.markdown(
         margin-bottom: 5px;
     }}
 
-    /* TÍTULOS */
-
     h1 {{
         color: {AZUL_OSCURO};
     }}
@@ -90,8 +84,6 @@ st.markdown(
     h3 {{
         color: {AZUL_OSCURO};
     }}
-
-    /* TARJETAS KPI */
 
     .kpi-card {{
         background-color: {BLANCO};
@@ -114,8 +106,6 @@ st.markdown(
         font-weight: 700;
     }}
 
-    /* SECCIONES */
-
     .section-title {{
         color: {AZUL_OSCURO};
         font-size: 20px;
@@ -129,8 +119,6 @@ st.markdown(
         font-size: 13px;
         margin-bottom: 15px;
     }}
-
-    /* ALERTAS */
 
     .alert-card {{
         background-color: {BLANCO};
@@ -220,7 +208,7 @@ MAPA_BODEGAS = {
 
     "[44] - OBSOLETOS": "Sin asignar",
 
-    "[46] - GESTIÓN DE CALIDAD": "RRHH",
+    "[46] - GESTIÓN DE CALIDAD": "Calidad",
 
     "[16] - INSUMOS RRHH Y SST": "RRHH",
 
@@ -241,6 +229,8 @@ COLORES_AREA = {
     "Operaciones": "#F58220",
 
     "RRHH": "#16A34A",
+
+    "Calidad": "#7C3AED",
 
     "Sin asignar": "#6B7280"
 }
@@ -308,9 +298,13 @@ COL_ANTIGUEDAD = "MESES"
 # ============================================================
 
 ORDEN_ANTIGUEDAD = [
+
     "Entre 0 y 3 meses",
+
     "Entre 4 y 6 meses",
+
     "Entre 7 y 12 meses",
+
     "Mayor a 12 meses"
 ]
 
@@ -320,9 +314,15 @@ ORDEN_ANTIGUEDAD = [
 # ============================================================
 
 ORDEN_AREAS = [
+
     "Mantenimiento",
+
     "Operaciones",
+
     "RRHH",
+
+    "Calidad",
+
     "Sin asignar"
 ]
 
@@ -444,7 +444,6 @@ with st.sidebar:
             margin-top: -10px;
             margin-bottom: 20px;
         ">
-
         </div>
         """,
         unsafe_allow_html=True
@@ -485,13 +484,11 @@ st.markdown(
 # FILTRO 1 - ÁREA
 # ============================================================
 
-areas = sorted(
-    df["AREA"]
-    .dropna()
-    .astype(str)
-    .unique()
-    .tolist()
-)
+areas = [
+    area
+    for area in ORDEN_AREAS
+    if area in df["AREA"].dropna().unique()
+]
 
 areas_opciones = ["Todas"] + areas
 
@@ -587,13 +584,26 @@ if articulo_seleccionado != "Todos":
 
 if COL_ANTIGUEDAD in df.columns:
 
-    antiguedades = sorted(
+    antiguedades_existentes = (
         df_articulo[COL_ANTIGUEDAD]
         .dropna()
         .astype(str)
         .unique()
         .tolist()
     )
+
+    antiguedades = [
+        edad
+        for edad in ORDEN_ANTIGUEDAD
+        if edad in antiguedades_existentes
+    ]
+
+    # Por si el Excel contiene algún valor adicional
+    antiguedades += [
+        edad
+        for edad in sorted(antiguedades_existentes)
+        if edad not in antiguedades
+    ]
 
 else:
 
@@ -678,10 +688,6 @@ if pagina == "📊Dashboard":
         else 0
     )
 
-    # ========================================================
-    # MOSTRAR KPIs
-    # ========================================================
-
     k1, k2, k3, k4 = st.columns(4)
 
     with k1:
@@ -712,7 +718,10 @@ if pagina == "📊Dashboard":
             value=formato_numero(dias)
         )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown(
+        "<br>",
+        unsafe_allow_html=True
+    )
 
     # ========================================================
     # GRÁFICO 1
@@ -760,8 +769,14 @@ if pagina == "📊Dashboard":
             ordered=True
         )
 
+        df_valor_edad["AREA"] = pd.Categorical(
+            df_valor_edad["AREA"],
+            categories=ORDEN_AREAS,
+            ordered=True
+        )
+
         df_valor_edad = df_valor_edad.sort_values(
-            COL_ANTIGUEDAD
+            ["AREA", COL_ANTIGUEDAD]
         )
 
         fig_valor_edad = px.bar(
@@ -835,6 +850,7 @@ if pagina == "📊Dashboard":
             fig_valor_edad,
             use_container_width=True
         )
+
     # ========================================================
     # GRÁFICO 2
     # INVENTARIO POR BODEGA, ÁREA Y ANTIGÜEDAD
@@ -848,7 +864,7 @@ if pagina == "📊Dashboard":
             font-weight: 700;
             color: #003B7A;
             margin-top: 30px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         ">
             Valor del inventario por bodega, área y antigüedad
         </div>
@@ -902,7 +918,7 @@ if pagina == "📊Dashboard":
 
         # ----------------------------------------------------
         # ORDENAR BODEGAS
-        # Mayor valor primero dentro de cada área
+        # POR ÁREA Y VALOR DESCENDENTE
         # ----------------------------------------------------
 
         orden_bodegas_df = (
@@ -941,7 +957,8 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # IDENTIFICADOR INTERNO PARA LOS COLORES
+        # IDENTIFICADOR INTERNO
+        # ÁREA + ANTIGÜEDAD
         # ----------------------------------------------------
 
         df_bodega_grafico["AREA_ANTIGUEDAD"] = (
@@ -951,7 +968,7 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # PALETA
+        # PALETA COMPLETA
         # ----------------------------------------------------
 
         PALETA_GRAFICO = {}
@@ -1001,10 +1018,11 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # OCULTAR LEYENDA ORIGINAL
+        # OCULTAR LEYENDA DE PLOTLY
         # ----------------------------------------------------
 
         fig_bodega.update_layout(
+
             showlegend=False,
 
             barmode="stack",
@@ -1035,77 +1053,109 @@ if pagina == "📊Dashboard":
             margin=dict(
                 l=90,
                 r=30,
-                t=150,
+                t=30,
                 b=140
             )
         )
 
         # ====================================================
-        # LEYENDA PERSONALIZADA
+        # ÁREAS REALMENTE PRESENTES
+        # ====================================================
+
+        areas_presentes = [
+
+            area
+
+            for area in ORDEN_AREAS
+
+            if area in
+            df_bodega_grafico["AREA_TEXTO"]
+            .unique()
+        ]
+
+        # ====================================================
+        # LEYENDA GENERAL DE ÁREAS
+        # ====================================================
+
+        elementos_leyenda = ""
+
+        for area in areas_presentes:
+
+            color = COLORES_AREA.get(
+                area,
+                "#6B7280"
+            )
+
+            elementos_leyenda += f"""
+                <div style="
+                    display:flex;
+                    align-items:center;
+                    gap:6px;
+                    white-space:nowrap;
+                ">
+
+                    <span style="
+                        width:13px;
+                        height:13px;
+                        border-radius:3px;
+                        background:{color};
+                        display:inline-block;
+                    "></span>
+
+                    <span>
+                        {area}
+                    </span>
+
+                </div>
+            """
+
+        # ====================================================
+        # MOSTRAR LEYENDA
         # ====================================================
 
         st.markdown(
-            """
+            f"""
             <div style="
-                text-align: center;
-                margin-top: -5px;
-                margin-bottom: 15px;
-                font-size: 13px;
-                color: #6B7280;
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                flex-wrap:wrap;
+                gap:22px;
+                margin-top:0px;
+                margin-bottom:8px;
+                font-size:13px;
+                color:#374151;
             ">
 
-                <b style="color:#003B7A;">Área:</b>
+                <div style="
+                    font-weight:700;
+                    color:#003B7A;
+                ">
+                    Área:
+                </div>
 
-                <span style="color:#064B9B;">
-                    ● Mantenimiento
-                </span>
+                {elementos_leyenda}
 
-                &nbsp;&nbsp;
+            </div>
 
-                <span style="color:#F58220;">
-                    ● Operaciones
-                </span>
+            <div style="
+                text-align:center;
+                font-size:12px;
+                color:#6B7280;
+                margin-bottom:10px;
+            ">
 
-                &nbsp;&nbsp;
-
-                <span style="color:#16A34A;">
-                    ● RRHH
-                </span>
-
-                &nbsp;&nbsp;
-
-                <span style="color:#7C3AED;">
-                    ● Calidad
-                </span>
-
-                &nbsp;&nbsp;
+                <b style="color:#003B7A;">
+                    Antigüedad:
+                </b>
 
                 <span style="color:#6B7280;">
-                    ● Sin asignar
+                    claro → oscuro
                 </span>
 
-                <br>
+                &nbsp;|&nbsp;
 
-                <span style="
-                    display:inline-block;
-                    margin-top:7px;
-                    color:#6B7280;
-                ">
-                    <b style="color:#003B7A;">
-                        Antigüedad:
-                    </b>
-
-                    0–3 meses
-                    →
-                    4–6 meses
-                    →
-                    7–12 meses
-                    →
-                    Mayor a 12 meses
-                    <span style="font-size:12px;">
-                        (de claro a oscuro)
-                    </span>
-                </span>
+                0–3 meses → 4–6 meses → 7–12 meses → Mayor a 12 meses
 
             </div>
             """,
@@ -1120,6 +1170,7 @@ if pagina == "📊Dashboard":
             fig_bodega,
             use_container_width=True
         )
+
 
 # ============================================================
 # PÁGINA: INVENTARIOS
@@ -1759,7 +1810,9 @@ elif pagina == "📋Detalle":
     columnas_disponibles = [
 
         columna
+
         for columna in columnas_detalle
+
         if columna in df_filtrado.columns
     ]
 
