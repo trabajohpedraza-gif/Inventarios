@@ -192,6 +192,16 @@ except Exception as e:
 # Si posteriormente quieres cambiar la clasificación,
 # solamente modificamos este diccionario.
 
+# ============================================================
+# PALETA INSTITUCIONAL POR ÁREA
+# ============================================================
+        
+COLORES_AREA = {
+            "Mantenimiento": "#064B9B",   # Azul institucional
+            "Operaciones": "#F58220",      # Naranja institucional
+            "RRHH": "#16A34A",             # Verde
+            "Sin asignar": "#6B7280"       # Gris
+        }
 
 MAPA_BODEGAS = {
 
@@ -591,16 +601,7 @@ if pagina == "📊Dashboard":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-        # ============================================================
-        # PALETA INSTITUCIONAL POR ÁREA
-        # ============================================================
-        
-        COLORES_AREA = {
-            "Mantenimiento": "#064B9B",   # Azul institucional
-            "Operaciones": "#F58220",      # Naranja institucional
-            "RRHH": "#16A34A",             # Verde
-            "Sin asignar": "#6B7280"       # Gris
-        }
+
         
         
         # ============================================================
