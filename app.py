@@ -220,7 +220,7 @@ MAPA_BODEGAS = {
 
     "[44] - OBSOLETOS": "Sin asignar",
 
-    "[46] - GESTIÓN DE CALIDAD": "Calidad",
+    "[46] - GESTIÓN DE CALIDAD": "RRHH",
 
     "[16] - INSUMOS RRHH Y SST": "RRHH",
 
@@ -241,8 +241,6 @@ COLORES_AREA = {
     "Operaciones": "#F58220",
 
     "RRHH": "#16A34A",
-
-    "Calidad": "#7C3AED",
 
     "Sin asignar": "#6B7280"
 }
@@ -325,7 +323,6 @@ ORDEN_AREAS = [
     "Mantenimiento",
     "Operaciones",
     "RRHH",
-    "Calidad",
     "Sin asignar"
 ]
 
@@ -447,21 +444,6 @@ with st.sidebar:
             margin-top: -10px;
             margin-bottom: 20px;
         ">
-
-            <div style="
-                font-size: 20px;
-                font-weight: 700;
-                color: #003B7A;
-            ">
-                Inventarios ALDC
-            </div>
-
-            <div style="
-                font-size: 12px;
-                color: #6B7280;
-            ">
-                Análisis de inventarios
-            </div>
 
         </div>
         """,
