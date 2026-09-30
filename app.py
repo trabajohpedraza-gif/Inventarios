@@ -909,7 +909,7 @@ if pagina == "📊Dashboard":
         fig_bodega = px.bar(
             df_bodega_grafico,
             x="Bodega",
-            y="valor_inventario",
+            y="Coste",
             color="AREA",
             color_discrete_map=COLORES_AREA,
     
