@@ -1,26 +1,32 @@
+# ============================================================
+# INVENTARIOS ALDC
+# Dashboard analítico de inventarios
+# ============================================================
+
 import os
 from datetime import datetime, timedelta
 
+import numpy as np
 import pandas as pd
-import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
 
 
 # ============================================================
-# CONFIGURACIÓN GENERAL
+# CONFIGURACIÓN
 # ============================================================
 
 st.set_page_config(
     page_title="Inventarios ALDC",
     page_icon="📦",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
 
 
 # ============================================================
-# PALETA INSTITUCIONAL
+# COLORES
 # ============================================================
 
 AZUL = "#064B9B"
@@ -58,719 +64,27 @@ BLANCO = "#FFFFFF"
 
 
 # ============================================================
-# PALETAS
+# ARCHIVO
 # ============================================================
 
-PALETA_ALDC = [
-    AZUL,
-    NARANJA,
-    VERDE,
-    MORADO,
-    AMARILLO,
-    ROJO,
-    AZUL_CLARO,
-    NARANJA_CLARO
-]
+ARCHIVO = "RESULTADO_PYTHON_ROTACION_MAYO_2026.xlsx"
+HOJA = "Tabla calculo"
 
-PALETA_MOVIMIENTO = {
-    "Entradas": VERDE,
-    "Salidas": ROJO
-}
+COL_STOCK = "STOCK TOTAL"
+COL_COSTE = "PROMEDIO INVENTARIO 2022"
+COL_ROTACION = "ROTACION DE INVENTARIOS 2022"
+COL_DIAS = "DIAS 2025"
+COL_ANTIGUEDAD = "MESES"
 
-PALETA_COSTOS = {
-    "Costo entradas": AZUL,
-    "Costo salidas": NARANJA
-}
-
-PALETA_ANALISIS = {
-    "Neto": AZUL,
-    "Rotacion": MORADO
-}
+COL_ARTICULO = "ARTICULO"
+COL_BODEGA = "BODEGA"
 
 
 # ============================================================
-# LOGO
-# ============================================================
-
-LOGO_URL = (
-    "https://encrypted-tbn0.gstatic.com/images?"
-    "q=tbn:ANd9GcT4PEaUuLJVbFJSpTZEJ0g0M20hUiko7iba-wcW1MdcEQ&s"
-)
-
-
-# ============================================================
-# AUTENTICACIÓN
-# ============================================================
-
-try:
-    USUARIOS = dict(st.secrets["usuarios"])
-except Exception:
-    USUARIOS = {}
-
-TIEMPO_SESION_MINUTOS = 30
-
-
-# ============================================================
-# CSS
-# ============================================================
-
-st.markdown(
-    f"""
-    <style>
-
-    /* =====================================================
-       FONDO
-    ===================================================== */
-
-    .stApp {{
-        background:
-            linear-gradient(
-                135deg,
-                #F4F7FA 0%,
-                #FFFFFF 52%,
-                #FFF8F2 100%
-            );
-    }}
-
-
-    /* =====================================================
-       CONTENEDOR PRINCIPAL
-    ===================================================== */
-
-    .block-container {{
-        padding-top: 1.6rem;
-        padding-bottom: 2rem;
-        max-width: 1500px;
-    }}
-
-
-    /* =====================================================
-       SIDEBAR
-    ===================================================== */
-
-    section[data-testid="stSidebar"] {{
-        background: #FFFFFF;
-        border-right: 1px solid {GRIS_BORDE};
-    }}
-
-    section[data-testid="stSidebar"] > div {{
-        padding-top: 1rem;
-    }}
-
-
-    /* =====================================================
-       TÍTULOS
-    ===================================================== */
-
-    h1 {{
-        color: {AZUL_OSCURO} !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.5px;
-    }}
-
-    h2 {{
-        color: {AZUL_OSCURO} !important;
-        font-weight: 750 !important;
-    }}
-
-    h3 {{
-        color: {AZUL_OSCURO} !important;
-        font-weight: 700 !important;
-    }}
-
-    p {{
-        color: {GRIS_TEXTO};
-    }}
-
-
-    /* =====================================================
-       CONTENEDORES / TARJETAS
-    ===================================================== */
-
-    div[data-testid="stVerticalBlockBorderWrapper"] {{
-        border-radius: 18px !important;
-        border: 1px solid {GRIS_BORDE} !important;
-        background: rgba(255,255,255,0.96) !important;
-        box-shadow:
-            0 8px 25px rgba(15, 23, 42, 0.055);
-    }}
-
-
-    /* =====================================================
-       MÉTRICAS
-    ===================================================== */
-
-    div[data-testid="metric-container"] {{
-        background: rgba(255,255,255,0.98);
-        border: 1px solid {GRIS_BORDE};
-        border-radius: 17px;
-        padding: 18px;
-        min-height: 112px;
-        box-shadow:
-            0 7px 20px rgba(15,23,42,0.055);
-        transition: 0.2s ease;
-    }}
-
-    div[data-testid="metric-container"]:hover {{
-        transform: translateY(-2px);
-        box-shadow:
-            0 12px 28px rgba(15,23,42,0.09);
-        border-color: #C9D5E2;
-    }}
-
-    div[data-testid="stMetricLabel"] {{
-        color: {GRIS_TEXTO} !important;
-        font-weight: 650 !important;
-    }}
-
-    div[data-testid="stMetricValue"] {{
-        color: {AZUL_OSCURO} !important;
-        font-weight: 850 !important;
-    }}
-
-    div[data-testid="stMetricDelta"] {{
-        font-weight: 650 !important;
-    }}
-
-
-    /* =====================================================
-       SELECTBOX
-    ===================================================== */
-
-    div[data-baseweb="select"] > div {{
-        border-radius: 11px;
-        border: 1px solid {GRIS_BORDE};
-        background: white;
-        min-height: 42px;
-        transition: 0.2s;
-    }}
-
-    div[data-baseweb="select"] > div:hover {{
-        border-color: {AZUL_CLARO};
-        box-shadow: 0 0 0 2px rgba(59,130,246,0.07);
-    }}
-
-
-    /* =====================================================
-       INPUTS
-    ===================================================== */
-
-    div[data-testid="stTextInput"] label {{
-        color: {AZUL_OSCURO} !important;
-        font-weight: 700 !important;
-        font-size: 12px !important;
-    }}
-
-    div[data-testid="stTextInput"] input {{
-        border: 1px solid {GRIS_BORDE} !important;
-        border-radius: 11px !important;
-        min-height: 44px !important;
-        background: #FFFFFF !important;
-    }}
-
-    div[data-testid="stTextInput"] input:focus {{
-        border-color: {AZUL} !important;
-        box-shadow:
-            0 0 0 2px rgba(6,75,155,0.10) !important;
-    }}
-
-
-    /* =====================================================
-       BOTONES
-    ===================================================== */
-
-    .stButton > button {{
-        border-radius: 11px;
-        border: 1px solid {AZUL};
-        background: {AZUL};
-        color: white;
-        font-weight: 750;
-        min-height: 42px;
-        transition: 0.2s ease;
-    }}
-
-    .stButton > button:hover {{
-        background: {AZUL_OSCURO};
-        border-color: {AZUL_OSCURO};
-        color: white;
-        transform: translateY(-1px);
-        box-shadow:
-            0 6px 16px rgba(6,75,155,0.20);
-    }}
-
-
-    /* =====================================================
-       DOWNLOAD
-    ===================================================== */
-
-    .stDownloadButton > button {{
-        border-radius: 11px;
-        border: 1px solid {AZUL};
-        background: white;
-        color: {AZUL};
-        font-weight: 750;
-        min-height: 42px;
-    }}
-
-    .stDownloadButton > button:hover {{
-        background: {AZUL_SUAVE};
-        color: {AZUL_OSCURO};
-        border-color: {AZUL};
-    }}
-
-
-    /* =====================================================
-       RADIO
-    ===================================================== */
-
-    div[role="radiogroup"] label {{
-        border-radius: 11px;
-        padding: 8px 10px;
-        margin-bottom: 3px;
-        transition: 0.2s;
-    }}
-
-    div[role="radiogroup"] label:hover {{
-        background: {AZUL_SUAVE};
-    }}
-
-
-    /* =====================================================
-       DATAFRAME
-    ===================================================== */
-
-    div[data-testid="stDataFrame"] {{
-        border-radius: 14px;
-        overflow: hidden;
-        border: 1px solid {GRIS_BORDE};
-        box-shadow:
-            0 5px 18px rgba(15,23,42,0.04);
-    }}
-
-
-    /* =====================================================
-       ALERTAS
-    ===================================================== */
-
-    div[data-testid="stAlert"] {{
-        border-radius: 13px;
-    }}
-
-
-    /* =====================================================
-       DIVISOR
-    ===================================================== */
-
-    hr {{
-        border-color: {GRIS_BORDE};
-    }}
-
-
-    /* =====================================================
-       CAPTIONS
-    ===================================================== */
-
-    div[data-testid="stCaptionContainer"] p {{
-        color: {GRIS_TEXTO} !important;
-    }}
-
-
-    /* =====================================================
-       IMÁGENES
-    ===================================================== */
-
-    img {{
-        object-fit: contain;
-    }}
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
-# FUNCIONES DE FORMATO
-# ============================================================
-
-def formato_moneda(valor):
-
-    if pd.isna(valor):
-        return "$0"
-
-    return f"${valor:,.0f}".replace(",", ".")
-
-
-def formato_numero(valor):
-
-    if pd.isna(valor):
-        return "0"
-
-    return (
-        f"{valor:,.2f}"
-        .replace(",", "X")
-        .replace(".", ",")
-        .replace("X", ".")
-    )
-
-
-def formato_entero(valor):
-
-    if pd.isna(valor):
-        return "0"
-
-    return f"{valor:,.0f}".replace(",", ".")
-
-
-def formato_porcentaje(valor):
-
-    if pd.isna(valor):
-        return "0,0%"
-
-    return (
-        f"{valor:.1f}"
-        .replace(".", ",")
-        + "%"
-    )
-
-
-def suma_columna(dataframe, columna):
-
-    if columna not in dataframe.columns:
-        return 0
-
-    valor = dataframe[columna].sum()
-
-    return 0 if pd.isna(valor) else valor
-
-
-def promedio_columna(dataframe, columna):
-
-    if columna not in dataframe.columns:
-        return 0
-
-    if dataframe.empty:
-        return 0
-
-    valor = dataframe[columna].mean()
-
-    return 0 if pd.isna(valor) else valor
-
-
-def participacion(valor, total):
-
-    if total == 0:
-        return 0
-
-    return (valor / total) * 100
-
-
-# ============================================================
-# FUNCIÓN DE CONFIGURACIÓN DE GRÁFICOS
-# ============================================================
-
-def configurar_figura(fig, altura=430):
-
-    fig.update_layout(
-
-        height=altura,
-
-        plot_bgcolor=BLANCO,
-
-        paper_bgcolor=BLANCO,
-
-        font=dict(
-            family="Segoe UI, Arial",
-            color=GRIS_OSCURO
-        ),
-
-        title=dict(
-            font=dict(
-                size=17,
-                color=AZUL_OSCURO
-            ),
-            x=0.02,
-            xanchor="left"
-        ),
-
-        margin=dict(
-            l=55,
-            r=30,
-            t=70,
-            b=55
-        ),
-
-        hoverlabel=dict(
-            bgcolor=BLANCO,
-            bordercolor=GRIS_BORDE,
-            font=dict(
-                family="Segoe UI, Arial",
-                size=13,
-                color=GRIS_OSCURO
-            ),
-            align="left"
-        ),
-
-        xaxis=dict(
-            showgrid=False,
-            linecolor=GRIS_BORDE,
-            tickfont=dict(
-                color=GRIS_TEXTO
-            )
-        ),
-
-        yaxis=dict(
-            showgrid=True,
-            gridcolor=GRIS_GRID,
-            zeroline=False,
-            tickfont=dict(
-                color=GRIS_TEXTO
-            )
-        ),
-
-        legend=dict(
-            bgcolor="rgba(255,255,255,0.92)",
-            bordercolor=GRIS_BORDE,
-            borderwidth=1,
-            font=dict(
-                color=GRIS_OSCURO
-            )
-        ),
-
-        hovermode="closest"
-    )
-
-    return fig
-
-
-# ============================================================
-# FUNCIÓN PARA GRÁFICOS VACÍOS
-# ============================================================
-
-def mostrar_sin_datos(mensaje="No hay información disponible para los filtros seleccionados."):
-
-    st.info(f"ℹ️ {mensaje}")
-
-
-# ============================================================
-# LOGIN
-# ============================================================
-
-def login():
-
-    st.write("")
-
-    col_izq, col_centro, col_der = st.columns(
-        [1, 1.05, 1]
-    )
-
-    with col_centro:
-
-        with st.container(border=True):
-
-            col_logo_izq, col_logo, col_logo_der = st.columns(
-                [0.8, 2, 0.8]
-            )
-
-            with col_logo:
-
-                st.image(
-                    LOGO_URL,
-                    width=235
-                )
-
-            st.title("Inventarios ALDC")
-
-            st.caption(
-                "Plataforma de gestión y analítica"
-            )
-
-            st.info(
-                "🔐 **Acceso institucional**\n\n"
-                "Ingresa con tus credenciales para acceder "
-                "al tablero de inventarios.\n\n"
-                "🟠 **Información protegida.**"
-            )
-
-            usuario = st.text_input(
-                "Usuario",
-                placeholder="Ingrese su usuario",
-                key="login_usuario"
-            )
-
-            contraseña = st.text_input(
-                "Contraseña",
-                type="password",
-                placeholder="Ingrese su contraseña",
-                key="login_contraseña"
-            )
-
-            ingresar = st.button(
-                "🔐  Ingresar a la plataforma",
-                use_container_width=True
-            )
-
-            if ingresar:
-
-                if (
-                    usuario in USUARIOS
-                    and USUARIOS[usuario] == contraseña
-                ):
-
-                    st.session_state["autenticado"] = True
-                    st.session_state["usuario"] = usuario
-                    st.session_state["inicio_sesion"] = datetime.now()
-
-                    st.session_state.pop(
-                        "login_usuario",
-                        None
-                    )
-
-                    st.session_state.pop(
-                        "login_contraseña",
-                        None
-                    )
-
-                    st.rerun()
-
-                else:
-
-                    st.error(
-                        "Usuario o contraseña incorrectos."
-                    )
-
-            st.divider()
-
-            st.markdown(
-                "**Área Limpia D.C. S.A.S. E.S.P.**"
-            )
-
-            st.caption(
-                "Sistema de gestión y análisis de inventarios"
-            )
-
-            st.success(
-                "🔒 Acceso protegido"
-            )
-
-
-# ============================================================
-# SESIÓN
-# ============================================================
-
-if "autenticado" not in st.session_state:
-
-    st.session_state["autenticado"] = False
-
-
-if st.session_state["autenticado"]:
-
-    inicio_sesion = st.session_state.get(
-        "inicio_sesion"
-    )
-
-    if inicio_sesion is None:
-
-        st.session_state["autenticado"] = False
-
-        st.session_state.pop(
-            "usuario",
-            None
-        )
-
-    else:
-
-        tiempo_transcurrido = (
-            datetime.now() - inicio_sesion
-        )
-
-        if tiempo_transcurrido >= timedelta(
-            minutes=TIEMPO_SESION_MINUTOS
-        ):
-
-            st.session_state["autenticado"] = False
-
-            st.session_state.pop(
-                "usuario",
-                None
-            )
-
-            st.session_state.pop(
-                "inicio_sesion",
-                None
-            )
-
-            st.warning(
-                "La sesión ha expirado. "
-                "Por favor, inicia sesión nuevamente."
-            )
-
-            st.stop()
-
-
-if not st.session_state["autenticado"]:
-
-    login()
-
-    st.stop()
-
-
-# ============================================================
-# CARGA DEL EXCEL
-# ============================================================
-
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
-
-ARCHIVO_EXCEL = os.path.join(
-    BASE_DIR,
-    "RESULTADO_PYTHON_ROTACION_MAYO_2026.xlsx"
-)
-
-
-@st.cache_data
-def cargar_datos():
-
-    df = pd.read_excel(
-        ARCHIVO_EXCEL,
-        sheet_name="Tabla calculo",
-        header=1,
-        engine="openpyxl"
-    )
-
-    df.columns = [
-        str(col).strip()
-        for col in df.columns
-    ]
-
-    return df
-
-
-try:
-
-    df = cargar_datos()
-
-except Exception as e:
-
-    st.error(
-        "No fue posible cargar el archivo Excel.\n\n"
-        f"Archivo esperado:\n{ARCHIVO_EXCEL}\n\n"
-        f"Error: {e}"
-    )
-
-    st.stop()
-
-
-# ============================================================
-# MAPEO DE BODEGAS
-# IMPORTANTE:
-# CALIDAD NO ES UN ÁREA.
-# [46] GESTIÓN DE CALIDAD pertenece a RRHH.
+# MAPEO BODEGA → ÁREA
 # ============================================================
 
 MAPA_BODEGAS = {
-
     "[1] - REPUESTOS": "Mantenimiento",
     "[2] - LUBRICANTES": "Mantenimiento",
     "[3] - COMBUSTIBLES": "Operaciones",
@@ -784,2825 +98,1974 @@ MAPA_BODEGAS = {
     "[15] - INSUMOS REP LOCATIVAS": "Mantenimiento",
     "[16] - INSUMOS RRHH Y SST": "RRHH",
     "[44] - OBSOLETOS": "Sin asignar",
-    "[46] - GESTIÓN DE CALIDAD": "RRHH"
+    "[46] - GESTIÓN DE CALIDAD": "RRHH",
 }
-
-
-# ============================================================
-# COLORES POR ÁREA
-# ============================================================
-
-COLORES_AREA = {
-
-    "Mantenimiento": AZUL,
-
-    "Operaciones": NARANJA,
-
-    "RRHH": VERDE,
-
-    "Sin asignar": GRIS_TEXTO
-}
-
-
-# ============================================================
-# ÁREA
-# ============================================================
-
-if "Bodega" in df.columns:
-
-    df["AREA"] = (
-        df["Bodega"]
-        .astype(str)
-        .str.strip()
-        .map(MAPA_BODEGAS)
-        .fillna("Sin asignar")
-    )
-
-else:
-
-    df["AREA"] = "Sin asignar"
-
-
-# ============================================================
-# CONVERSIÓN NUMÉRICA
-# ============================================================
-
-COLUMNAS_TEXTO = [
-    "Bodega",
-    "Codigo Articulo",
-    "Articulo",
-    "MESES",
-    "AREA"
-]
-
-
-for columna in df.columns:
-
-    if columna not in COLUMNAS_TEXTO:
-
-        df[columna] = pd.to_numeric(
-            df[columna],
-            errors="coerce"
-        )
-
-
-# ============================================================
-# COLUMNAS PRINCIPALES
-# ============================================================
-
-COL_STOCK = "STOCK TOTAL"
-
-COL_COSTE = "PROMEDIO INVENTARIO 2022"
-
-COL_ROTACION = "ROTACION DE INVENTARIOS 2022"
-
-COL_DIAS = "DIAS 2025"
-
-COL_ANTIGUEDAD = "MESES"
-
-
-# ============================================================
-# ORDENES
-# ============================================================
-
-ORDEN_ANTIGUEDAD = [
-
-    "Entre 0 y 3 meses",
-    "Entre 4 y 6 meses",
-    "Entre 7 y 12 meses",
-    "Mayor a 12 meses"
-]
-
 
 ORDEN_AREAS = [
-
     "Mantenimiento",
     "Operaciones",
     "RRHH",
-    "Sin asignar"
+    "Sin asignar",
+]
+
+ORDEN_ANTIGUEDAD = [
+    "Entre 0 y 3 meses",
+    "Entre 4 y 6 meses",
+    "Entre 7 y 12 meses",
+    "Mayor a 12 meses",
 ]
 
 
 # ============================================================
-# COLORES ÁREA + ANTIGÜEDAD
+# MAPEO DE LOS 12 MESES
 # ============================================================
 
-COLORES_AREA_ANTIGUEDAD = {
+MESES_NOMBRES = [
+    "JUNIO",
+    "JULIO",
+    "AGOSTO",
+    "SEPTIEMBRE",
+    "OCTUBRE",
+    "NOVIEMBRE",
+    "DICIEMBRE",
+    "ENERO",
+    "FEBRERO",
+    "MARZO",
+    "ABRIL",
+    "MAYO",
+]
 
-    "Mantenimiento": {
-
-        "Entre 0 y 3 meses": "#BFDBFE",
-
-        "Entre 4 y 6 meses": "#60A5FA",
-
-        "Entre 7 y 12 meses": AZUL_CLARO,
-
-        "Mayor a 12 meses": AZUL
+MOVIMIENTO_MENSUAL = {
+    "JUNIO": {
+        "entrada": "ENTRADA",
+        "salida": "SALIDA",
+        "costo_entrada": "COSTO ENTRADA",
+        "costo_salida": "COSTO SALIDA",
+        "neto": "NETO",
+        "rotacion": "ROTACION",
     },
-
-    "Operaciones": {
-
-        "Entre 0 y 3 meses": "#FED7AA",
-
-        "Entre 4 y 6 meses": NARANJA_CLARO,
-
-        "Entre 7 y 12 meses": NARANJA,
-
-        "Mayor a 12 meses": "#C2410C"
+    "JULIO": {
+        "entrada": "ENTRADA2",
+        "salida": "SALIDA3",
+        "costo_entrada": "COSTO ENTRADA4",
+        "costo_salida": "COSTO SALIDA5",
+        "neto": "NETO6",
+        "rotacion": "ROTACION 68",
     },
-
-    "RRHH": {
-
-        "Entre 0 y 3 meses": "#BBF7D0",
-
-        "Entre 4 y 6 meses": VERDE_CLARO,
-
-        "Entre 7 y 12 meses": VERDE,
-
-        "Mayor a 12 meses": "#166534"
+    "AGOSTO": {
+        "entrada": "ENTRADA8",
+        "salida": "SALIDA9",
+        "costo_entrada": "COSTO ENTRADA10",
+        "costo_salida": "COSTO SALIDA11",
+        "neto": "NETO12",
+        "rotacion": "ROTACION 69",
     },
-
-    "Sin asignar": {
-
-        "Entre 0 y 3 meses": "#E5E7EB",
-
-        "Entre 4 y 6 meses": "#9CA3AF",
-
-        "Entre 7 y 12 meses": "#6B7280",
-
-        "Mayor a 12 meses": "#374151"
-    }
+    "SEPTIEMBRE": {
+        "entrada": "ENTRADA14",
+        "salida": "SALIDA15",
+        "costo_entrada": "COSTO ENTRADA16",
+        "costo_salida": "COSTO SALIDA17",
+        "neto": "NETO18",
+        "rotacion": "ROTACION 70",
+    },
+    "OCTUBRE": {
+        "entrada": "ENTRADA20",
+        "salida": "SALIDA21",
+        "costo_entrada": "COSTO ENTRADA22",
+        "costo_salida": "COSTO SALIDA23",
+        "neto": "NETO24",
+        "rotacion": "ROTACION 71",
+    },
+    "NOVIEMBRE": {
+        "entrada": "ENTRADA26",
+        "salida": "SALIDA27",
+        "costo_entrada": "COSTO ENTRADA28",
+        "costo_salida": "COSTO SALIDA29",
+        "neto": "NETO30",
+        "rotacion": "ROTACION 72",
+    },
+    "DICIEMBRE": {
+        "entrada": "ENTRADA32",
+        "salida": "SALIDA33",
+        "costo_entrada": "COSTO ENTRADA34",
+        "costo_salida": "COSTO SALIDA35",
+        "neto": "NETO36",
+        "rotacion": "ROTACION 73",
+    },
+    "ENERO": {
+        "entrada": "ENTRADA38",
+        "salida": "SALIDA39",
+        "costo_entrada": "COSTO ENTRADA40",
+        "costo_salida": "COSTO SALIDA41",
+        "neto": "NETO42",
+        "rotacion": "ROTACION 74",
+    },
+    "FEBRERO": {
+        "entrada": "ENTRADA44",
+        "salida": "SALIDA45",
+        "costo_entrada": "COSTO ENTRADA46",
+        "costo_salida": "COSTO SALIDA47",
+        "neto": "NETO48",
+        "rotacion": "ROTACION 75",
+    },
+    "MARZO": {
+        "entrada": "ENTRADA50",
+        "salida": "SALIDA51",
+        "costo_entrada": "COSTO ENTRADA52",
+        "costo_salida": "COSTO SALIDA53",
+        "neto": "NETO54",
+        "rotacion": "ROTACION 76",
+    },
+    "ABRIL": {
+        "entrada": "ENTRADA56",
+        "salida": "SALIDA57",
+        "costo_entrada": "COSTO ENTRADA58",
+        "costo_salida": "COSTO SALIDA59",
+        "neto": "NETO60",
+        "rotacion": "ROTACION 77",
+    },
+    "MAYO": {
+        "entrada": "ENTRADA62",
+        "salida": "SALIDA63",
+        "costo_entrada": "COSTO ENTRADA64",
+        "costo_salida": "COSTO SALIDA65",
+        "neto": "NETO66",
+        "rotacion": "ROTACION 78",
+    },
 }
 
 
 # ============================================================
-# SIDEBAR
+# CSS
 # ============================================================
 
-with st.sidebar:
+st.markdown(
+    f"""
+    <style>
 
-    st.image(
-        LOGO_URL,
-        width=185
-    )
+    .stApp {{
+        background: {GRIS_FONDO};
+    }}
 
-    st.caption(
-        "Gestión y Analítica de Inventarios"
-    )
+    [data-testid="stSidebar"] {{
+        background: {BLANCO};
+        border-right: 1px solid {GRIS_BORDE};
+    }}
 
-    st.divider()
+    [data-testid="stSidebar"] > div:first-child {{
+        padding-top: 1.2rem;
+    }}
 
-    usuario_actual = st.session_state.get(
-        "usuario",
-        ""
-    )
+    .main-title {{
+        font-size: 2rem;
+        font-weight: 800;
+        color: {AZUL_OSCURO};
+        margin-bottom: 0.15rem;
+        letter-spacing: -0.5px;
+    }}
 
-    with st.container(border=True):
+    .main-subtitle {{
+        color: {GRIS_TEXTO};
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+    }}
 
-        st.markdown(
-            f"**👤 {usuario_actual}**"
-        )
+    .section-title {{
+        font-size: 1.15rem;
+        font-weight: 750;
+        color: {GRIS_OSCURO};
+        margin-top: 0.8rem;
+        margin-bottom: 0.15rem;
+    }}
 
-        st.caption(
-            "🟢 Sesión activa"
-        )
+    .section-subtitle {{
+        font-size: 0.82rem;
+        color: {GRIS_TEXTO};
+        margin-bottom: 0.8rem;
+    }}
 
-    st.caption("NAVEGACIÓN")
+    .insight-card {{
+        background: {BLANCO};
+        border: 1px solid {GRIS_BORDE};
+        border-radius: 14px;
+        padding: 18px 20px;
+        min-height: 120px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+    }}
 
-    pagina = st.radio(
+    .insight-title {{
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: {GRIS_TEXTO};
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }}
 
-        "Navegación",
+    .insight-value {{
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: {AZUL_OSCURO};
+    }}
 
-        [
-            "📊Dashboard",
-            "📦Inventarios",
-            "📈Análisis",
-            "⚠️Alertas",
-            "📋Detalle"
-        ],
+    .insight-description {{
+        font-size: 0.78rem;
+        color: {GRIS_TEXTO};
+        margin-top: 6px;
+        line-height: 1.35;
+    }}
 
-        label_visibility="collapsed"
-    )
+    .finding {{
+        background: {BLANCO};
+        border: 1px solid {GRIS_BORDE};
+        border-radius: 13px;
+        padding: 15px 17px;
+        margin-bottom: 10px;
+    }}
 
-    st.write("")
+    .finding-title {{
+        font-weight: 750;
+        color: {GRIS_OSCURO};
+        font-size: 0.92rem;
+    }}
 
-    if st.button(
-        "🔓 Cerrar sesión",
-        use_container_width=True
-    ):
+    .finding-text {{
+        color: {GRIS_TEXTO};
+        font-size: 0.82rem;
+        line-height: 1.45;
+        margin-top: 4px;
+    }}
 
-        st.session_state["autenticado"] = False
+    .risk-critical {{
+        border-left: 5px solid {ROJO};
+    }}
 
-        st.session_state.pop(
-            "usuario",
-            None
-        )
+    .risk-high {{
+        border-left: 5px solid {NARANJA};
+    }}
 
-        st.session_state.pop(
-            "inicio_sesion",
-            None
-        )
+    .risk-medium {{
+        border-left: 5px solid {AMARILLO};
+    }}
 
-        st.rerun()
+    .risk-low {{
+        border-left: 5px solid {VERDE};
+    }}
 
-    st.divider()
+    .stButton > button {{
+        border-radius: 9px;
+        border: 1px solid {AZUL};
+        font-weight: 650;
+    }}
 
-    st.caption(
-        "Área Limpia D.C."
-    )
+    div[data-testid="stMetric"] {{
+        background: {BLANCO};
+        border: 1px solid {GRIS_BORDE};
+        border-radius: 14px;
+        padding: 14px 16px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+    }}
 
-    st.caption(
-        "Sistema de análisis de inventarios"
-    )
+    div[data-testid="stMetricLabel"] {{
+        color: {GRIS_TEXTO};
+    }}
+
+    div[data-testid="stMetricValue"] {{
+        color: {AZUL_OSCURO};
+    }}
+
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 # ============================================================
-# FILTROS EN CASCADA
+# FUNCIONES GENERALES
 # ============================================================
 
-with st.container(border=True):
+def limpiar_numero(serie):
+    return pd.to_numeric(
+        serie.astype(str)
+        .str.replace(",", "", regex=False)
+        .str.replace("$", "", regex=False)
+        .str.replace("%", "", regex=False)
+        .str.strip(),
+        errors="coerce",
+    ).fillna(0)
 
-    st.subheader(
-        "🔎 Filtros de consulta"
+
+def formato_numero(valor):
+    try:
+        return f"{valor:,.0f}".replace(",", ".")
+    except Exception:
+        return "0"
+
+
+def formato_moneda(valor):
+    try:
+        valor = float(valor)
+        if abs(valor) >= 1_000_000_000:
+            return f"${valor / 1_000_000_000:,.1f} MM".replace(",", "X").replace(".", ",").replace("X", ".")
+        if abs(valor) >= 1_000_000:
+            return f"${valor / 1_000_000:,.1f} M".replace(",", "X").replace(".", ",").replace("X", ".")
+        if abs(valor) >= 1_000:
+            return f"${valor / 1_000:,.0f} K".replace(",", ".")
+        return f"${valor:,.0f}".replace(",", ".")
+    except Exception:
+        return "$0"
+
+
+def formato_porcentaje(valor):
+    try:
+        return f"{valor:.1f}%".replace(".", ",")
+    except Exception:
+        return "0,0%"
+
+
+def safe_sum(df, columna):
+    if columna not in df.columns:
+        return 0
+    return float(df[columna].sum())
+
+
+def safe_mean(df, columna):
+    if columna not in df.columns or len(df) == 0:
+        return 0
+    return float(df[columna].mean())
+
+
+def safe_numeric_column(df, columna):
+    if columna in df.columns:
+        return limpiar_numero(df[columna])
+    return pd.Series(0, index=df.index)
+
+
+# ============================================================
+# CARGA DE DATOS
+# ============================================================
+
+@st.cache_data(show_spinner=False)
+def cargar_datos():
+    if not os.path.exists(ARCHIVO):
+        st.error(
+            f"No se encontró el archivo `{ARCHIVO}` en la carpeta de la aplicación."
+        )
+        st.stop()
+
+    df = pd.read_excel(
+        ARCHIVO,
+        sheet_name=HOJA,
+        header=0,
+        engine="openpyxl",
     )
 
-    st.caption(
-        "Los filtros se actualizan en cascada y todos "
-        "los indicadores y gráficos responden a la selección."
-    )
-
-    col1, col2, col3, col4 = st.columns(4)
+    df.columns = [str(c).strip() for c in df.columns]
 
     # --------------------------------------------------------
-    # ÁREA
+    # Buscar artículo
     # --------------------------------------------------------
-
-    areas = [
-
-        area
-
-        for area in ORDEN_AREAS
-
-        if area in df["AREA"].dropna().unique()
+    posibles_articulos = [
+        "ARTICULO",
+        "ARTÍCULO",
+        "DESCRIPCION",
+        "DESCRIPCIÓN",
+        "NOMBRE ARTICULO",
+        "NOMBRE ARTÍCULO",
+        "MATERIAL",
     ]
 
-    areas_opciones = ["Todas"] + areas
+    articulo_encontrado = None
 
-    with col1:
+    for col in posibles_articulos:
+        if col in df.columns:
+            articulo_encontrado = col
+            break
 
-        area_seleccionada = st.selectbox(
-            "Área",
-            areas_opciones
-        )
+    if articulo_encontrado is None:
+        df["ARTICULO"] = df.index.astype(str)
+        articulo_encontrado = "ARTICULO"
 
-    df_area = df.copy()
-
-    if area_seleccionada != "Todas":
-
-        df_area = df_area[
-            df_area["AREA"] == area_seleccionada
-        ]
+    if articulo_encontrado != COL_ARTICULO:
+        df[COL_ARTICULO] = df[articulo_encontrado].astype(str)
 
     # --------------------------------------------------------
-    # BODEGA
+    # Buscar bodega
     # --------------------------------------------------------
-
-    orden_bodegas = list(
-        MAPA_BODEGAS.keys()
-    )
-
-    bodegas_existentes = (
-
-        df_area["Bodega"]
-        .dropna()
-        .astype(str)
-        .str.strip()
-        .unique()
-        .tolist()
-
-        if "Bodega" in df_area.columns
-
-        else []
-    )
-
-    bodegas = [
-
-        bodega
-
-        for bodega in orden_bodegas
-
-        if bodega in bodegas_existentes
+    posibles_bodegas = [
+        "BODEGA",
+        "NOMBRE BODEGA",
+        "ALMACEN",
+        "ALMACÉN",
+        "CENTRO",
     ]
 
-    bodegas_no_mapeadas = [
+    bodega_encontrada = None
 
-        bodega
+    for col in posibles_bodegas:
+        if col in df.columns:
+            bodega_encontrada = col
+            break
 
-        for bodega in bodegas_existentes
-
-        if bodega not in orden_bodegas
-    ]
-
-    bodegas.extend(
-        sorted(bodegas_no_mapeadas)
-    )
-
-    with col2:
-
-        bodega_seleccionada = st.selectbox(
-            "Bodega",
-            ["Todas"] + bodegas
-        )
-
-    df_bodega = df_area.copy()
-
-    if bodega_seleccionada != "Todas":
-
-        df_bodega = df_bodega[
-            df_bodega["Bodega"]
-            .astype(str)
-            .str.strip()
-            == bodega_seleccionada
-        ]
-
-    # --------------------------------------------------------
-    # ARTÍCULO
-    # --------------------------------------------------------
-
-    articulos = (
-
-        sorted(
-            df_bodega["Articulo"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-        if "Articulo" in df_bodega.columns
-
-        else []
-    )
-
-    with col3:
-
-        articulo_seleccionado = st.selectbox(
-            "Artículo",
-            ["Todos"] + articulos
-        )
-
-    df_articulo = df_bodega.copy()
-
-    if articulo_seleccionado != "Todos":
-
-        df_articulo = df_articulo[
-            df_articulo["Articulo"]
-            .astype(str)
-            == articulo_seleccionado
-        ]
-
-    # --------------------------------------------------------
-    # ANTIGÜEDAD
-    # --------------------------------------------------------
-
-    if COL_ANTIGUEDAD in df_articulo.columns:
-
-        antiguedades_existentes = (
-
-            df_articulo[
-                COL_ANTIGUEDAD
-            ]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
-
-        antiguedades = [
-
-            edad
-
-            for edad in ORDEN_ANTIGUEDAD
-
-            if edad in antiguedades_existentes
-        ]
-
-        antiguedades += [
-
-            edad
-
-            for edad in sorted(
-                antiguedades_existentes
-            )
-
-            if edad not in antiguedades
-        ]
-
+    if bodega_encontrada is None:
+        df[COL_BODEGA] = "Sin bodega"
     else:
-
-        antiguedades = []
-
-    with col4:
-
-        antiguedad_seleccionada = st.selectbox(
-            "Antigüedad",
-            ["Todas"] + antiguedades
-        )
-
-    df_filtrado = df_articulo.copy()
-
-    if antiguedad_seleccionada != "Todas":
-
-        df_filtrado = df_filtrado[
-            df_filtrado[
-                COL_ANTIGUEDAD
-            ]
-            .astype(str)
-            == antiguedad_seleccionada
-        ]
-
-    registros_formateados = (
-        f"{len(df_filtrado):,}"
-        .replace(",", ".")
-    )
-
-    st.caption(
-        f"📌 Registros encontrados: **{registros_formateados}**"
-    )
-
-
-# ============================================================
-# DASHBOARD
-# ============================================================
-
-if pagina == "📊Dashboard":
-
-    st.title(
-        "📊 Dashboard de Inventarios"
-    )
-
-    st.caption(
-        "Vista ejecutiva del comportamiento, composición, "
-        "antigüedad y concentración económica del inventario."
-    )
-
-    # ========================================================
-    # KPIs
-    # ========================================================
-
-    stock_total = suma_columna(
-        df_filtrado,
-        COL_STOCK
-    )
-
-    coste_inventario = suma_columna(
-        df_filtrado,
-        COL_COSTE
-    )
-
-    rotacion = promedio_columna(
-        df_filtrado,
-        COL_ROTACION
-    )
-
-    dias = promedio_columna(
-        df_filtrado,
-        COL_DIAS
-    )
-
-    articulos_total = (
-
-        df_filtrado["Articulo"]
-        .nunique()
-
-        if "Articulo" in df_filtrado.columns
-
-        else 0
-    )
-
-    bodegas_total = (
-
-        df_filtrado["Bodega"]
-        .nunique()
-
-        if "Bodega" in df_filtrado.columns
-
-        else 0
-    )
-
-    k1, k2, k3, k4 = st.columns(4)
-
-    with k1:
-
-        st.metric(
-            "📦 Stock total",
-            formato_numero(stock_total),
-            help="Cantidad total de unidades en el conjunto filtrado."
-        )
-
-    with k2:
-
-        st.metric(
-            "💰 Valor inventario",
-            formato_moneda(coste_inventario),
-            help="Valor total del inventario según la columna PROMEDIO INVENTARIO 2022."
-        )
-
-    with k3:
-
-        st.metric(
-            "🔄 Rotación promedio",
-            formato_numero(rotacion),
-            help="Promedio de la rotación de inventarios de los registros filtrados."
-        )
-
-    with k4:
-
-        st.metric(
-            "⏱️ Días promedio",
-            formato_numero(dias),
-            help="Promedio de días de inventario de los registros filtrados."
-        )
-
-    st.write("")
-
-    k5, k6 = st.columns(2)
-
-    with k5:
-
-        st.metric(
-            "🧾 Artículos",
-            formato_entero(articulos_total)
-        )
-
-    with k6:
-
-        st.metric(
-            "🏭 Bodegas",
-            formato_entero(bodegas_total)
-        )
-
-    st.subheader(
-        "Resumen ejecutivo"
-    )
-
-    st.caption(
-        "Distribución del valor del inventario por antigüedad y área."
-    )
-
-    # ========================================================
-    # VALOR POR ANTIGÜEDAD
-    # ========================================================
-
-    col_a, col_b = st.columns([1.2, 1])
-
-    with col_a:
-
-        if (
-            COL_COSTE in df_filtrado.columns
-            and COL_ANTIGUEDAD in df_filtrado.columns
-        ):
-
-            resumen_edad = (
-
-                df_filtrado
-
-                .groupby(
-                    COL_ANTIGUEDAD,
-                    as_index=False
-                )
-
-                .agg(
-
-                    Valor=(
-                        COL_COSTE,
-                        "sum"
-                    ),
-
-                    Stock=(
-                        COL_STOCK,
-                        "sum"
-                    ),
-
-                    Articulos=(
-                        "Articulo",
-                        "nunique"
-                    ),
-
-                    Rotacion=(
-                        COL_ROTACION,
-                        "mean"
-                    ),
-
-                    Dias=(
-                        COL_DIAS,
-                        "mean"
-                    )
-                )
-            )
-
-            resumen_edad["Orden"] = (
-
-                resumen_edad[
-                    COL_ANTIGUEDAD
-                ]
-
-                .map({
-                    edad: i
-                    for i, edad
-                    in enumerate(
-                        ORDEN_ANTIGUEDAD
-                    )
-                })
-
-                .fillna(99)
-            )
-
-            resumen_edad = (
-                resumen_edad
-                .sort_values("Orden")
-            )
-
-            resumen_edad["Participacion"] = (
-
-                resumen_edad["Valor"]
-                / coste_inventario
-                * 100
-
-                if coste_inventario != 0
-
-                else 0
-            )
-
-            colores_edad = {
-
-                "Entre 0 y 3 meses": "#BFDBFE",
-
-                "Entre 4 y 6 meses": "#60A5FA",
-
-                "Entre 7 y 12 meses": AZUL_CLARO,
-
-                "Mayor a 12 meses": AZUL
-            }
-
-            fig_edad = px.bar(
-
-                resumen_edad,
-
-                x=COL_ANTIGUEDAD,
-
-                y="Valor",
-
-                color=COL_ANTIGUEDAD,
-
-                category_orders={
-                    COL_ANTIGUEDAD:
-                    ORDEN_ANTIGUEDAD
-                },
-
-                color_discrete_map=colores_edad,
-
-                custom_data=[
-                    "Stock",
-                    "Articulos",
-                    "Participacion",
-                    "Rotacion",
-                    "Dias"
-                ],
-
-                title="Valor del inventario por antigüedad"
-            )
-
-            fig_edad.update_traces(
-
-                hovertemplate=
-                "<b>%{x}</b><br>"
-                "Valor: %{y:$,.0f}<br>"
-                "Stock: %{customdata[0]:,.0f}<br>"
-                "Artículos: %{customdata[1]:,.0f}<br>"
-                "Participación: %{customdata[2]:.1f}%<br>"
-                "Rotación promedio: %{customdata[3]:.2f}<br>"
-                "Días promedio: %{customdata[4]:.1f}"
-                "<extra></extra>"
-            )
-
-            fig_edad.update_layout(
-                showlegend=False,
-                xaxis_title="",
-                yaxis_title="Valor"
-            )
-
-            configurar_figura(
-                fig_edad
-            )
-
-            st.plotly_chart(
-                fig_edad,
-                use_container_width=True
-            )
-
-    # ========================================================
-    # VALOR POR ÁREA
-    # ========================================================
-
-    with col_b:
-
-        if (
-            COL_COSTE in df_filtrado.columns
-            and "AREA" in df_filtrado.columns
-        ):
-
-            resumen_area = (
-
-                df_filtrado
-
-                .groupby(
-                    "AREA",
-                    as_index=False
-                )
-
-                .agg(
-
-                    Valor=(
-                        COL_COSTE,
-                        "sum"
-                    ),
-
-                    Stock=(
-                        COL_STOCK,
-                        "sum"
-                    ),
-
-                    Articulos=(
-                        "Articulo",
-                        "nunique"
-                    ),
-
-                    Rotacion=(
-                        COL_ROTACION,
-                        "mean"
-                    ),
-
-                    Dias=(
-                        COL_DIAS,
-                        "mean"
-                    )
-                )
-            )
-
-            resumen_area["Participacion"] = (
-
-                resumen_area["Valor"]
-                / coste_inventario
-                * 100
-
-                if coste_inventario != 0
-
-                else 0
-            )
-
-            resumen_area["Orden"] = (
-
-                resumen_area["AREA"]
-                .map({
-                    area: i
-                    for i, area
-                    in enumerate(ORDEN_AREAS)
-                })
-                .fillna(99)
-            )
-
-            resumen_area = (
-                resumen_area
-                .sort_values(
-                    "Valor",
-                    ascending=True
-                )
-            )
-
-            fig_area = px.bar(
-
-                resumen_area,
-
-                x="Valor",
-
-                y="AREA",
-
-                orientation="h",
-
-                color="AREA",
-
-                color_discrete_map=COLORES_AREA,
-
-                custom_data=[
-                    "Stock",
-                    "Articulos",
-                    "Participacion",
-                    "Rotacion",
-                    "Dias"
-                ],
-
-                title="Valor del inventario por área"
-            )
-
-            fig_area.update_traces(
-
-                hovertemplate=
-                "<b>%{y}</b><br>"
-                "Valor: %{x:$,.0f}<br>"
-                "Stock: %{customdata[0]:,.0f}<br>"
-                "Artículos: %{customdata[1]:,.0f}<br>"
-                "Participación: %{customdata[2]:.1f}%<br>"
-                "Rotación promedio: %{customdata[3]:.2f}<br>"
-                "Días promedio: %{customdata[4]:.1f}"
-                "<extra></extra>"
-            )
-
-            fig_area.update_layout(
-                xaxis_title="Valor",
-                yaxis_title="",
-                showlegend=False
-            )
-
-            configurar_figura(
-                fig_area
-            )
-
-            st.plotly_chart(
-                fig_area,
-                use_container_width=True
-            )
-
-    # ========================================================
-    # MATRIZ ÁREA × ANTIGÜEDAD
-    # ========================================================
-
-    st.subheader(
-        "Mapa de concentración por área y antigüedad"
-    )
-
-    st.caption(
-        "Permite observar cómo se distribuye el valor del inventario "
-        "entre las áreas y los rangos de antigüedad."
-    )
-
-    if (
-        "AREA" in df_filtrado.columns
-        and COL_ANTIGUEDAD in df_filtrado.columns
-        and COL_COSTE in df_filtrado.columns
-    ):
-
-        matriz = (
-
-            df_filtrado
-
-            .groupby(
-                [
-                    "AREA",
-                    COL_ANTIGUEDAD
-                ],
-                as_index=False
-            )
-
-            .agg(
-
-                Valor=(
-                    COL_COSTE,
-                    "sum"
-                ),
-
-                Stock=(
-                    COL_STOCK,
-                    "sum"
-                ),
-
-                Articulos=(
-                    "Articulo",
-                    "nunique"
-                )
-            )
-        )
-
-        matriz["AreaOrden"] = (
-
-            matriz["AREA"]
-            .map({
-                area: i
-                for i, area
-                in enumerate(ORDEN_AREAS)
-            })
-            .fillna(99)
-        )
-
-        matriz["EdadOrden"] = (
-
-            matriz[COL_ANTIGUEDAD]
-            .map({
-                edad: i
-                for i, edad
-                in enumerate(ORDEN_ANTIGUEDAD)
-            })
-            .fillna(99)
-        )
-
-        matriz = matriz.sort_values(
-            [
-                "AreaOrden",
-                "EdadOrden"
-            ]
-        )
-
-        matriz_pivot = matriz.pivot_table(
-
-            index="AREA",
-
-            columns=COL_ANTIGUEDAD,
-
-            values="Valor",
-
-            aggfunc="sum",
-
-            fill_value=0
-        )
-
-        matriz_pivot = matriz_pivot.reindex(
-            index=[
-                a for a in ORDEN_AREAS
-                if a in matriz_pivot.index
-            ]
-        )
-
-        matriz_pivot = matriz_pivot.reindex(
-            columns=[
-                e for e in ORDEN_ANTIGUEDAD
-                if e in matriz_pivot.columns
-            ],
-            fill_value=0
-        )
-
-        fig_heat = go.Figure(
-
-            data=go.Heatmap(
-
-                z=matriz_pivot.values,
-
-                x=matriz_pivot.columns,
-
-                y=matriz_pivot.index,
-
-                colorscale=[
-                    [0, "#F8FAFC"],
-                    [0.25, "#DBEAFE"],
-                    [0.5, "#93C5FD"],
-                    [0.75, AZUL_CLARO],
-                    [1, AZUL_OSCURO]
-                ],
-
-                customdata=matriz_pivot.values,
-
-                hovertemplate=
-                "<b>Área:</b> %{y}<br>"
-                "<b>Antigüedad:</b> %{x}<br>"
-                "<b>Valor:</b> %{z:$,.0f}"
-                "<extra></extra>",
-
-                colorbar=dict(
-                    title="Valor"
-                )
-            )
-        )
-
-        fig_heat.update_layout(
-            title="Concentración del valor por área y antigüedad",
-            xaxis_title="Antigüedad",
-            yaxis_title="Área"
-        )
-
-        configurar_figura(
-            fig_heat,
-            altura=400
-        )
-
-        st.plotly_chart(
-            fig_heat,
-            use_container_width=True
-        )
-
-    # ========================================================
-    # VALOR VS ROTACIÓN
-    # ========================================================
-
-    st.subheader(
-        "Valor del inventario vs. rotación"
-    )
-
-    st.caption(
-        "Cada punto representa un artículo. El tamaño corresponde "
-        "al stock y el color identifica el área."
-    )
-
-    columnas_scatter = [
-
-        "Articulo",
-        "Bodega",
-        "AREA",
+        if bodega_encontrada != COL_BODEGA:
+            df[COL_BODEGA] = df[bodega_encontrada].astype(str)
+        else:
+            df[COL_BODEGA] = df[COL_BODEGA].astype(str)
+
+    # --------------------------------------------------------
+    # Área
+    # --------------------------------------------------------
+    df["AREA"] = df[COL_BODEGA].map(MAPA_BODEGAS).fillna("Sin asignar")
+
+    # --------------------------------------------------------
+    # Variables numéricas
+    # --------------------------------------------------------
+    for col in [
         COL_STOCK,
         COL_COSTE,
         COL_ROTACION,
         COL_DIAS,
-        COL_ANTIGUEDAD
-    ]
+        COL_ANTIGUEDAD,
+    ]:
+        if col in df.columns:
+            df[col] = limpiar_numero(df[col])
+        else:
+            df[col] = 0
 
-    columnas_scatter = [
+    # --------------------------------------------------------
+    # Valor inventario
+    #
+    # El costo promedio representa el valor económico
+    # asociado al stock.
+    # --------------------------------------------------------
+    df["VALOR_INVENTARIO"] = df[COL_STOCK] * df[COL_COSTE]
 
-        c for c in columnas_scatter
+    # --------------------------------------------------------
+    # Antigüedad
+    # --------------------------------------------------------
+    def clasificar_antiguedad(meses):
+        if meses <= 3:
+            return "Entre 0 y 3 meses"
+        elif meses <= 6:
+            return "Entre 4 y 6 meses"
+        elif meses <= 12:
+            return "Entre 7 y 12 meses"
+        return "Mayor a 12 meses"
 
-        if c in df_filtrado.columns
-    ]
-
-    if (
-        "Articulo" in df_filtrado.columns
-        and COL_COSTE in df_filtrado.columns
-        and COL_ROTACION in df_filtrado.columns
-        and COL_STOCK in df_filtrado.columns
-    ):
-
-        scatter_data = df_filtrado[
-            columnas_scatter
-        ].copy()
-
-        scatter_data = scatter_data.dropna(
-            subset=[
-                COL_COSTE,
-                COL_ROTACION
-            ]
-        )
-
-        if not scatter_data.empty:
-
-            scatter_data["StockGrafico"] = (
-                scatter_data[COL_STOCK]
-                .abs()
-                .fillna(0)
-            )
-
-            fig_scatter = px.scatter(
-
-                scatter_data,
-
-                x=COL_ROTACION,
-
-                y=COL_COSTE,
-
-                color="AREA",
-
-                size="StockGrafico",
-
-                size_max=45,
-
-                color_discrete_map=COLORES_AREA,
-
-                hover_name="Articulo",
-
-                hover_data={
-                    "Bodega": True,
-                    "AREA": True,
-                    COL_STOCK: ":,.0f",
-                    COL_COSTE: ":$,.0f",
-                    COL_ROTACION: ":.2f",
-                    COL_DIAS: ":.1f",
-                    COL_ANTIGUEDAD: True,
-                    "StockGrafico": False
-                },
-
-                title="Relación entre valor, rotación y stock"
-            )
-
-            fig_scatter.update_layout(
-                xaxis_title="Rotación",
-                yaxis_title="Valor del inventario"
-            )
-
-            configurar_figura(
-                fig_scatter,
-                altura=500
-            )
-
-            st.plotly_chart(
-                fig_scatter,
-                use_container_width=True
-            )
-
-
-    # ========================================================
-    # BODEGAS
-    # ========================================================
-
-    st.subheader(
-        "Distribución por bodega"
+    df["ANTIGUEDAD_CATEGORIA"] = df[COL_ANTIGUEDAD].apply(
+        clasificar_antiguedad
     )
 
-    st.caption(
-        "Comparación de stock, valor, artículos y comportamiento "
-        "del inventario entre bodegas."
+    # --------------------------------------------------------
+    # Movimiento anual
+    # --------------------------------------------------------
+    columnas_entrada = []
+    columnas_salida = []
+    columnas_costo_entrada = []
+    columnas_costo_salida = []
+
+    for mes in MESES_NOMBRES:
+        mapa = MOVIMIENTO_MENSUAL[mes]
+
+        if mapa["entrada"] in df.columns:
+            df[mapa["entrada"]] = limpiar_numero(df[mapa["entrada"]])
+            columnas_entrada.append(mapa["entrada"])
+
+        if mapa["salida"] in df.columns:
+            df[mapa["salida"]] = limpiar_numero(df[mapa["salida"]])
+            columnas_salida.append(mapa["salida"])
+
+        if mapa["costo_entrada"] in df.columns:
+            df[mapa["costo_entrada"]] = limpiar_numero(
+                df[mapa["costo_entrada"]]
+            )
+            columnas_costo_entrada.append(mapa["costo_entrada"])
+
+        if mapa["costo_salida"] in df.columns:
+            df[mapa["costo_salida"]] = limpiar_numero(
+                df[mapa["costo_salida"]]
+            )
+            columnas_costo_salida.append(mapa["costo_salida"])
+
+        if mapa["neto"] in df.columns:
+            df[mapa["neto"]] = limpiar_numero(df[mapa["neto"]])
+
+        if mapa["rotacion"] in df.columns:
+            df[mapa["rotacion"]] = limpiar_numero(df[mapa["rotacion"]])
+
+    # --------------------------------------------------------
+    # Totales de movimiento
+    # --------------------------------------------------------
+    df["ENTRADAS_ANUALES"] = (
+        df[columnas_entrada].sum(axis=1)
+        if columnas_entrada
+        else 0
     )
 
-    if "Bodega" in df_filtrado.columns:
+    df["SALIDAS_ANUALES"] = (
+        df[columnas_salida].sum(axis=1)
+        if columnas_salida
+        else 0
+    )
 
-        resumen_bodega = (
+    df["COSTO_ENTRADAS_ANUAL"] = (
+        df[columnas_costo_entrada].sum(axis=1)
+        if columnas_costo_entrada
+        else 0
+    )
 
-            df_filtrado
+    df["COSTO_SALIDAS_ANUAL"] = (
+        df[columnas_costo_salida].sum(axis=1)
+        if columnas_costo_salida
+        else 0
+    )
 
-            .groupby(
-                [
-                    "Bodega",
-                    "AREA"
-                ],
-                as_index=False
-            )
+    df["MOVIMIENTO_NETO_ANUAL"] = (
+        df["ENTRADAS_ANUALES"] - df["SALIDAS_ANUALES"]
+    )
 
-            .agg(
+    # --------------------------------------------------------
+    # Indicadores analíticos
+    # --------------------------------------------------------
 
-                Stock=(
-                    COL_STOCK,
-                    "sum"
-                ),
+    df["TIENE_MOVIMIENTO"] = (
+        (df["ENTRADAS_ANUALES"] > 0)
+        | (df["SALIDAS_ANUALES"] > 0)
+    )
 
-                Valor=(
-                    COL_COSTE,
-                    "sum"
-                ),
+    df["SIN_MOVIMIENTO"] = (
+        (df["ENTRADAS_ANUALES"] <= 0)
+        & (df["SALIDAS_ANUALES"] <= 0)
+        & (df[COL_STOCK] > 0)
+    )
 
-                Articulos=(
-                    "Articulo",
-                    "nunique"
-                ),
+    df["VALOR_ANTIGUO"] = np.where(
+        df[COL_ANTIGUEDAD] > 12,
+        df["VALOR_INVENTARIO"],
+        0,
+    )
 
-                Rotacion=(
-                    COL_ROTACION,
-                    "mean"
-                ),
+    # --------------------------------------------------------
+    # Riesgo
+    #
+    # No se usa una sola variable.
+    # Se combina antigüedad + rotación + valor.
+    # --------------------------------------------------------
 
-                Dias=(
-                    COL_DIAS,
-                    "mean"
-                )
-            )
-        )
+    valor_75 = df["VALOR_INVENTARIO"].quantile(0.75)
+    valor_90 = df["VALOR_INVENTARIO"].quantile(0.90)
 
-        resumen_bodega["Participacion"] = (
+    rotacion_mediana = df[COL_ROTACION].replace(
+        [np.inf, -np.inf], np.nan
+    ).median()
 
-            resumen_bodega["Valor"]
-            / coste_inventario
-            * 100
+    if pd.isna(rotacion_mediana):
+        rotacion_mediana = 0
 
-            if coste_inventario != 0
+    def calcular_riesgo(row):
 
-            else 0
-        )
+        puntos = 0
 
-        resumen_bodega = (
-            resumen_bodega
-            .sort_values(
-                "Valor",
-                ascending=False
-            )
-        )
+        valor = row["VALOR_INVENTARIO"]
+        antiguedad = row[COL_ANTIGUEDAD]
+        rotacion = row[COL_ROTACION]
+        salidas = row["SALIDAS_ANUALES"]
 
-        col_c, col_d = st.columns(2)
+        if valor >= valor_90:
+            puntos += 3
+        elif valor >= valor_75:
+            puntos += 2
+        elif valor > 0:
+            puntos += 1
 
-        with col_c:
+        if antiguedad > 12:
+            puntos += 3
+        elif antiguedad > 6:
+            puntos += 2
+        elif antiguedad > 3:
+            puntos += 1
 
-            fig_stock = px.bar(
+        if rotacion <= 0:
+            puntos += 3
+        elif rotacion < rotacion_mediana:
+            puntos += 2
 
-                resumen_bodega,
+        if salidas <= 0 and row[COL_STOCK] > 0:
+            puntos += 2
 
-                x="Bodega",
+        if puntos >= 8:
+            return "Crítico"
+        elif puntos >= 5:
+            return "Alto"
+        elif puntos >= 3:
+            return "Medio"
 
-                y="Stock",
+        return "Bajo"
 
-                color="AREA",
+    df["RIESGO"] = df.apply(calcular_riesgo, axis=1)
 
-                color_discrete_map=COLORES_AREA,
+    return df
 
-                custom_data=[
-                    "AREA",
-                    "Valor",
-                    "Articulos",
-                    "Participacion",
-                    "Rotacion",
-                    "Dias"
-                ],
 
-                title="Stock por bodega"
-            )
-
-            fig_stock.update_traces(
-
-                hovertemplate=
-                "<b>%{x}</b><br>"
-                "Área: %{customdata[0]}<br>"
-                "Stock: %{y:,.0f}<br>"
-                "Valor: %{customdata[1]:$,.0f}<br>"
-                "Artículos: %{customdata[2]:,.0f}<br>"
-                "Participación: %{customdata[3]:.1f}%<br>"
-                "Rotación: %{customdata[4]:.2f}<br>"
-                "Días: %{customdata[5]:.1f}"
-                "<extra></extra>"
-            )
-
-            fig_stock.update_layout(
-                xaxis_title="",
-                yaxis_title="Stock",
-                showlegend=True
-            )
-
-            configurar_figura(
-                fig_stock,
-                altura=500
-            )
-
-            fig_stock.update_xaxes(
-                tickangle=-45
-            )
-
-            st.plotly_chart(
-                fig_stock,
-                use_container_width=True
-            )
-
-        with col_d:
-
-            fig_valor = px.bar(
-
-                resumen_bodega,
-
-                x="Bodega",
-
-                y="Valor",
-
-                color="AREA",
-
-                color_discrete_map=COLORES_AREA,
-
-                custom_data=[
-                    "AREA",
-                    "Stock",
-                    "Articulos",
-                    "Participacion",
-                    "Rotacion",
-                    "Dias"
-                ],
-
-                title="Valor del inventario por bodega"
-            )
-
-            fig_valor.update_traces(
-
-                hovertemplate=
-                "<b>%{x}</b><br>"
-                "Área: %{customdata[0]}<br>"
-                "Valor: %{y:$,.0f}<br>"
-                "Stock: %{customdata[1]:,.0f}<br>"
-                "Artículos: %{customdata[2]:,.0f}<br>"
-                "Participación: %{customdata[3]:.1f}%<br>"
-                "Rotación: %{customdata[4]:.2f}<br>"
-                "Días: %{customdata[5]:.1f}"
-                "<extra></extra>"
-            )
-
-            fig_valor.update_layout(
-                xaxis_title="",
-                yaxis_title="Valor"
-            )
-
-            configurar_figura(
-                fig_valor,
-                altura=500
-            )
-
-            fig_valor.update_xaxes(
-                tickangle=-45
-            )
-
-            st.plotly_chart(
-                fig_valor,
-                use_container_width=True
-            )
+df = cargar_datos()
 
 
 # ============================================================
-# INVENTARIOS
+# DATAFRAME TEMPORAL
 # ============================================================
 
-elif pagina == "📦Inventarios":
-
-    st.title(
-        "📦 Inventarios"
-    )
-
-    st.caption(
-        "Análisis detallado de stock, valor, bodegas y artículos."
-    )
-
-    if "Bodega" in df_filtrado.columns:
-
-        inventario_bodega = (
-
-            df_filtrado
-
-            .groupby(
-                [
-                    "Bodega",
-                    "AREA"
-                ],
-                as_index=False
-            )
-
-            .agg(
-
-                Stock=(
-                    COL_STOCK,
-                    "sum"
-                ),
-
-                Valor=(
-                    COL_COSTE,
-                    "sum"
-                ),
-
-                Articulos=(
-                    "Articulo",
-                    "nunique"
-                ),
-
-                Rotacion=(
-                    COL_ROTACION,
-                    "mean"
-                ),
-
-                Dias=(
-                    COL_DIAS,
-                    "mean"
-                )
-            )
-        )
-
-        total_valor = inventario_bodega["Valor"].sum()
-
-        inventario_bodega["Participacion"] = (
-
-            inventario_bodega["Valor"]
-            / total_valor
-            * 100
-
-            if total_valor != 0
-
-            else 0
-        )
-
-        inventario_bodega = (
-            inventario_bodega
-            .sort_values(
-                "Valor",
-                ascending=False
-            )
-        )
-
-        # ====================================================
-        # KPIs
-        # ====================================================
-
-        i1, i2, i3, i4 = st.columns(4)
-
-        with i1:
-
-            st.metric(
-                "🏭 Bodegas",
-                formato_entero(
-                    inventario_bodega["Bodega"].nunique()
-                )
-            )
-
-        with i2:
-
-            st.metric(
-                "📦 Stock",
-                formato_numero(
-                    inventario_bodega["Stock"].sum()
-                )
-            )
-
-        with i3:
-
-            st.metric(
-                "💰 Valor",
-                formato_moneda(
-                    inventario_bodega["Valor"].sum()
-                )
-            )
-
-        with i4:
-
-            st.metric(
-                "🧾 Artículos",
-                formato_entero(
-                    inventario_bodega["Articulos"].sum()
-                )
-            )
-
-        st.write("")
-
-        col1, col2 = st.columns(2)
-
-        with col1:
-
-            fig_stock = px.bar(
-
-                inventario_bodega,
-
-                x="Bodega",
-
-                y="Stock",
-
-                color="AREA",
-
-                color_discrete_map=COLORES_AREA,
-
-                custom_data=[
-                    "AREA",
-                    "Valor",
-                    "Articulos",
-                    "Participacion",
-                    "Rotacion",
-                    "Dias"
-                ],
-
-                title="Stock por bodega"
-            )
-
-            fig_stock.update_traces(
-
-                hovertemplate=
-                "<b>%{x}</b><br>"
-                "Área: %{customdata[0]}<br>"
-                "Stock: %{y:,.0f}<br>"
-                "Valor: %{customdata[1]:$,.0f}<br>"
-                "Artículos: %{customdata[2]:,.0f}<br>"
-                "Participación: %{customdata[3]:.1f}%<br>"
-                "Rotación: %{customdata[4]:.2f}<br>"
-                "Días: %{customdata[5]:.1f}"
-                "<extra></extra>"
-            )
-
-            fig_stock.update_layout(
-                xaxis_title="",
-                yaxis_title="Stock"
-            )
-
-            configurar_figura(
-                fig_stock,
-                altura=500
-            )
-
-            fig_stock.update_xaxes(
-                tickangle=-45
-            )
-
-            st.plotly_chart(
-                fig_stock,
-                use_container_width=True
-            )
-
-        with col2:
-
-            fig_valor = px.bar(
-
-                inventario_bodega,
-
-                x="Bodega",
-
-                y="Valor",
-
-                color="AREA",
-
-                color_discrete_map=COLORES_AREA,
-
-                custom_data=[
-                    "AREA",
-                    "Stock",
-                    "Articulos",
-                    "Participacion",
-                    "Rotacion",
-                    "Dias"
-                ],
-
-                title="Valor del inventario por bodega"
-            )
-
-            fig_valor.update_traces(
-
-                hovertemplate=
-                "<b>%{x}</b><br>"
-                "Área: %{customdata[0]}<br>"
-                "Valor: %{y:$,.0f}<br>"
-                "Stock: %{customdata[1]:,.0f}<br>"
-                "Artículos: %{customdata[2]:,.0f}<br>"
-                "Participación: %{customdata[3]:.1f}%<br>"
-                "Rotación: %{customdata[4]:.2f}<br>"
-                "Días: %{customdata[5]:.1f}"
-                "<extra></extra>"
-            )
-
-            fig_valor.update_layout(
-                xaxis_title="",
-                yaxis_title="Valor"
-            )
-
-            configurar_figura(
-                fig_valor,
-                altura=500
-            )
-
-            fig_valor.update_xaxes(
-                tickangle=-45
-            )
-
-            st.plotly_chart(
-                fig_valor,
-                use_container_width=True
-            )
-
-        # ====================================================
-        # TABLA
-        # ====================================================
-
-        st.subheader(
-            "Resumen por bodega"
-        )
-
-        tabla_bodega = inventario_bodega.copy()
-
-        tabla_bodega["Stock"] = (
-            tabla_bodega["Stock"]
-            .round(2)
-        )
-
-        tabla_bodega["Valor"] = (
-            tabla_bodega["Valor"]
-            .round(0)
-        )
-
-        tabla_bodega["Participacion"] = (
-            tabla_bodega["Participacion"]
-            .round(1)
-        )
-
-        tabla_bodega["Rotacion"] = (
-            tabla_bodega["Rotacion"]
-            .round(2)
-        )
-
-        tabla_bodega["Dias"] = (
-            tabla_bodega["Dias"]
-            .round(1)
-        )
-
-        st.dataframe(
-            tabla_bodega,
-            use_container_width=True,
-            hide_index=True
-        )
-
-
-# ============================================================
-# ANÁLISIS
-# ============================================================
-
-elif pagina == "📈Análisis":
-
-    st.title(
-        "📈 Análisis mensual"
-    )
-
-    st.caption(
-        "Evolución de movimientos, costos, netos y rotación."
-    )
-
-    MESES_NOMBRES = [
-
-        "JUNIO",
-        "JULIO",
-        "AGOSTO",
-        "SEPTIEMBRE",
-        "OCTUBRE",
-        "NOVIEMBRE",
-        "DICIEMBRE",
-        "ENERO",
-        "FEBRERO",
-        "MARZO",
-        "ABRIL",
-        "MAYO"
-    ]
-
-    MOVIMIENTO_MENSUAL = {
-
-        "JUNIO": {
-            "entrada": "ENTRADA",
-            "salida": "SALIDA",
-            "costo_entrada": "COSTO ENTRADA",
-            "costo_salida": "COSTO SALIDA",
-            "neto": "NETO",
-            "rotacion": "ROTACION"
-        },
-
-        "JULIO": {
-            "entrada": "ENTRADA2",
-            "salida": "SALIDA3",
-            "costo_entrada": "COSTO ENTRADA4",
-            "costo_salida": "COSTO SALIDA5",
-            "neto": "NETO6",
-            "rotacion": "ROTACION 68"
-        },
-
-        "AGOSTO": {
-            "entrada": "ENTRADA8",
-            "salida": "SALIDA9",
-            "costo_entrada": "COSTO ENTRADA10",
-            "costo_salida": "COSTO SALIDA11",
-            "neto": "NETO12",
-            "rotacion": "ROTACION 69"
-        },
-
-        "SEPTIEMBRE": {
-            "entrada": "ENTRADA14",
-            "salida": "SALIDA15",
-            "costo_entrada": "COSTO ENTRADA16",
-            "costo_salida": "COSTO SALIDA17",
-            "neto": "NETO18",
-            "rotacion": "ROTACION 70"
-        },
-
-        "OCTUBRE": {
-            "entrada": "ENTRADA20",
-            "salida": "SALIDA21",
-            "costo_entrada": "COSTO ENTRADA22",
-            "costo_salida": "COSTO SALIDA23",
-            "neto": "NETO24",
-            "rotacion": "ROTACION 71"
-        },
-
-        "NOVIEMBRE": {
-            "entrada": "ENTRADA26",
-            "salida": "SALIDA27",
-            "costo_entrada": "COSTO ENTRADA28",
-            "costo_salida": "COSTO SALIDA29",
-            "neto": "NETO30",
-            "rotacion": "ROTACION 72"
-        },
-
-        "DICIEMBRE": {
-            "entrada": "ENTRADA32",
-            "salida": "SALIDA33",
-            "costo_entrada": "COSTO ENTRADA34",
-            "costo_salida": "COSTO SALIDA35",
-            "neto": "NETO36",
-            "rotacion": "ROTACION 73"
-        },
-
-        "ENERO": {
-            "entrada": "ENTRADA38",
-            "salida": "SALIDA39",
-            "costo_entrada": "COSTO ENTRADA40",
-            "costo_salida": "COSTO SALIDA41",
-            "neto": "NETO42",
-            "rotacion": "ROTACION 74"
-        },
-
-        "FEBRERO": {
-            "entrada": "ENTRADA44",
-            "salida": "SALIDA45",
-            "costo_entrada": "COSTO ENTRADA46",
-            "costo_salida": "COSTO SALIDA47",
-            "neto": "NETO48",
-            "rotacion": "ROTACION 75"
-        },
-
-        "MARZO": {
-            "entrada": "ENTRADA50",
-            "salida": "SALIDA51",
-            "costo_entrada": "COSTO ENTRADA52",
-            "costo_salida": "COSTO SALIDA53",
-            "neto": "NETO54",
-            "rotacion": "ROTACION 76"
-        },
-
-        "ABRIL": {
-            "entrada": "ENTRADA56",
-            "salida": "SALIDA57",
-            "costo_entrada": "COSTO ENTRADA58",
-            "costo_salida": "COSTO SALIDA59",
-            "neto": "NETO60",
-            "rotacion": "ROTACION 77"
-        },
-
-        "MAYO": {
-            "entrada": "ENTRADA62",
-            "salida": "SALIDA63",
-            "costo_entrada": "COSTO ENTRADA64",
-            "costo_salida": "COSTO SALIDA65",
-            "neto": "NETO66",
-            "rotacion": "ROTACION 78"
-        }
-    }
-
-    # ========================================================
-    # CONSTRUIR DATAFRAME MENSUAL
-    # ========================================================
-
-    datos_mensuales = []
+def construir_timeline(dataframe):
+    registros = []
 
     for mes in MESES_NOMBRES:
 
-        columnas = MOVIMIENTO_MENSUAL[mes]
+        mapa = MOVIMIENTO_MENSUAL[mes]
 
         entrada = (
-            df_filtrado[columnas["entrada"]].sum()
-            if columnas["entrada"] in df_filtrado.columns
+            safe_sum(dataframe, mapa["entrada"])
+            if mapa["entrada"] in dataframe.columns
             else 0
         )
 
         salida = (
-            df_filtrado[columnas["salida"]].sum()
-            if columnas["salida"] in df_filtrado.columns
+            safe_sum(dataframe, mapa["salida"])
+            if mapa["salida"] in dataframe.columns
             else 0
         )
 
         costo_entrada = (
-            df_filtrado[columnas["costo_entrada"]].sum()
-            if columnas["costo_entrada"] in df_filtrado.columns
+            safe_sum(dataframe, mapa["costo_entrada"])
+            if mapa["costo_entrada"] in dataframe.columns
             else 0
         )
 
         costo_salida = (
-            df_filtrado[columnas["costo_salida"]].sum()
-            if columnas["costo_salida"] in df_filtrado.columns
+            safe_sum(dataframe, mapa["costo_salida"])
+            if mapa["costo_salida"] in dataframe.columns
             else 0
         )
 
         neto = (
-            df_filtrado[columnas["neto"]].sum()
-            if columnas["neto"] in df_filtrado.columns
+            safe_sum(dataframe, mapa["neto"])
+            if mapa["neto"] in dataframe.columns
+            else entrada - salida
+        )
+
+        rotacion = (
+            safe_mean(dataframe, mapa["rotacion"])
+            if mapa["rotacion"] in dataframe.columns
             else 0
         )
 
-        rotacion_mes = (
-            df_filtrado[columnas["rotacion"]].mean()
-            if columnas["rotacion"] in df_filtrado.columns
-            else 0
+        registros.append(
+            {
+                "Mes": mes.title(),
+                "Entradas": entrada,
+                "Salidas": salida,
+                "Neto": neto,
+                "Costo entradas": costo_entrada,
+                "Costo salidas": costo_salida,
+                "Rotación": rotacion,
+            }
         )
 
-        datos_mensuales.append({
+    timeline = pd.DataFrame(registros)
 
-            "Mes": mes,
+    # --------------------------------------------------------
+    # Stock estimado acumulado.
+    #
+    # Se utiliza el stock actual como punto final y se reconstruye
+    # hacia atrás utilizando el movimiento neto mensual.
+    # --------------------------------------------------------
 
-            "Entradas": entrada,
+    stock_actual = safe_sum(dataframe, COL_STOCK)
 
-            "Salidas": salida,
+    stocks = [0] * len(timeline)
 
-            "Costo entradas": costo_entrada,
+    stocks[-1] = stock_actual
 
-            "Costo salidas": costo_salida,
-
-            "Neto": neto,
-
-            "Rotacion": (
-                0
-                if pd.isna(rotacion_mes)
-                else rotacion_mes
-            )
-        })
-
-    df_mensual = pd.DataFrame(
-        datos_mensuales
-    )
-
-    df_mensual["Entradas acumuladas"] = (
-        df_mensual["Entradas"].cumsum()
-    )
-
-    df_mensual["Salidas acumuladas"] = (
-        df_mensual["Salidas"].cumsum()
-    )
-
-    df_mensual["Neto acumulado"] = (
-        df_mensual["Neto"].cumsum()
-    )
-
-    # ========================================================
-    # KPIs MENSUALES
-    # ========================================================
-
-    total_entradas = df_mensual["Entradas"].sum()
-
-    total_salidas = df_mensual["Salidas"].sum()
-
-    total_costo_entradas = (
-        df_mensual["Costo entradas"].sum()
-    )
-
-    total_costo_salidas = (
-        df_mensual["Costo salidas"].sum()
-    )
-
-    neto_periodo = (
-        df_mensual["Neto"].sum()
-    )
-
-    rotacion_periodo = (
-        df_mensual["Rotacion"].mean()
-    )
-
-    a1, a2, a3, a4 = st.columns(4)
-
-    with a1:
-
-        st.metric(
-            "📥 Entradas acumuladas",
-            formato_numero(total_entradas)
+    for i in range(len(timeline) - 2, -1, -1):
+        stocks[i] = (
+            stocks[i + 1]
+            - timeline.loc[i + 1, "Neto"]
         )
 
-    with a2:
+    timeline["Stock"] = stocks
 
-        st.metric(
-            "📤 Salidas acumuladas",
-            formato_numero(total_salidas)
-        )
+    # Evitar valores negativos derivados de inconsistencias
+    # o redondeos del histórico.
+    timeline["Stock"] = timeline["Stock"].clip(lower=0)
 
-    with a3:
+    return timeline
 
-        st.metric(
-            "↔️ Neto del periodo",
-            formato_numero(neto_periodo)
-        )
 
-    with a4:
+# ============================================================
+# FILTROS
+# ============================================================
 
-        st.metric(
-            "🔄 Rotación promedio",
-            formato_numero(rotacion_periodo)
-        )
+st.sidebar.markdown(
+    f"""
+    <div style="
+        font-size:1.35rem;
+        font-weight:800;
+        color:{AZUL_OSCURO};
+        margin-bottom:0.2rem;">
+        📦 Inventarios ALDC
+    </div>
+    <div style="
+        font-size:0.78rem;
+        color:{GRIS_TEXTO};
+        margin-bottom:1.3rem;">
+        Analítica para gestión de inventarios
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.sidebar.markdown("### Filtros")
+
+areas_disponibles = [
+    a for a in ORDEN_AREAS
+    if a in df["AREA"].unique()
+]
+
+area_seleccionada = st.sidebar.multiselect(
+    "Área",
+    options=areas_disponibles,
+    default=areas_disponibles,
+)
+
+df_area = df[df["AREA"].isin(area_seleccionada)].copy()
+
+bodegas_disponibles = sorted(
+    df_area[COL_BODEGA].dropna().astype(str).unique()
+)
+
+bodegas_seleccionadas = st.sidebar.multiselect(
+    "Bodega",
+    options=bodegas_disponibles,
+    default=bodegas_disponibles,
+)
+
+df_bodega = df_area[
+    df_area[COL_BODEGA].isin(bodegas_seleccionadas)
+].copy()
+
+articulos_disponibles = sorted(
+    df_bodega[COL_ARTICULO].dropna().astype(str).unique()
+)
+
+articulos_seleccionados = st.sidebar.multiselect(
+    "Artículo",
+    options=articulos_disponibles,
+    default=[],
+    placeholder="Todos los artículos",
+)
+
+df_filtrado = df_bodega.copy()
+
+if articulos_seleccionados:
+    df_filtrado = df_filtrado[
+        df_filtrado[COL_ARTICULO].isin(articulos_seleccionados)
+    ]
+
+antiguedades_seleccionadas = st.sidebar.multiselect(
+    "Antigüedad",
+    options=ORDEN_ANTIGUEDAD,
+    default=ORDEN_ANTIGUEDAD,
+)
+
+df_filtrado = df_filtrado[
+    df_filtrado["ANTIGUEDAD_CATEGORIA"].isin(
+        antiguedades_seleccionadas
+    )
+].copy()
+
+st.sidebar.divider()
+
+st.sidebar.caption(
+    f"{len(df_filtrado):,.0f} registros incluidos".replace(",", ".")
+)
+
+if st.sidebar.button(
+    "↻ Actualizar datos",
+    use_container_width=True,
+):
+    st.cache_data.clear()
+    st.rerun()
+
+
+# ============================================================
+# ENCABEZADO PRINCIPAL
+# ============================================================
+
+st.markdown(
+    '<div class="main-title">Inventarios ALDC</div>',
+    unsafe_allow_html=True,
+)
+
+st.markdown(
+    '<div class="main-subtitle">'
+    'Sistema de análisis y seguimiento del comportamiento del inventario'
+    '</div>',
+    unsafe_allow_html=True,
+)
+
+
+# ============================================================
+# NAVEGACIÓN
+# ============================================================
+
+pagina = st.radio(
+    "Navegación",
+    [
+        "📊 Inventario actual",
+        "📈 Evolución",
+        "⚠️ Riesgos",
+        "📋 Detalle",
+    ],
+    horizontal=True,
+    label_visibility="collapsed",
+)
+
+
+# ============================================================
+# DATOS BASE
+# ============================================================
+
+stock_total = safe_sum(df_filtrado, COL_STOCK)
+valor_total = safe_sum(df_filtrado, "VALOR_INVENTARIO")
+
+rotacion_promedio = safe_mean(
+    df_filtrado,
+    COL_ROTACION,
+)
+
+antiguedad_promedio = safe_mean(
+    df_filtrado,
+    COL_ANTIGUEDAD,
+)
+
+valor_antiguo = safe_sum(
+    df_filtrado,
+    "VALOR_ANTIGUO",
+)
+
+valor_critico = safe_sum(
+    df_filtrado[
+        df_filtrado["RIESGO"].isin(["Crítico", "Alto"])
+    ],
+    "VALOR_INVENTARIO",
+)
+
+porcentaje_antiguo = (
+    valor_antiguo / valor_total * 100
+    if valor_total > 0
+    else 0
+)
+
+porcentaje_riesgo = (
+    valor_critico / valor_total * 100
+    if valor_total > 0
+    else 0
+)
+
+
+# ============================================================
+# PÁGINA 1 — INVENTARIO ACTUAL
+# ============================================================
+
+if pagina == "📊 Inventario actual":
+
+    st.markdown(
+        '<div class="section-title">Situación actual</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Una lectura ejecutiva de cuánto inventario existe, dónde está '
+        'concentrado y qué parte requiere atención.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric(
+        "💰 Valor del inventario",
+        formato_moneda(valor_total),
+    )
+
+    c2.metric(
+        "📦 Stock total",
+        formato_numero(stock_total),
+    )
+
+    c3.metric(
+        "🔄 Rotación promedio",
+        f"{rotacion_promedio:.2f}",
+    )
+
+    c4.metric(
+        "⚠️ Valor con riesgo",
+        f"{porcentaje_riesgo:.1f}%",
+    )
 
     st.write("")
 
-    # ========================================================
-    # ENTRADAS Y SALIDAS
-    # ========================================================
+    # --------------------------------------------------------
+    # Concentración por área
+    # --------------------------------------------------------
 
-    st.subheader(
-        "Entradas y salidas mensuales"
-    )
+    col_izq, col_der = st.columns([1.35, 1])
 
-    st.caption(
-        "Evolución mensual de los movimientos físicos del inventario."
-    )
+    with col_izq:
 
-    fig_movimiento = px.line(
+        st.markdown(
+            '<div class="section-title">¿Dónde está concentrado el inventario?</div>',
+            unsafe_allow_html=True,
+        )
 
-        df_mensual,
+        area_resumen = (
+            df_filtrado
+            .groupby("AREA", as_index=False)
+            .agg(
+                Valor=("VALOR_INVENTARIO", "sum"),
+                Stock=(COL_STOCK, "sum"),
+            )
+        )
 
-        x="Mes",
+        area_resumen["Participación"] = (
+            area_resumen["Valor"]
+            / area_resumen["Valor"].sum()
+            * 100
+            if area_resumen["Valor"].sum() > 0
+            else 0
+        )
 
-        y=[
-            "Entradas",
-            "Salidas"
-        ],
+        area_resumen["AREA"] = pd.Categorical(
+            area_resumen["AREA"],
+            categories=ORDEN_AREAS,
+            ordered=True,
+        )
 
-        markers=True,
+        area_resumen = area_resumen.sort_values("AREA")
 
-        color_discrete_map=PALETA_MOVIMIENTO,
-
-        custom_data=[
-            "Entradas acumuladas",
-            "Salidas acumuladas",
-            "Neto"
-        ],
-
-        title="Movimiento mensual de inventario"
-    )
-
-    fig_movimiento.update_traces(
-
-        hovertemplate=
-        "<b>%{x}</b><br>"
-        "%{fullData.name}: %{y:,.2f}<br>"
-        "Entradas acumuladas: %{customdata[0]:,.2f}<br>"
-        "Salidas acumuladas: %{customdata[1]:,.2f}<br>"
-        "Neto del mes: %{customdata[2]:,.2f}"
-        "<extra></extra>"
-    )
-
-    fig_movimiento.update_layout(
-        xaxis_title="",
-        yaxis_title="Cantidad"
-    )
-
-    configurar_figura(
-        fig_movimiento,
-        altura=480
-    )
-
-    st.plotly_chart(
-        fig_movimiento,
-        use_container_width=True
-    )
-
-    # ========================================================
-    # COSTOS
-    # ========================================================
-
-    st.subheader(
-        "Costos de entradas y salidas"
-    )
-
-    st.caption(
-        "Valor económico asociado a los movimientos mensuales."
-    )
-
-    fig_costos = px.bar(
-
-        df_mensual,
-
-        x="Mes",
-
-        y=[
-            "Costo entradas",
-            "Costo salidas"
-        ],
-
-        barmode="group",
-
-        color_discrete_map=PALETA_COSTOS,
-
-        custom_data=[
-            "Entradas",
-            "Salidas",
-            "Neto"
-        ],
-
-        title="Costos mensuales de movimiento"
-    )
-
-    fig_costos.update_traces(
-
-        hovertemplate=
-        "<b>%{x}</b><br>"
-        "%{fullData.name}: %{y:$,.0f}<br>"
-        "Entradas: %{customdata[0]:,.2f}<br>"
-        "Salidas: %{customdata[1]:,.2f}<br>"
-        "Neto: %{customdata[2]:,.2f}"
-        "<extra></extra>"
-    )
-
-    fig_costos.update_layout(
-        xaxis_title="",
-        yaxis_title="Valor"
-    )
-
-    configurar_figura(
-        fig_costos,
-        altura=480
-    )
-
-    st.plotly_chart(
-        fig_costos,
-        use_container_width=True
-    )
-
-    # ========================================================
-    # NETO + ROTACIÓN
-    # ========================================================
-
-    col_neto, col_rot = st.columns(2)
-
-    with col_neto:
-
-        fig_neto = px.bar(
-
-            df_mensual,
-
-            x="Mes",
-
-            y="Neto",
-
-            color="Neto",
-
-            color_continuous_scale=[
-                ROJO_CLARO,
-                BLANCO,
-                AZUL
-            ],
-
+        fig_area = px.bar(
+            area_resumen,
+            x="Valor",
+            y="AREA",
+            orientation="h",
+            text="Participación",
             custom_data=[
-                "Entradas",
-                "Salidas",
-                "Neto acumulado"
+                "Stock",
+                "Participación",
             ],
-
-            title="Movimiento neto mensual"
         )
 
-        fig_neto.update_traces(
-
-            hovertemplate=
-            "<b>%{x}</b><br>"
-            "Neto: %{y:,.2f}<br>"
-            "Entradas: %{customdata[0]:,.2f}<br>"
-            "Salidas: %{customdata[1]:,.2f}<br>"
-            "Neto acumulado: %{customdata[2]:,.2f}"
-            "<extra></extra>"
-        )
-
-        fig_neto.update_layout(
-            coloraxis_showscale=False,
-            xaxis_title="",
-            yaxis_title="Neto"
-        )
-
-        configurar_figura(
-            fig_neto,
-            altura=450
-        )
-
-        st.plotly_chart(
-            fig_neto,
-            use_container_width=True
-        )
-
-    with col_rot:
-
-        fig_rotacion = px.line(
-
-            df_mensual,
-
-            x="Mes",
-
-            y="Rotacion",
-
-            markers=True,
-
-            color_discrete_sequence=[
-                MORADO
-            ],
-
-            custom_data=[
-                "Entradas",
-                "Salidas",
-                "Neto"
-            ],
-
-            title="Rotación mensual"
-        )
-
-        fig_rotacion.update_traces(
-
-            hovertemplate=
-            "<b>%{x}</b><br>"
-            "Rotación: %{y:.2f}<br>"
-            "Entradas: %{customdata[0]:,.2f}<br>"
-            "Salidas: %{customdata[1]:,.2f}<br>"
-            "Neto: %{customdata[2]:,.2f}"
-            "<extra></extra>"
-        )
-
-        fig_rotacion.update_layout(
-            xaxis_title="",
-            yaxis_title="Rotación"
-        )
-
-        configurar_figura(
-            fig_rotacion,
-            altura=450
-        )
-
-        st.plotly_chart(
-            fig_rotacion,
-            use_container_width=True
-        )
-
-    # ========================================================
-    # ACUMULADOS
-    # ========================================================
-
-    st.subheader(
-        "Evolución acumulada"
-    )
-
-    st.caption(
-        "Seguimiento acumulado de entradas, salidas y movimiento neto."
-    )
-
-    fig_acumulado = px.area(
-
-        df_mensual,
-
-        x="Mes",
-
-        y=[
-            "Entradas acumuladas",
-            "Salidas acumuladas"
-        ],
-
-        title="Entradas y salidas acumuladas",
-
-        color_discrete_map={
-            "Entradas acumuladas": VERDE,
-            "Salidas acumuladas": ROJO
-        },
-
-        custom_data=[
-            "Neto acumulado"
-        ]
-    )
-
-    fig_acumulado.update_traces(
-
-        hovertemplate=
-        "<b>%{x}</b><br>"
-        "%{fullData.name}: %{y:,.2f}<br>"
-        "Neto acumulado: %{customdata[0]:,.2f}"
-        "<extra></extra>"
-    )
-
-    fig_acumulado.update_layout(
-        xaxis_title="",
-        yaxis_title="Cantidad"
-    )
-
-    configurar_figura(
-        fig_acumulado,
-        altura=470
-    )
-
-    st.plotly_chart(
-        fig_acumulado,
-        use_container_width=True
-    )
-
-    # ========================================================
-    # TABLA MENSUAL
-    # ========================================================
-
-    with st.expander(
-        "📋 Ver detalle mensual"
-    ):
-
-        tabla_mensual = df_mensual.copy()
-
-        for columna in [
-            "Entradas",
-            "Salidas",
-            "Entradas acumuladas",
-            "Salidas acumuladas",
-            "Neto",
-            "Neto acumulado"
-        ]:
-
-            tabla_mensual[columna] = (
-                tabla_mensual[columna]
-                .round(2)
-            )
-
-        tabla_mensual["Rotacion"] = (
-            tabla_mensual["Rotacion"]
-            .round(2)
-        )
-
-        st.dataframe(
-            tabla_mensual,
-            use_container_width=True,
-            hide_index=True
-        )
-
-
-# ============================================================
-# ALERTAS
-# ============================================================
-
-elif pagina == "⚠️Alertas":
-
-    st.title(
-        "⚠️ Alertas e inventario envejecido"
-    )
-
-    st.caption(
-        "Identificación de registros con antigüedad superior "
-        "a 12 meses y concentración de valor."
-    )
-
-    if COL_ANTIGUEDAD in df_filtrado.columns:
-
-        df_alertas = df_filtrado[
-            df_filtrado[
-                COL_ANTIGUEDAD
-            ]
-            .astype(str)
-            .str.contains(
-                "Mayor a 12 meses",
-                case=False,
-                na=False
-            )
-        ].copy()
-
-        stock_alerta = suma_columna(
-            df_alertas,
-            COL_STOCK
-        )
-
-        valor_alerta = suma_columna(
-            df_alertas,
-            COL_COSTE
-        )
-
-        porcentaje_alerta = participacion(
-            valor_alerta,
-            suma_columna(
-                df_filtrado,
-                COL_COSTE
-            )
-        )
-
-        a1, a2, a3, a4 = st.columns(4)
-
-        with a1:
-
-            st.metric(
-                "⚠️ Registros",
-                formato_entero(
-                    len(df_alertas)
-                )
-            )
-
-        with a2:
-
-            st.metric(
-                "📦 Stock",
-                formato_numero(
-                    stock_alerta
-                )
-            )
-
-        with a3:
-
-            st.metric(
-                "💰 Valor",
-                formato_moneda(
-                    valor_alerta
-                )
-            )
-
-        with a4:
-
-            st.metric(
-                "📊 Participación",
-                formato_porcentaje(
-                    porcentaje_alerta
-                )
-            )
-
-        st.write("")
-
-        if not df_alertas.empty:
-
-            # =================================================
-            # TOP ARTÍCULOS
-            # =================================================
-
-            st.subheader(
-                "Mayor concentración de valor"
-            )
-
-            st.caption(
-                "Top 15 registros de mayor valor dentro del inventario "
-                "con antigüedad superior a 12 meses."
-            )
-
-            top_alertas = (
-
-                df_alertas
-
-                .sort_values(
-                    COL_COSTE,
-                    ascending=False
-                )
-
-                .head(15)
-                .copy()
-            )
-
-            if "AREA" not in top_alertas.columns:
-
-                top_alertas["AREA"] = "Sin asignar"
-
-            fig_alertas = px.bar(
-
-                top_alertas,
-
-                x=COL_COSTE,
-
-                y="Articulo",
-
-                color="AREA",
-
-                orientation="h",
-
-                color_discrete_map=COLORES_AREA,
-
-                custom_data=[
-                    "AREA",
-                    "Bodega",
-                    COL_STOCK,
-                    COL_ANTIGUEDAD,
-                    COL_ROTACION,
-                    COL_DIAS
-                ],
-
-                title="Top 15 artículos por valor — >12 meses"
-            )
-
-            fig_alertas.update_traces(
-
-                hovertemplate=
+        fig_area.update_traces(
+            texttemplate="%{text:.1f}%",
+            textposition="outside",
+            hovertemplate=(
                 "<b>%{y}</b><br>"
-                "Área: %{customdata[0]}<br>"
-                "Bodega: %{customdata[1]}<br>"
-                "Valor: %{x:$,.0f}<br>"
-                "Stock: %{customdata[2]:,.0f}<br>"
-                "Antigüedad: %{customdata[3]}<br>"
-                "Rotación: %{customdata[4]:.2f}<br>"
-                "Días: %{customdata[5]:.1f}"
-                "<extra></extra>"
-            )
-
-            fig_alertas.update_layout(
-                xaxis_title="Valor inventario",
-                yaxis_title="",
-                showlegend=True
-            )
-
-            configurar_figura(
-                fig_alertas,
-                altura=600
-            )
-
-            st.plotly_chart(
-                fig_alertas,
-                use_container_width=True
-            )
-
-            # =================================================
-            # ALERTAS POR ÁREA
-            # =================================================
-
-            st.subheader(
-                "Inventario envejecido por área"
-            )
-
-            resumen_alertas_area = (
-
-                df_alertas
-
-                .groupby(
-                    "AREA",
-                    as_index=False
-                )
-
-                .agg(
-
-                    Valor=(
-                        COL_COSTE,
-                        "sum"
-                    ),
-
-                    Stock=(
-                        COL_STOCK,
-                        "sum"
-                    ),
-
-                    Articulos=(
-                        "Articulo",
-                        "nunique"
-                    ),
-
-                    Rotacion=(
-                        COL_ROTACION,
-                        "mean"
-                    ),
-
-                    Dias=(
-                        COL_DIAS,
-                        "mean"
-                    )
-                )
-            )
-
-            resumen_alertas_area["Participacion"] = (
-
-                resumen_alertas_area["Valor"]
-                / valor_alerta
-                * 100
-
-                if valor_alerta != 0
-
-                else 0
-            )
-
-            fig_alertas_area = px.bar(
-
-                resumen_alertas_area,
-
-                x="AREA",
-
-                y="Valor",
-
-                color="AREA",
-
-                color_discrete_map=COLORES_AREA,
-
-                custom_data=[
-                    "Stock",
-                    "Articulos",
-                    "Participacion",
-                    "Rotacion",
-                    "Dias"
-                ],
-
-                title="Valor >12 meses por área"
-            )
-
-            fig_alertas_area.update_traces(
-
-                hovertemplate=
-                "<b>%{x}</b><br>"
-                "Valor >12 meses: %{y:$,.0f}<br>"
+                "Valor: $%{x:,.0f}<br>"
                 "Stock: %{customdata[0]:,.0f}<br>"
-                "Artículos: %{customdata[1]:,.0f}<br>"
-                "Participación: %{customdata[2]:.1f}%<br>"
-                "Rotación: %{customdata[3]:.2f}<br>"
-                "Días: %{customdata[4]:.1f}"
+                "Participación: %{customdata[1]:.1f}%"
                 "<extra></extra>"
+            ),
+        )
+
+        fig_area.update_layout(
+            height=360,
+            margin=dict(l=10, r=30, t=10, b=10),
+            showlegend=False,
+            xaxis_title=None,
+            yaxis_title=None,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+        )
+
+        st.plotly_chart(
+            fig_area,
+            use_container_width=True,
+            config={"displayModeBar": False},
+        )
+
+    with col_der:
+
+        st.markdown(
+            '<div class="section-title">Antigüedad del valor</div>',
+            unsafe_allow_html=True,
+        )
+
+        antig = (
+            df_filtrado
+            .groupby(
+                "ANTIGUEDAD_CATEGORIA",
+                as_index=False,
             )
-
-            fig_alertas_area.update_layout(
-                xaxis_title="Área",
-                yaxis_title="Valor",
-                showlegend=False
+            .agg(
+                Valor=("VALOR_INVENTARIO", "sum")
             )
+        )
 
-            configurar_figura(
-                fig_alertas_area,
-                altura=430
-            )
+        antig["ANTIGUEDAD_CATEGORIA"] = pd.Categorical(
+            antig["ANTIGUEDAD_CATEGORIA"],
+            categories=ORDEN_ANTIGUEDAD,
+            ordered=True,
+        )
 
-            st.plotly_chart(
-                fig_alertas_area,
-                use_container_width=True
-            )
+        antig = antig.sort_values("ANTIGUEDAD_CATEGORIA")
 
-            # =================================================
-            # TABLA
-            # =================================================
+        fig_antig = px.bar(
+            antig,
+            x="ANTIGUEDAD_CATEGORIA",
+            y="Valor",
+            text="Valor",
+        )
 
-            st.subheader(
-                "Detalle de inventario envejecido"
-            )
+        fig_antig.update_traces(
+            texttemplate="%{y:$,.0s}",
+            textposition="outside",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Valor: $%{y:,.0f}"
+                "<extra></extra>"
+            ),
+        )
 
-            columnas_alertas = [
+        fig_antig.update_layout(
+            height=360,
+            margin=dict(l=10, r=10, t=10, b=10),
+            showlegend=False,
+            xaxis_title=None,
+            yaxis_title=None,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+        )
 
-                "AREA",
-                "Bodega",
-                "Codigo Articulo",
-                "Articulo",
-                COL_STOCK,
-                COL_COSTE,
-                COL_ROTACION,
-                COL_DIAS,
-                COL_ANTIGUEDAD
-            ]
+        st.plotly_chart(
+            fig_antig,
+            use_container_width=True,
+            config={"displayModeBar": False},
+        )
 
-            columnas_alertas = [
+    # --------------------------------------------------------
+    # Concentración económica
+    # --------------------------------------------------------
 
-                columna
-
-                for columna
-                in columnas_alertas
-
-                if columna in df_alertas.columns
-            ]
-
-            tabla_alertas = (
-
-                df_alertas[
-                    columnas_alertas
-                ]
-
-                .sort_values(
-                    COL_COSTE,
-                    ascending=False
-                )
-            )
-
-            st.dataframe(
-                tabla_alertas,
-                use_container_width=True,
-                hide_index=True
-            )
-
-        else:
-
-            st.success(
-                "✅ No se encontraron artículos con antigüedad "
-                "superior a 12 meses para los filtros seleccionados."
-            )
-
-
-# ============================================================
-# DETALLE
-# ============================================================
-
-elif pagina == "📋Detalle":
-
-    st.title(
-        "📋 Detalle del inventario"
+    st.markdown(
+        '<div class="section-title">Concentración económica</div>',
+        unsafe_allow_html=True,
     )
 
-    st.caption(
-        "Exploración detallada de los registros incluidos "
-        "en los filtros seleccionados."
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Los artículos que explican la mayor parte del valor del inventario.'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
-    # ========================================================
-    # KPIs
-    # ========================================================
+    top_articulos = (
+        df_filtrado
+        .groupby(COL_ARTICULO, as_index=False)
+        .agg(
+            Valor=("VALOR_INVENTARIO", "sum"),
+            Stock=(COL_STOCK, "sum"),
+            Rotacion=(COL_ROTACION, "mean"),
+            Antiguedad=(COL_ANTIGUEDAD, "mean"),
+        )
+        .sort_values("Valor", ascending=False)
+        .head(10)
+    )
 
-    detalle_articulos = (
-
-        df_filtrado["Articulo"]
-        .nunique()
-
-        if "Articulo" in df_filtrado.columns
-
+    top_articulos["Participación"] = (
+        top_articulos["Valor"]
+        / valor_total
+        * 100
+        if valor_total > 0
         else 0
     )
 
-    detalle_stock = suma_columna(
-        df_filtrado,
-        COL_STOCK
+    fig_top = px.bar(
+        top_articulos.sort_values("Valor"),
+        x="Valor",
+        y=COL_ARTICULO,
+        orientation="h",
+        custom_data=[
+            "Stock",
+            "Rotacion",
+            "Antiguedad",
+            "Participación",
+        ],
     )
 
-    detalle_valor = suma_columna(
-        df_filtrado,
-        COL_COSTE
+    fig_top.update_traces(
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "Valor: $%{x:,.0f}<br>"
+            "Stock: %{customdata[0]:,.0f}<br>"
+            "Rotación: %{customdata[1]:.2f}<br>"
+            "Antigüedad: %{customdata[2]:.1f} meses<br>"
+            "Participación: %{customdata[3]:.1f}%"
+            "<extra></extra>"
+        ),
+    )
+
+    fig_top.update_layout(
+        height=430,
+        margin=dict(l=10, r=20, t=10, b=10),
+        showlegend=False,
+        xaxis_title=None,
+        yaxis_title=None,
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+    )
+
+    st.plotly_chart(
+        fig_top,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
+# ============================================================
+# PÁGINA 2 — EVOLUCIÓN
+# ============================================================
+
+elif pagina == "📈 Evolución":
+
+    st.markdown(
+        '<div class="section-title">Evolución del inventario</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Relación entre entradas, salidas y nivel de inventario durante los 12 meses.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    timeline = construir_timeline(df_filtrado)
+
+    # --------------------------------------------------------
+    # KPI temporal
+    # --------------------------------------------------------
+
+    total_entradas = timeline["Entradas"].sum()
+    total_salidas = timeline["Salidas"].sum()
+    total_neto = timeline["Neto"].sum()
+
+    mes_mayor_entrada = (
+        timeline.loc[
+            timeline["Entradas"].idxmax(),
+            "Mes"
+        ]
+        if len(timeline)
+        else "-"
+    )
+
+    mes_mayor_salida = (
+        timeline.loc[
+            timeline["Salidas"].idxmax(),
+            "Mes"
+        ]
+        if len(timeline)
+        else "-"
+    )
+
+    ce1, ce2, ce3, ce4 = st.columns(4)
+
+    ce1.metric(
+        "Entradas acumuladas",
+        formato_numero(total_entradas),
+    )
+
+    ce2.metric(
+        "Salidas acumuladas",
+        formato_numero(total_salidas),
+    )
+
+    ce3.metric(
+        "Balance del período",
+        formato_numero(total_neto),
+    )
+
+    ce4.metric(
+        "Mayor entrada",
+        mes_mayor_entrada,
+    )
+
+    st.write("")
+
+    # --------------------------------------------------------
+    # GRÁFICO PRINCIPAL
+    # --------------------------------------------------------
+
+    st.markdown(
+        '<div class="section-title">La historia del inventario</div>',
+        unsafe_allow_html=True,
+    )
+
+    fig_evolucion = go.Figure()
+
+    fig_evolucion.add_trace(
+        go.Bar(
+            x=timeline["Mes"],
+            y=timeline["Entradas"],
+            name="Entradas",
+            marker_color=NARANJA,
+            customdata=np.column_stack(
+                [
+                    timeline["Costo entradas"],
+                    timeline["Neto"],
+                    timeline["Stock"],
+                ]
+            ),
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Entradas: %{y:,.0f}<br>"
+                "Costo entradas: $%{customdata[0]:,.0f}<br>"
+                "Balance mensual: %{customdata[1]:,.0f}<br>"
+                "Stock: %{customdata[2]:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig_evolucion.add_trace(
+        go.Bar(
+            x=timeline["Mes"],
+            y=timeline["Salidas"],
+            name="Salidas",
+            marker_color=AZUL_CLARO,
+            customdata=np.column_stack(
+                [
+                    timeline["Costo salidas"],
+                    timeline["Neto"],
+                    timeline["Stock"],
+                ]
+            ),
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Salidas: %{y:,.0f}<br>"
+                "Costo salidas: $%{customdata[0]:,.0f}<br>"
+                "Balance mensual: %{customdata[1]:,.0f}<br>"
+                "Stock: %{customdata[2]:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig_evolucion.add_trace(
+        go.Scatter(
+            x=timeline["Mes"],
+            y=timeline["Stock"],
+            mode="lines+markers",
+            name="Stock",
+            line=dict(
+                color=AZUL_OSCURO,
+                width=4,
+            ),
+            marker=dict(
+                size=8,
+                color=BLANCO,
+                line=dict(
+                    color=AZUL_OSCURO,
+                    width=3,
+                ),
+            ),
+            customdata=np.column_stack(
+                [
+                    timeline["Entradas"],
+                    timeline["Salidas"],
+                    timeline["Neto"],
+                    timeline["Rotación"],
+                ]
+            ),
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "<b>Stock: %{y:,.0f}</b><br>"
+                "Entradas: %{customdata[0]:,.0f}<br>"
+                "Salidas: %{customdata[1]:,.0f}<br>"
+                "Balance: %{customdata[2]:,.0f}<br>"
+                "Rotación: %{customdata[3]:.2f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig_evolucion.update_layout(
+        barmode="group",
+        height=520,
+        margin=dict(l=20, r=20, t=20, b=20),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        hovermode="x unified",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+        xaxis=dict(
+            showgrid=False,
+        ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor=GRIS_GRID,
+            title=None,
+        ),
+    )
+
+    st.plotly_chart(
+        fig_evolucion,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+    # --------------------------------------------------------
+    # HALLAZGOS TEMPORALES
+    # --------------------------------------------------------
+
+    st.markdown(
+        '<div class="section-title">Qué está pasando</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Mayor diferencia entre entradas y salidas
+    timeline["Diferencia absoluta"] = (
+        timeline["Entradas"] - timeline["Salidas"]
+    )
+
+    mayor_acumulacion = timeline.loc[
+        timeline["Diferencia absoluta"].idxmax()
+    ]
+
+    mayor_reduccion = timeline.loc[
+        timeline["Diferencia absoluta"].idxmin()
+    ]
+
+    crecimiento_stock = (
+        timeline["Stock"].iloc[-1]
+        - timeline["Stock"].iloc[0]
+    )
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(
+            f"""
+            <div class="finding risk-high">
+                <div class="finding-title">
+                    📈 Mayor acumulación
+                </div>
+                <div class="finding-text">
+                    <b>{mayor_acumulacion["Mes"]}</b> presenta la mayor diferencia
+                    positiva entre entradas y salidas:
+                    <b>{formato_numero(mayor_acumulacion["Diferencia absoluta"])}</b>
+                    unidades.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+        st.markdown(
+            f"""
+            <div class="finding risk-medium">
+                <div class="finding-title">
+                    📉 Mayor reducción
+                </div>
+                <div class="finding-text">
+                    <b>{mayor_reduccion["Mes"]}</b> presenta la mayor salida neta,
+                    con una diferencia de
+                    <b>{formato_numero(abs(mayor_reduccion["Diferencia absoluta"]))}</b>
+                    unidades.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col3:
+        tendencia = "creció" if crecimiento_stock >= 0 else "disminuyó"
+
+        st.markdown(
+            f"""
+            <div class="finding risk-low">
+                <div class="finding-title">
+                    🔎 Tendencia del período
+                </div>
+                <div class="finding-text">
+                    El stock reconstruido del período
+                    <b>{tendencia}</b> en aproximadamente
+                    <b>{formato_numero(abs(crecimiento_stock))}</b>
+                    unidades.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # --------------------------------------------------------
+    # COSTOS DE MOVIMIENTO
+    # --------------------------------------------------------
+
+    st.markdown(
+        '<div class="section-title">Valor económico de los movimientos</div>',
+        unsafe_allow_html=True,
+    )
+
+    fig_costos = go.Figure()
+
+    fig_costos.add_trace(
+        go.Bar(
+            x=timeline["Mes"],
+            y=timeline["Costo entradas"],
+            name="Costo entradas",
+            marker_color=NARANJA,
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Entradas: $%{y:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig_costos.add_trace(
+        go.Bar(
+            x=timeline["Mes"],
+            y=timeline["Costo salidas"],
+            name="Costo salidas",
+            marker_color=AZUL_CLARO,
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Salidas: $%{y:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+    )
+
+    fig_costos.update_layout(
+        barmode="group",
+        height=380,
+        margin=dict(l=20, r=20, t=10, b=10),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1,
+        ),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor=GRIS_GRID,
+            tickprefix="$",
+        ),
+    )
+
+    st.plotly_chart(
+        fig_costos,
+        use_container_width=True,
+        config={"displayModeBar": False},
+    )
+
+
+# ============================================================
+# PÁGINA 3 — RIESGOS
+# ============================================================
+
+elif pagina == "⚠️ Riesgos":
+
+    st.markdown(
+        '<div class="section-title">Riesgos y oportunidades de revisión</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Priorización basada en valor, antigüedad, rotación y movimiento.'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    riesgos = (
+        df_filtrado
+        .groupby("RIESGO")
+        .agg(
+            Registros=(COL_ARTICULO, "count"),
+            Valor=("VALOR_INVENTARIO", "sum"),
+            Stock=(COL_STOCK, "sum"),
+        )
+        .reset_index()
+    )
+
+    orden_riesgos = [
+        "Crítico",
+        "Alto",
+        "Medio",
+        "Bajo",
+    ]
+
+    riesgos["RIESGO"] = pd.Categorical(
+        riesgos["RIESGO"],
+        categories=orden_riesgos,
+        ordered=True,
+    )
+
+    riesgos = riesgos.sort_values("RIESGO")
+
+    critico_valor = safe_sum(
+        df_filtrado[df_filtrado["RIESGO"] == "Crítico"],
+        "VALOR_INVENTARIO",
+    )
+
+    alto_valor = safe_sum(
+        df_filtrado[df_filtrado["RIESGO"] == "Alto"],
+        "VALOR_INVENTARIO",
+    )
+
+    sin_movimiento_valor = safe_sum(
+        df_filtrado[df_filtrado["SIN_MOVIMIENTO"]],
+        "VALOR_INVENTARIO",
+    )
+
+    antiguo_valor = safe_sum(
+        df_filtrado[df_filtrado[COL_ANTIGUEDAD] > 12],
+        "VALOR_INVENTARIO",
+    )
+
+    r1, r2, r3, r4 = st.columns(4)
+
+    r1.metric(
+        "🔴 Crítico",
+        formato_moneda(critico_valor),
+    )
+
+    r2.metric(
+        "🟠 Alto",
+        formato_moneda(alto_valor),
+    )
+
+    r3.metric(
+        "⏳ Mayor a 12 meses",
+        formato_moneda(antiguo_valor),
+    )
+
+    r4.metric(
+        "⏸ Sin movimiento",
+        formato_moneda(sin_movimiento_valor),
+    )
+
+    st.write("")
+
+    # --------------------------------------------------------
+    # RESUMEN DE RIESGO
+    # --------------------------------------------------------
+
+    col_riesgo, col_sin_mov = st.columns([1.2, 1])
+
+    with col_riesgo:
+
+        st.markdown(
+            '<div class="section-title">Valor expuesto por nivel de riesgo</div>',
+            unsafe_allow_html=True,
+        )
+
+        fig_riesgo = px.bar(
+            riesgos,
+            x="RIESGO",
+            y="Valor",
+            text="Valor",
+            custom_data=[
+                "Registros",
+                "Stock",
+            ],
+        )
+
+        fig_riesgo.update_traces(
+            texttemplate="$%{y:,.0s}",
+            textposition="outside",
+            hovertemplate=(
+                "<b>%{x}</b><br>"
+                "Valor: $%{y:,.0f}<br>"
+                "Registros: %{customdata[0]:,.0f}<br>"
+                "Stock: %{customdata[1]:,.0f}"
+                "<extra></extra>"
+            ),
+        )
+
+        fig_riesgo.update_layout(
+            height=390,
+            margin=dict(l=10, r=10, t=10, b=10),
+            showlegend=False,
+            plot_bgcolor="white",
+            paper_bgcolor="white",
+            xaxis_title=None,
+            yaxis_title=None,
+        )
+
+        st.plotly_chart(
+            fig_riesgo,
+            use_container_width=True,
+            config={"displayModeBar": False},
+        )
+
+    with col_sin_mov:
+
+        st.markdown(
+            '<div class="section-title">Inventario sin movimiento</div>',
+            unsafe_allow_html=True,
+        )
+
+        sin_mov = (
+            df_filtrado[
+                df_filtrado["SIN_MOVIMIENTO"]
+            ]
+            .groupby(COL_BODEGA, as_index=False)
+            .agg(
+                Valor=("VALOR_INVENTARIO", "sum"),
+                Stock=(COL_STOCK, "sum"),
+            )
+            .sort_values("Valor", ascending=False)
+            .head(8)
+        )
+
+        if len(sin_mov) > 0:
+
+            fig_sin_mov = px.bar(
+                sin_mov.sort_values("Valor"),
+                x="Valor",
+                y=COL_BODEGA,
+                orientation="h",
+                custom_data=["Stock"],
+            )
+
+            fig_sin_mov.update_traces(
+                hovertemplate=(
+                    "<b>%{y}</b><br>"
+                    "Valor: $%{x:,.0f}<br>"
+                    "Stock: %{customdata[0]:,.0f}"
+                    "<extra></extra>"
+                ),
+            )
+
+            fig_sin_mov.update_layout(
+                height=390,
+                margin=dict(l=10, r=10, t=10, b=10),
+                showlegend=False,
+                plot_bgcolor="white",
+                paper_bgcolor="white",
+                xaxis_title=None,
+                yaxis_title=None,
+            )
+
+            st.plotly_chart(
+                fig_sin_mov,
+                use_container_width=True,
+                config={"displayModeBar": False},
+            )
+
+        else:
+            st.success(
+                "No se identificó inventario sin movimiento dentro de los filtros actuales."
+            )
+
+    # --------------------------------------------------------
+    # HALLAZGOS PRIORITARIOS
+    # --------------------------------------------------------
+
+    st.markdown(
+        '<div class="section-title">Hallazgos prioritarios</div>',
+        unsafe_allow_html=True,
+    )
+
+    # 1. Mayor valor antiguo
+    antiguos = (
+        df_filtrado[
+            df_filtrado[COL_ANTIGUEDAD] > 12
+        ]
+        .sort_values(
+            "VALOR_INVENTARIO",
+            ascending=False,
+        )
+        .head(5)
+    )
+
+    # 2. Mayor valor con baja rotación
+    baja_rotacion = (
+        df_filtrado[
+            (df_filtrado[COL_ROTACION] <= rotacion_mediana)
+            & (df_filtrado[COL_STOCK] > 0)
+        ]
+        .sort_values(
+            "VALOR_INVENTARIO",
+            ascending=False,
+        )
+        .head(5)
+    )
+
+    hallazgos = []
+
+    if len(antiguos) > 0:
+        hallazgos.append(
+            (
+                "risk-critical",
+                "⏳ Inventario antiguo",
+                f"Se identificaron {len(antiguos):,} registros dentro del grupo "
+                "de mayor valor con antigüedad superior a 12 meses."
+            )
+        )
+
+    if len(baja_rotacion) > 0:
+        hallazgos.append(
+            (
+                "risk-high",
+                "🔄 Baja rotación",
+                "Existe inventario con valor significativo y rotación inferior "
+                "a la referencia del conjunto filtrado."
+            )
+        )
+
+    if sin_movimiento_valor > 0:
+        hallazgos.append(
+            (
+                "risk-medium",
+                "⏸ Inventario sin movimiento",
+                f"Hay aproximadamente {formato_moneda(sin_movimiento_valor)} "
+                "asociados a registros con stock pero sin entradas ni salidas "
+                "durante el período analizado."
+            )
+        )
+
+    if porcentaje_antiguo > 30:
+        hallazgos.append(
+            (
+                "risk-critical",
+                "📦 Alta exposición por antigüedad",
+                f"El {porcentaje_antiguo:.1f}% del valor del inventario "
+                "corresponde a existencias con más de 12 meses."
+            )
+        )
+
+    if not hallazgos:
+        hallazgos.append(
+            (
+                "risk-low",
+                "✓ Sin señales relevantes",
+                "Con los filtros actuales no se identificaron señales fuertes "
+                "según las reglas analíticas configuradas."
+            )
+        )
+
+    for clase, titulo, texto in hallazgos:
+
+        st.markdown(
+            f"""
+            <div class="finding {clase}">
+                <div class="finding-title">{titulo}</div>
+                <div class="finding-text">{texto}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # --------------------------------------------------------
+    # TABLA DE PRIORIDAD
+    # --------------------------------------------------------
+
+    st.markdown(
+        '<div class="section-title">Registros que conviene revisar primero</div>',
+        unsafe_allow_html=True,
+    )
+
+    prioridad = (
+        df_filtrado[
+            df_filtrado["RIESGO"].isin(
+                ["Crítico", "Alto"]
+            )
+        ]
+        .sort_values(
+            [
+                "RIESGO",
+                "VALOR_INVENTARIO",
+            ],
+            ascending=[
+                True,
+                False,
+            ],
+        )
+        .head(30)
+    )
+
+    columnas_prioridad = [
+        COL_ARTICULO,
+        COL_BODEGA,
+        "AREA",
+        COL_STOCK,
+        "VALOR_INVENTARIO",
+        COL_ANTIGUEDAD,
+        COL_ROTACION,
+        "RIESGO",
+    ]
+
+    columnas_prioridad = [
+        c for c in columnas_prioridad
+        if c in prioridad.columns
+    ]
+
+    st.dataframe(
+        prioridad[columnas_prioridad],
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            COL_STOCK: st.column_config.NumberColumn(
+                "Stock",
+                format="%,.0f",
+            ),
+            "VALOR_INVENTARIO": st.column_config.NumberColumn(
+                "Valor inventario",
+                format="$%,.0f",
+            ),
+            COL_ANTIGUEDAD: st.column_config.NumberColumn(
+                "Meses",
+                format="%.1f",
+            ),
+            COL_ROTACION: st.column_config.NumberColumn(
+                "Rotación",
+                format="%.2f",
+            ),
+        },
+    )
+
+
+# ============================================================
+# PÁGINA 4 — DETALLE
+# ============================================================
+
+elif pagina == "📋 Detalle":
+
+    st.markdown(
+        '<div class="section-title">Detalle del inventario</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="section-subtitle">'
+        'Explora los registros incluidos en el análisis y descarga el resultado.'
+        '</div>',
+        unsafe_allow_html=True,
     )
 
     d1, d2, d3 = st.columns(3)
 
-    with d1:
+    d1.metric(
+        "Registros",
+        formato_numero(len(df_filtrado)),
+    )
 
-        st.metric(
-            "🧾 Artículos",
-            formato_entero(
-                detalle_articulos
-            )
-        )
+    d2.metric(
+        "Valor",
+        formato_moneda(valor_total),
+    )
 
-    with d2:
-
-        st.metric(
-            "📦 Stock",
-            formato_numero(
-                detalle_stock
-            )
-        )
-
-    with d3:
-
-        st.metric(
-            "💰 Valor",
-            formato_moneda(
-                detalle_valor
-            )
-        )
+    d3.metric(
+        "Stock",
+        formato_numero(stock_total),
+    )
 
     st.write("")
 
-    # ========================================================
-    # TOP ARTÍCULOS
-    # ========================================================
-
-    if (
-        COL_COSTE in df_filtrado.columns
-        and "Articulo" in df_filtrado.columns
-    ):
-
-        top_articulos = (
-
-            df_filtrado
-
-            .groupby(
-                [
-                    "Articulo",
-                    "Bodega",
-                    "AREA"
-                ],
-                as_index=False
-            )
-
-            .agg(
-
-                Valor=(
-                    COL_COSTE,
-                    "sum"
-                ),
-
-                Stock=(
-                    COL_STOCK,
-                    "sum"
-                ),
-
-                Rotacion=(
-                    COL_ROTACION,
-                    "mean"
-                ),
-
-                Dias=(
-                    COL_DIAS,
-                    "mean"
-                )
-            )
-
-            .sort_values(
-                "Valor",
-                ascending=False
-            )
-
-            .head(15)
-        )
-
-        top_total = top_articulos["Valor"].sum()
-
-        top_articulos["Participacion"] = (
-
-            top_articulos["Valor"]
-            / detalle_valor
-            * 100
-
-            if detalle_valor != 0
-
-            else 0
-        )
-
-        st.subheader(
-            "Top 15 artículos por valor"
-        )
-
-        st.caption(
-            "Los colores representan el área asociada a cada artículo."
-        )
-
-        fig_top = px.bar(
-
-            top_articulos,
-
-            x="Valor",
-
-            y="Articulo",
-
-            color="AREA",
-
-            orientation="h",
-
-            color_discrete_map=COLORES_AREA,
-
-            custom_data=[
-                "Bodega",
-                "AREA",
-                "Stock",
-                "Participacion",
-                "Rotacion",
-                "Dias"
-            ],
-
-            title="Top 15 artículos por valor de inventario"
-        )
-
-        fig_top.update_traces(
-
-            hovertemplate=
-            "<b>%{y}</b><br>"
-            "Área: %{customdata[1]}<br>"
-            "Bodega: %{customdata[0]}<br>"
-            "Valor: %{x:$,.0f}<br>"
-            "Stock: %{customdata[2]:,.0f}<br>"
-            "Participación: %{customdata[3]:.1f}%<br>"
-            "Rotación: %{customdata[4]:.2f}<br>"
-            "Días: %{customdata[5]:.1f}"
-            "<extra></extra>"
-        )
-
-        fig_top.update_layout(
-            xaxis_title="Valor inventario",
-            yaxis_title="",
-            showlegend=True
-        )
-
-        configurar_figura(
-            fig_top,
-            altura=620
-        )
-
-        st.plotly_chart(
-            fig_top,
-            use_container_width=True
-        )
-
-    # ========================================================
-    # TABLA DETALLE
-    # ========================================================
-
-    st.subheader(
-        "Detalle"
-    )
-
-    st.caption(
-        "Información detallada de los registros seleccionados."
-    )
-
-    columnas_detalle = [
-
+    columnas_mostrar = [
+        COL_ARTICULO,
+        COL_BODEGA,
         "AREA",
-        "Bodega",
-        "Codigo Articulo",
-        "Articulo",
         COL_STOCK,
         COL_COSTE,
+        "VALOR_INVENTARIO",
         COL_ROTACION,
         COL_DIAS,
-        COL_ANTIGUEDAD
+        COL_ANTIGUEDAD,
+        "ANTIGUEDAD_CATEGORIA",
+        "ENTRADAS_ANUALES",
+        "SALIDAS_ANUALES",
+        "RIESGO",
     ]
 
-    columnas_disponibles = [
-
-        columna
-
-        for columna
-        in columnas_detalle
-
-        if columna in df_filtrado.columns
+    columnas_mostrar = [
+        c for c in columnas_mostrar
+        if c in df_filtrado.columns
     ]
 
-    df_detalle = df_filtrado[
-        columnas_disponibles
-    ].copy()
+    tabla = df_filtrado[columnas_mostrar].copy()
 
     st.dataframe(
-
-        df_detalle,
-
+        tabla,
         use_container_width=True,
-
-        hide_index=True
+        hide_index=True,
+        height=560,
+        column_config={
+            COL_STOCK: st.column_config.NumberColumn(
+                "Stock",
+                format="%,.0f",
+            ),
+            COL_COSTE: st.column_config.NumberColumn(
+                "Costo promedio",
+                format="$%,.0f",
+            ),
+            "VALOR_INVENTARIO": st.column_config.NumberColumn(
+                "Valor inventario",
+                format="$%,.0f",
+            ),
+            COL_ROTACION: st.column_config.NumberColumn(
+                "Rotación",
+                format="%.2f",
+            ),
+            COL_DIAS: st.column_config.NumberColumn(
+                "Días",
+                format="%.0f",
+            ),
+            COL_ANTIGUEDAD: st.column_config.NumberColumn(
+                "Meses",
+                format="%.1f",
+            ),
+            "ENTRADAS_ANUALES": st.column_config.NumberColumn(
+                "Entradas 12 meses",
+                format="%,.0f",
+            ),
+            "SALIDAS_ANUALES": st.column_config.NumberColumn(
+                "Salidas 12 meses",
+                format="%,.0f",
+            ),
+        },
     )
 
-    # ========================================================
-    # DESCARGA
-    # ========================================================
+    st.write("")
 
-    csv = df_detalle.to_csv(
+    # --------------------------------------------------------
+    # DESCARGA
+    # --------------------------------------------------------
+
+    csv = df_filtrado.to_csv(
         index=False,
-        encoding="utf-8-sig"
+        encoding="utf-8-sig",
     )
 
     st.download_button(
-
-        label="⬇️ Descargar detalle en CSV",
-
+        label="⬇️ Descargar información filtrada",
         data=csv,
-
-        file_name="detalle_inventarios_aldc.csv",
-
-        mime="text/csv"
+        file_name="inventarios_aldc_filtrado.csv",
+        mime="text/csv",
+        use_container_width=False,
     )
-
-
-# ============================================================
-# PIE DE PÁGINA
-# ============================================================
-
-st.divider()
-
-st.caption(
-    "Inventarios ALDC  |  "
-    "Herramienta de análisis y seguimiento de inventarios  |  "
-    "Área Limpia D.C."
-)
