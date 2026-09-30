@@ -514,12 +514,33 @@ if area_seleccionada != "Todas":
     ]
 
 
-bodegas = sorted(
+# Ordenar las bodegas según el orden numérico definido en MAPA_BODEGAS
+orden_bodegas = list(MAPA_BODEGAS.keys())
+
+bodegas_existentes = (
     df_area["Bodega"]
     .dropna()
     .astype(str)
+    .str.strip()
     .unique()
     .tolist()
+)
+
+bodegas = [
+    bodega
+    for bodega in orden_bodegas
+    if bodega in bodegas_existentes
+]
+
+# Por si aparece alguna bodega en el Excel que no esté en MAPA_BODEGAS
+bodegas_no_mapeadas = [
+    bodega
+    for bodega in bodegas_existentes
+    if bodega not in orden_bodegas
+]
+
+bodegas.extend(
+    sorted(bodegas_no_mapeadas)
 )
 
 bodegas_opciones = ["Todas"] + bodegas
@@ -531,7 +552,6 @@ with col2:
         "Bodega",
         bodegas_opciones
     )
-
 
 # ============================================================
 # FILTRO 3 - ARTÍCULO
