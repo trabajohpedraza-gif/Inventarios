@@ -238,7 +238,7 @@ MAPA_BODEGAS = {
 
     "[44] - OBSOLETOS": "Sin asignar",
 
-    "[46] - GESTIÓN DE CALIDAD": "Calidad",
+    "[46] - GESTIÓN DE CALIDAD": "RRHH",
 
     "[16] - INSUMOS RRHH Y SST": "RRHH",
 
@@ -339,26 +339,38 @@ with st.sidebar:
     # LOGO
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="logo-container">
+LOGO_ALDC = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
 
-            <div class="logo-icon">
-                📦
-            </div>
+st.image(
+    LOGO_ALDC,
+    width=150
+)
 
-            <div class="logo-title">
-                Inventarios ALDC
-            </div>
-
-            <div class="logo-subtitle">
-                Análisis de inventarios
-            </div>
-
+st.markdown(
+    """
+    <div style="
+        text-align: center;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    ">
+        <div style="
+            font-size: 20px;
+            font-weight: 700;
+            color: #003B7A;
+        ">
+            Inventarios ALDC
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+
+        <div style="
+            font-size: 12px;
+            color: #6B7280;
+        ">
+            Análisis de inventarios
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
     # ========================================================
@@ -370,11 +382,11 @@ with st.sidebar:
     pagina = st.radio(
         "Navegación",
         [
-            "Dashboard",
-            "Inventarios",
-            "Análisis",
-            "Alertas",
-            "Detalle"
+            "📊Dashboard",
+            "📦Inventarios",
+            "📈Análisis",
+            "⚠️Alertas",
+            "📋Detalle"
         ],
         label_visibility="collapsed"
     )
@@ -572,123 +584,75 @@ if pagina == "Dashboard":
     )
 
 
-    # ========================================================
-    # KPIs
-    # ========================================================
+# ========================================================
+# KPIs
+# ========================================================
 
-    stock_total = (
-        df_filtrado[COL_STOCK].sum()
-        if COL_STOCK in df_filtrado.columns
-        else 0
+stock_total = (
+    df_filtrado[COL_STOCK].sum()
+    if COL_STOCK in df_filtrado.columns
+    else 0
+)
+
+coste_inventario = (
+    df_filtrado[COL_COSTE].sum()
+    if COL_COSTE in df_filtrado.columns
+    else 0
+)
+
+rotacion = (
+    df_filtrado[COL_ROTACION].mean()
+    if COL_ROTACION in df_filtrado.columns
+    else 0
+)
+
+dias = (
+    df_filtrado[COL_DIAS].mean()
+    if COL_DIAS in df_filtrado.columns
+    else 0
+)
+
+
+# ========================================================
+# MOSTRAR KPIs
+# ========================================================
+
+k1, k2, k3, k4 = st.columns(4)
+
+
+with k1:
+
+    st.metric(
+        label="📦 Stock total",
+        value=formato_numero(stock_total)
     )
 
 
-    coste_inventario = (
-        df_filtrado[COL_COSTE].sum()
-        if COL_COSTE in df_filtrado.columns
-        else 0
+with k2:
+
+    st.metric(
+        label="💰 Coste inventario",
+        value=formato_moneda(coste_inventario)
     )
 
 
-    rotacion = (
-        df_filtrado[COL_ROTACION].mean()
-        if COL_ROTACION in df_filtrado.columns
-        else 0
+with k3:
+
+    st.metric(
+        label="🔄 Rotación",
+        value=formato_numero(rotacion)
     )
 
 
-    dias = (
-        df_filtrado[COL_DIAS].mean()
-        if COL_DIAS in df_filtrado.columns
-        else 0
+with k4:
+
+    st.metric(
+        label="📅 Días",
+        value=formato_numero(dias)
     )
 
 
-    k1, k2, k3, k4 = st.columns(4)
-
-
-    with k1:
-
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-
-                <div class="kpi-title">
-                    Stock total
-                </div>
-
-                <div class="kpi-value">
-                    {formato_numero(stock_total)}
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-    with k2:
-
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-
-                <div class="kpi-title">
-                    Coste inventario
-                </div>
-
-                <div class="kpi-value">
-                    {formato_moneda(coste_inventario)}
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-    with k3:
-
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-
-                <div class="kpi-title">
-                    Rotación
-                </div>
-
-                <div class="kpi-value">
-                    {formato_numero(rotacion)}
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-    with k4:
-
-        st.markdown(
-            f"""
-            <div class="kpi-card">
-
-                <div class="kpi-title">
-                    Días
-                </div>
-
-                <div class="kpi-value">
-                    {formato_numero(dias)}
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
+st.markdown("<br>", unsafe_allow_html=True)
 
     # ========================================================
     # GRÁFICO 1 - STOCK POR ANTIGÜEDAD
