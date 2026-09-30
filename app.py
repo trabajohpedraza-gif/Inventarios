@@ -522,7 +522,7 @@ st.markdown("---")
 # PÁGINA: DASHBOARD
 # ============================================================
 
-if pagina == "Dashboard":
+if pagina == "📊Dashboard":
 
     st.title("Dashboard de Inventarios")
 
@@ -531,82 +531,92 @@ if pagina == "Dashboard":
     )
 
 
-# KPIs
+    # ========================================================
+    # KPIs
+    # ========================================================
 
-stock_total = (
-    df_filtrado[COL_STOCK].sum()
-    if COL_STOCK in df_filtrado.columns
-    else 0
-)
+    stock_total = (
+        df_filtrado[COL_STOCK].sum()
+        if COL_STOCK in df_filtrado.columns
+        else 0
+    )
 
-coste_inventario = (
-    df_filtrado[COL_COSTE].sum()
-    if COL_COSTE in df_filtrado.columns
-    else 0
-)
+    coste_inventario = (
+        df_filtrado[COL_COSTE].sum()
+        if COL_COSTE in df_filtrado.columns
+        else 0
+    )
 
-rotacion = (
-    df_filtrado[COL_ROTACION].mean()
-    if COL_ROTACION in df_filtrado.columns
-    else 0
-)
+    rotacion = (
+        df_filtrado[COL_ROTACION].mean()
+        if COL_ROTACION in df_filtrado.columns
+        else 0
+    )
 
-dias = (
-    df_filtrado[COL_DIAS].mean()
-    if COL_DIAS in df_filtrado.columns
-    else 0
-)
-
-
-# MOSTRAR KPIs
-
-k1, k2, k3, k4 = st.columns(4)
-
-
-with k1:
-
-    st.metric(
-        label="📦 Stock total",
-        value=formato_numero(stock_total)
+    dias = (
+        df_filtrado[COL_DIAS].mean()
+        if COL_DIAS in df_filtrado.columns
+        else 0
     )
 
 
-with k2:
+    # ========================================================
+    # MOSTRAR KPIs
+    # ========================================================
 
-    st.metric(
-        label="💰 Coste inventario",
-        value=formato_moneda(coste_inventario)
-    )
-
-
-with k3:
-
-    st.metric(
-        label="🔄 Rotación",
-        value=formato_numero(rotacion)
-    )
+    k1, k2, k3, k4 = st.columns(4)
 
 
-with k4:
+    with k1:
 
-    st.metric(
-        label="📅 Días",
-        value=formato_numero(dias)
-    )
+        st.metric(
+            label="📦 Stock total",
+            value=formato_numero(stock_total)
+        )
 
 
-st.markdown("<br>", unsafe_allow_html=True)
+    with k2:
 
+        st.metric(
+            label="💰 Coste inventario",
+            value=formato_moneda(coste_inventario)
+        )
+
+
+    with k3:
+
+        st.metric(
+            label="🔄 Rotación",
+            value=formato_numero(rotacion)
+        )
+
+
+    with k4:
+
+        st.metric(
+            label="📅 Días",
+            value=formato_numero(dias)
+        )
+
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+
+    # ========================================================
     # GRÁFICO 1 - STOCK POR ANTIGÜEDAD
+    # ========================================================
+    #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
     # Actualmente muestra:
     # MESES vs STOCK TOTAL
+    # ========================================================
 
-       st.markdown(
+    st.markdown(
         "<div class='section-title'>Stock por antigüedad</div>",
         unsafe_allow_html=True
     )
+
 
     if COL_ANTIGUEDAD in df_filtrado.columns:
 
@@ -619,6 +629,7 @@ st.markdown("<br>", unsafe_allow_html=True)
             .sum()
         )
 
+
         fig_edad = px.bar(
             df_edad,
             x=COL_ANTIGUEDAD,
@@ -627,6 +638,7 @@ st.markdown("<br>", unsafe_allow_html=True)
             title="Stock total según antigüedad"
         )
 
+
         fig_edad.update_layout(
             xaxis_title="Antigüedad",
             yaxis_title="Stock",
@@ -634,16 +646,19 @@ st.markdown("<br>", unsafe_allow_html=True)
             paper_bgcolor="white"
         )
 
+
         st.plotly_chart(
             fig_edad,
             use_container_width=True
         )
 
 
+    # ========================================================
     # GRÁFICO 2 - VALOR DEL INVENTARIO POR ANTIGÜEDAD
+    # ========================================================
     #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
-    #
+    # ========================================================
 
     st.markdown(
         "<div class='section-title'>Valor del inventario por antigüedad</div>",
@@ -658,9 +673,13 @@ st.markdown("<br>", unsafe_allow_html=True)
 
         df_valor_edad = (
             df_filtrado
-            .groupby(COL_ANTIGUEDAD, as_index=False)[COL_COSTE]
+            .groupby(
+                COL_ANTIGUEDAD,
+                as_index=False
+            )[COL_COSTE]
             .sum()
         )
+
 
         fig_valor_edad = px.bar(
             df_valor_edad,
@@ -670,6 +689,7 @@ st.markdown("<br>", unsafe_allow_html=True)
             title="Valor del inventario según antigüedad"
         )
 
+
         fig_valor_edad.update_layout(
             xaxis_title="Antigüedad",
             yaxis_title="Valor",
@@ -677,16 +697,19 @@ st.markdown("<br>", unsafe_allow_html=True)
             paper_bgcolor="white"
         )
 
+
         st.plotly_chart(
             fig_valor_edad,
             use_container_width=True
         )
 
 
+    # ========================================================
     # GRÁFICO 3 - INVENTARIO POR BODEGA
     # ========================================================
-    # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
+    # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
+    # ========================================================
 
     st.markdown(
         "<div class='section-title'>Inventario por bodega</div>",
@@ -698,12 +721,16 @@ st.markdown("<br>", unsafe_allow_html=True)
 
         df_bodega_grafico = (
             df_filtrado
-            .groupby("Bodega", as_index=False)
+            .groupby(
+                "Bodega",
+                as_index=False
+            )
             .agg(
                 Stock=(COL_STOCK, "sum"),
                 Coste=(COL_COSTE, "sum")
             )
         )
+
 
         fig_bodega = px.bar(
             df_bodega_grafico,
@@ -712,6 +739,7 @@ st.markdown("<br>", unsafe_allow_html=True)
             title="Stock total por bodega"
         )
 
+
         fig_bodega.update_layout(
             xaxis_title="Bodega",
             yaxis_title="Stock",
@@ -719,17 +747,16 @@ st.markdown("<br>", unsafe_allow_html=True)
             paper_bgcolor="white"
         )
 
+
         st.plotly_chart(
             fig_bodega,
             use_container_width=True
         )
-
-
 # ============================================================
 # PÁGINA: INVENTARIOS
 # ============================================================
 
-elif pagina == "Inventarios":
+elif pagina == "📦Inventarios":
 
     st.title("Inventarios")
 
@@ -833,7 +860,7 @@ elif pagina == "Inventarios":
 # PÁGINA: ANÁLISIS
 # ============================================================
 
-elif pagina == "Análisis":
+elif pagina == "📈Análisis":
 
     st.title("Análisis")
 
@@ -1187,7 +1214,7 @@ elif pagina == "Análisis":
 # PÁGINA: ALERTAS
 # ============================================================
 
-elif pagina == "Alertas":
+elif pagina == "⚠️Alertas":
 
     st.title("Alertas")
 
@@ -1328,7 +1355,7 @@ elif pagina == "Alertas":
 # PÁGINA: DETALLE
 # ============================================================
 
-elif pagina == "Detalle":
+elif pagina == "📋Detalle":
 
     st.title("Detalle del inventario")
 
