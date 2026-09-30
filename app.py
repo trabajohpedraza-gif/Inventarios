@@ -190,31 +190,31 @@ MAPA_BODEGAS = {
 
     "[1] - REPUESTOS": "Mantenimiento",
 
-    "[13] - INSUMOS OPERATIVOS": "Operaciones",
-
-    "[15] - INSUMOS REP LOCATIVAS": "Mantenimiento",
-
     "[2] - LUBRICANTES": "Mantenimiento",
 
-    "[7] - HERRAMIENTAS": "Mantenimiento",
+    "[3] - COMBUSTIBLES": "Operaciones",
+
+    "[4] - DOTACIONES": "RRHH",
 
     "[5] - INSUMOS DE MANTENIMIENTO": "Mantenimiento",
 
-    "[4] - DOTACIONES": "RRHH",
+    "[7] - HERRAMIENTAS": "Mantenimiento",
 
     "[8] - LLANTAS": "Mantenimiento",
 
     "[9] - IMPORTACIONES": "Mantenimiento",
 
-    "[44] - OBSOLETOS": "Sin asignar",
+    "[13] - INSUMOS OPERATIVOS": "Operaciones",
 
-    "[46] - GESTIÓN DE CALIDAD": "Calidad",
+    "[14] - INSUMOS REP. CONTENEDORES": "Mantenimiento",
+
+    "[15] - INSUMOS REP LOCATIVAS": "Mantenimiento",
 
     "[16] - INSUMOS RRHH Y SST": "RRHH",
 
-    "[3] - COMBUSTIBLES": "Operaciones",
+    "[44] - OBSOLETOS": "Sin asignar",
 
-    "[14] - INSUMOS REP. CONTENEDORES": "Mantenimiento"
+    "[46] - GESTIÓN DE CALIDAD": "RRHH"
 }
 
 
@@ -229,8 +229,6 @@ COLORES_AREA = {
     "Operaciones": "#F58220",
 
     "RRHH": "#16A34A",
-
-    "Calidad": "#7C3AED",
 
     "Sin asignar": "#6B7280"
 }
