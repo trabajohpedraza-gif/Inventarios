@@ -787,19 +787,53 @@ if pagina == "📊Dashboard":
     #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     # ========================================================
+# ============================================================
+# INVENTARIO POR BODEGA Y ÁREA
+# ============================================================
 
     st.markdown(
-        "<div class='section-title'>Inventario por bodega</div>",
+        """
+        <div style="
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: #003B7A;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        ">
+            Inventario por bodega y área
+        </div>
+        """,
         unsafe_allow_html=True
     )
-
-
-    if "Bodega" in df_filtrado.columns:
-
+    
+    
+    if (
+        "Bodega" in df_filtrado.columns
+        and "AREA" in df_filtrado.columns
+    ):
+    
+        # --------------------------------------------------------
+        # ORDEN DE LAS ÁREAS
+        # --------------------------------------------------------
+    
+        ORDEN_AREAS = [
+            "Mantenimiento",
+            "Operaciones",
+            "RRHH",
+            "Calidad",
+            "Sin asignar"
+        ]
+    
+    
+        # --------------------------------------------------------
+        # AGRUPAR INFORMACIÓN
+        # --------------------------------------------------------
+    
         df_bodega_grafico = (
             df_filtrado
             .groupby(
-                "Bodega",
+                ["AREA", "Bodega"],
                 as_index=False
             )
             .agg(
@@ -807,24 +841,170 @@ if pagina == "📊Dashboard":
                 Coste=(COL_COSTE, "sum")
             )
         )
-
-
+    
+    
+        # --------------------------------------------------------
+        # OBTENER ANTIGÜEDADES POR BODEGA
+        # --------------------------------------------------------
+    
+        if COL_ANTIGUEDAD in df_filtrado.columns:
+    
+            df_antiguedad_bodega = (
+                df_filtrado
+                .groupby(
+                    ["AREA", "Bodega"]
+                )[COL_ANTIGUEDAD]
+                .apply(
+                    lambda x: ", ".join(
+                        sorted(
+                            x.dropna()
+                            .astype(str)
+                            .unique()
+                        )
+                    )
+                )
+                .reset_index(name="Antiguedad")
+            )
+    
+            df_bodega_grafico = df_bodega_grafico.merge(
+                df_antiguedad_bodega,
+                on=["AREA", "Bodega"],
+                how="left"
+            )
+    
+        else:
+    
+            df_bodega_grafico["Antiguedad"] = "No disponible"
+    
+    
+        # --------------------------------------------------------
+        # ORDENAR ÁREA
+        # --------------------------------------------------------
+    
+        df_bodega_grafico["AREA"] = pd.Categorical(
+            df_bodega_grafico["AREA"],
+            categories=ORDEN_AREAS,
+            ordered=True
+        )
+    
+    
+        # --------------------------------------------------------
+        # ORDENAR BODEGAS
+        # --------------------------------------------------------
+    
+        df_bodega_grafico = (
+            df_bodega_grafico
+            .sort_values(
+                ["AREA", "Bodega"]
+            )
+            .reset_index(drop=True)
+        )
+    
+    
+        # --------------------------------------------------------
+        # CREAR GRÁFICO
+        # --------------------------------------------------------
+    
         fig_bodega = px.bar(
             df_bodega_grafico,
             x="Bodega",
             y="Stock",
-            title="Stock total por bodega"
+            color="AREA",
+            color_discrete_map=COLORES_AREA,
+    
+            custom_data=[
+                "AREA",
+                "Bodega",
+                "Stock",
+                "Coste",
+                "Antiguedad"
+            ]
         )
-
-
+    
+    
+        # --------------------------------------------------------
+        # HOVER
+        # --------------------------------------------------------
+    
+        fig_bodega.update_traces(
+            hovertemplate=
+                "<b>%{customdata[1]}</b><br>"
+                "Área: %{customdata[0]}<br>"
+                "Cantidad: %{customdata[2]:,.0f}<br>"
+                "Valor inventario: $%{customdata[3]:,.0f}<br>"
+                "Antigüedad: %{customdata[4]}"
+                "<extra></extra>"
+        )
+    
+    
+        # --------------------------------------------------------
+        # DISEÑO
+        # --------------------------------------------------------
+    
         fig_bodega.update_layout(
+    
+            # Barras una al lado de otra
+            barmode="group",
+    
+            # Título
+            title=dict(
+                text="Stock total por bodega y área",
+                x=0.5,
+                xanchor="center",
+                font=dict(
+                    size=20,
+                    color="#003B7A"
+                )
+            ),
+    
+            # Ejes
             xaxis_title="Bodega",
-            yaxis_title="Stock",
+            yaxis_title="Cantidad",
+    
+            # Fondo
             plot_bgcolor="white",
-            paper_bgcolor="white"
+            paper_bgcolor="white",
+    
+            # Leyenda
+            legend_title_text="Área",
+    
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="center",
+                x=0.5
+            ),
+    
+            # Separación
+            bargap=0.25,
+    
+            # Eje X
+            xaxis=dict(
+                tickangle=-45
+            ),
+    
+            # Eje Y
+            yaxis=dict(
+                tickformat=",.0f",
+                gridcolor="#E5E7EB",
+                zerolinecolor="#E5E7EB"
+            ),
+    
+            # Márgenes
+            margin=dict(
+                l=70,
+                r=30,
+                t=100,
+                b=130
+            )
         )
-
-
+    
+    
+        # --------------------------------------------------------
+        # MOSTRAR
+        # --------------------------------------------------------
+    
         st.plotly_chart(
             fig_bodega,
             use_container_width=True
