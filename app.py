@@ -997,15 +997,7 @@ if pagina == "📊Dashboard":
 
             barmode="stack",
 
-            title=dict(
-                text="Valor del inventario por bodega, área y antigüedad",
-                x=0.5,
-                xanchor="center",
-                font=dict(
-                    size=20,
-                    color="#003B7A"
-                )
-            ),
+
 
             xaxis_title="Bodega",
 
