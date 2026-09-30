@@ -895,7 +895,8 @@ if pagina == "📊Dashboard":
         df_bodega_grafico = (
             df_bodega_grafico
             .sort_values(
-                ["AREA", "Bodega"]
+                ["AREA", "Coste"],
+                ascending=[True, False]
             )
             .reset_index(drop=True)
         )
@@ -930,8 +931,8 @@ if pagina == "📊Dashboard":
             hovertemplate=
                 "<b>%{customdata[1]}</b><br>"
                 "Área: %{customdata[0]}<br>"
-                "Cantidad: %{customdata[2]:,.0f}<br>"
                 "Valor inventario: $%{customdata[3]:,.0f}<br>"
+                "Cantidad: %{customdata[2]:,.0f}<br>"
                 "Antigüedad: %{customdata[4]}"
                 "<extra></extra>"
         )
@@ -942,13 +943,11 @@ if pagina == "📊Dashboard":
         # --------------------------------------------------------
     
         fig_bodega.update_layout(
-    
-            # Barras una al lado de otra
+        
             barmode="group",
-    
-            # Título
+        
             title=dict(
-                text="Stock total por bodega y área",
+                text="Valor del inventario por bodega y área",
                 x=0.5,
                 xanchor="center",
                 font=dict(
@@ -956,18 +955,15 @@ if pagina == "📊Dashboard":
                     color="#003B7A"
                 )
             ),
-    
-            # Ejes
+        
             xaxis_title="Bodega",
-            yaxis_title="Cantidad",
-    
-            # Fondo
+            yaxis_title="Valor del inventario ($)",
+        
             plot_bgcolor="white",
             paper_bgcolor="white",
-    
-            # Leyenda
+        
             legend_title_text="Área",
-    
+        
             legend=dict(
                 orientation="h",
                 yanchor="bottom",
@@ -975,25 +971,22 @@ if pagina == "📊Dashboard":
                 xanchor="center",
                 x=0.5
             ),
-    
-            # Separación
+        
             bargap=0.25,
-    
-            # Eje X
+        
             xaxis=dict(
                 tickangle=-45
             ),
-    
-            # Eje Y
+        
             yaxis=dict(
+                tickprefix="$ ",
                 tickformat=",.0f",
                 gridcolor="#E5E7EB",
                 zerolinecolor="#E5E7EB"
             ),
-    
-            # Márgenes
+        
             margin=dict(
-                l=70,
+                l=80,
                 r=30,
                 t=100,
                 b=130
