@@ -598,7 +598,6 @@ if COL_ANTIGUEDAD in df.columns:
         if edad in antiguedades_existentes
     ]
 
-    # Por si el Excel contiene algún valor adicional
     antiguedades += [
         edad
         for edad in sorted(antiguedades_existentes)
@@ -851,6 +850,7 @@ if pagina == "📊Dashboard":
             use_container_width=True
         )
 
+
     # ========================================================
     # GRÁFICO 2
     # INVENTARIO POR BODEGA, ÁREA Y ANTIGÜEDAD
@@ -918,7 +918,6 @@ if pagina == "📊Dashboard":
 
         # ----------------------------------------------------
         # ORDENAR BODEGAS
-        # POR ÁREA Y VALOR DESCENDENTE
         # ----------------------------------------------------
 
         orden_bodegas_df = (
@@ -957,8 +956,7 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # IDENTIFICADOR INTERNO
-        # ÁREA + ANTIGÜEDAD
+        # IDENTIFICADOR ÁREA + ANTIGÜEDAD
         # ----------------------------------------------------
 
         df_bodega_grafico["AREA_ANTIGUEDAD"] = (
@@ -968,7 +966,7 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # PALETA COMPLETA
+        # PALETA
         # ----------------------------------------------------
 
         PALETA_GRAFICO = {}
@@ -1018,7 +1016,7 @@ if pagina == "📊Dashboard":
         )
 
         # ----------------------------------------------------
-        # OCULTAR LEYENDA DE PLOTLY
+        # CONFIGURACIÓN DEL GRÁFICO
         # ----------------------------------------------------
 
         fig_bodega.update_layout(
@@ -1059,25 +1057,20 @@ if pagina == "📊Dashboard":
         )
 
         # ====================================================
-        # ÁREAS REALMENTE PRESENTES
+        # ÁREAS PRESENTES
         # ====================================================
 
         areas_presentes = [
-
             area
-
             for area in ORDEN_AREAS
-
-            if area in
-            df_bodega_grafico["AREA_TEXTO"]
-            .unique()
+            if area in df_bodega_grafico["AREA_TEXTO"].unique()
         ]
 
         # ====================================================
-        # LEYENDA GENERAL DE ÁREAS
+        # LEYENDA DE ÁREAS
         # ====================================================
 
-        elementos_leyenda = ""
+        elementos_leyenda = []
 
         for area in areas_presentes:
 
@@ -1086,77 +1079,125 @@ if pagina == "📊Dashboard":
                 "#6B7280"
             )
 
-            elementos_leyenda += f"""
-                <div style="
-                    display:flex;
-                    align-items:center;
-                    gap:6px;
-                    white-space:nowrap;
-                ">
+            elemento = (
+                '<span style="'
+                'display:inline-flex;'
+                'align-items:center;'
+                'margin-right:20px;'
+                'color:#374151;'
+                'white-space:nowrap;'
+                '">'
+                '<span style="'
+                'display:inline-block;'
+                'width:12px;'
+                'height:12px;'
+                'border-radius:3px;'
+                f'background-color:{color};'
+                'margin-right:6px;'
+                '"></span>'
+                f'{area}'
+                '</span>'
+            )
 
-                    <span style="
-                        width:13px;
-                        height:13px;
-                        border-radius:3px;
-                        background:{color};
-                        display:inline-block;
-                    "></span>
+            elementos_leyenda.append(elemento)
 
-                    <span>
-                        {area}
-                    </span>
-
-                </div>
-            """
+        leyenda_areas = "".join(
+            elementos_leyenda
+        )
 
         # ====================================================
-        # MOSTRAR LEYENDA
+        # LEYENDA DE ANTIGÜEDAD
+        # ====================================================
+
+        elementos_antiguedad = []
+
+        for antiguedad in ORDEN_ANTIGUEDAD:
+
+            color = COLORES_AREA_ANTIGUEDAD[
+                "Mantenimiento"
+            ][antiguedad]
+
+            if antiguedad == "Entre 0 y 3 meses":
+                nombre = "0–3 meses"
+
+            elif antiguedad == "Entre 4 y 6 meses":
+                nombre = "4–6 meses"
+
+            elif antiguedad == "Entre 7 y 12 meses":
+                nombre = "7–12 meses"
+
+            else:
+                nombre = "Mayor a 12 meses"
+
+            elemento = (
+                '<span style="'
+                'display:inline-flex;'
+                'align-items:center;'
+                'margin-right:15px;'
+                'color:#6B7280;'
+                'white-space:nowrap;'
+                '">'
+                '<span style="'
+                'display:inline-block;'
+                'width:12px;'
+                'height:12px;'
+                'border-radius:3px;'
+                f'background-color:{color};'
+                'margin-right:5px;'
+                '"></span>'
+                f'{nombre}'
+                '</span>'
+            )
+
+            elementos_antiguedad.append(elemento)
+
+        leyenda_antiguedad = "".join(
+            elementos_antiguedad
+        )
+
+        # ====================================================
+        # MOSTRAR LEYENDAS
         # ====================================================
 
         st.markdown(
             f"""
             <div style="
-                display:flex;
-                justify-content:center;
-                align-items:center;
-                flex-wrap:wrap;
-                gap:22px;
-                margin-top:0px;
+                text-align:center;
+                margin-top:5px;
                 margin-bottom:8px;
                 font-size:13px;
                 color:#374151;
             ">
-
-                <div style="
+                <span style="
                     font-weight:700;
                     color:#003B7A;
+                    margin-right:10px;
                 ">
                     Área:
-                </div>
-
-                {elementos_leyenda}
-
+                </span>
+                {leyenda_areas}
             </div>
+            """,
+            unsafe_allow_html=True
+        )
 
+        st.markdown(
+            f"""
             <div style="
                 text-align:center;
+                margin-top:0px;
+                margin-bottom:15px;
                 font-size:12px;
                 color:#6B7280;
-                margin-bottom:10px;
             ">
-
-                <b style="color:#003B7A;">
+                <span style="
+                    font-weight:700;
+                    color:#003B7A;
+                    margin-right:8px;
+                ">
                     Antigüedad:
-                </b>
-
-                <span style="color:#6B7280;">
-                    claro → oscuro
                 </span>
-
-                &nbsp;|&nbsp;
-
-                0–3 meses → 4–6 meses → 7–12 meses → Mayor a 12 meses
-
+                {leyenda_antiguedad}
             </div>
             """,
             unsafe_allow_html=True
@@ -1183,10 +1224,6 @@ elif pagina == "📦Inventarios":
     st.caption(
         "Comportamiento del inventario por bodega y artículo."
     )
-
-    # ========================================================
-    # INVENTARIO POR BODEGA
-    # ========================================================
 
     if "Bodega" in df_filtrado.columns:
 
@@ -1291,10 +1328,6 @@ elif pagina == "📈Análisis":
         "Análisis del movimiento y rotación del inventario."
     )
 
-    # ========================================================
-    # MESES
-    # ========================================================
-
     MESES_NOMBRES = [
 
         "JUNIO",
@@ -1310,10 +1343,6 @@ elif pagina == "📈Análisis":
         "ABRIL",
         "MAYO"
     ]
-
-    # ========================================================
-    # COLUMNAS MENSUALES
-    # ========================================================
 
     MOVIMIENTO_MENSUAL = {
 
@@ -1425,10 +1454,6 @@ elif pagina == "📈Análisis":
             "rotacion": "ROTACION 78"
         }
     }
-
-    # ========================================================
-    # CREAR DATAFRAME MENSUAL
-    # ========================================================
 
     datos_mensuales = []
 
