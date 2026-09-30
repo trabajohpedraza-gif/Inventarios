@@ -333,45 +333,47 @@ def formato_numero(valor):
 # SIDEBAR
 # ============================================================
 
+# SIDEBAR
+# ============================================================
+
 with st.sidebar:
 
     # ========================================================
-    # LOGO
+    # LOGO ALDC
     # ========================================================
 
-LOGO_ALDC = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
+    LOGO_ALDC = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
 
-st.image(
-    LOGO_ALDC,
-    width=150
-)
+    st.image(
+        LOGO_ALDC,
+        width=150
+    )
 
-st.markdown(
-    """
-    <div style="
-        text-align: center;
-        margin-top: -10px;
-        margin-bottom: 20px;
-    ">
+    st.markdown(
+        """
         <div style="
-            font-size: 20px;
-            font-weight: 700;
-            color: #003B7A;
+            text-align: center;
+            margin-top: -10px;
+            margin-bottom: 20px;
         ">
-            Inventarios ALDC
-        </div>
+            <div style="
+                font-size: 20px;
+                font-weight: 700;
+                color: #003B7A;
+            ">
+                Inventarios ALDC
+            </div>
 
-        <div style="
-            font-size: 12px;
-            color: #6B7280;
-        ">
-            Análisis de inventarios
+            <div style="
+                font-size: 12px;
+                color: #6B7280;
+            ">
+                Análisis de inventarios
+            </div>
         </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
+        """,
+        unsafe_allow_html=True
+    )
 
     # ========================================================
     # MENÚ LATERAL
