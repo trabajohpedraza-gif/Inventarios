@@ -700,7 +700,7 @@ with st.sidebar:
     # --------------------------------------------------------
 
     if st.button(
-        "🚪 Cerrar sesión",
+        "🔓 Cerrar sesión",
         use_container_width=True
     ):
 
