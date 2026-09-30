@@ -111,17 +111,289 @@ LOGO_URL = (
 # ============================================================
 
 try:
-
     USUARIOS = dict(
         st.secrets["usuarios"]
     )
-
 except Exception:
-
     USUARIOS = {}
 
-
 TIEMPO_SESION_MINUTOS = 30
+
+
+# ============================================================
+# CSS DEL LOGIN
+# ============================================================
+
+st.markdown(
+    f"""
+    <style>
+
+    /* =====================================================
+       FONDO LOGIN
+    ===================================================== */
+
+    .login-background {{
+        min-height: 100vh;
+
+        background:
+            radial-gradient(
+                circle at 10% 20%,
+                rgba(6,75,155,.08),
+                transparent 32%
+            ),
+            radial-gradient(
+                circle at 90% 80%,
+                rgba(245,130,32,.10),
+                transparent 32%
+            ),
+            linear-gradient(
+                135deg,
+                #F4F7FA 0%,
+                #FFFFFF 50%,
+                #FFF8F2 100%
+            );
+    }}
+
+
+    /* =====================================================
+       CONTENEDOR LOGIN
+    ===================================================== */
+
+    .login-card {{
+        background:white;
+
+        border:1px solid {GRIS_BORDE};
+
+        border-radius:24px;
+
+        padding:38px 40px 32px;
+
+        box-shadow:
+            0 20px 50px rgba(15,23,42,.10);
+
+        position:relative;
+
+        overflow:hidden;
+    }}
+
+
+    /* línea superior institucional */
+
+    .login-card::before {{
+        content:"";
+
+        position:absolute;
+
+        top:0;
+        left:0;
+        right:0;
+
+        height:5px;
+
+        background:
+            linear-gradient(
+                90deg,
+                {AZUL_OSCURO} 0%,
+                {AZUL} 60%,
+                {NARANJA} 100%
+            );
+    }}
+
+
+    /* =====================================================
+       LOGO
+    ===================================================== */
+
+    .login-logo {{
+        text-align:center;
+
+        margin-top:8px;
+
+        margin-bottom:18px;
+    }}
+
+
+    /* =====================================================
+       TÍTULO
+    ===================================================== */
+
+    .login-title {{
+        text-align:center;
+
+        color:{AZUL_OSCURO};
+
+        font-size:27px;
+
+        font-weight:800;
+
+        margin-bottom:5px;
+    }}
+
+
+    .login-subtitle {{
+        text-align:center;
+
+        color:{GRIS_TEXTO};
+
+        font-size:13px;
+
+        margin-bottom:27px;
+    }}
+
+
+    /* =====================================================
+       FRANJA INFORMATIVA
+    ===================================================== */
+
+    .login-info {{
+        background:
+            linear-gradient(
+                90deg,
+                {AZUL_SUAVE},
+                #F8FBFF
+            );
+
+        border:1px solid #DCEAF8;
+
+        border-radius:12px;
+
+        padding:11px 13px;
+
+        margin-bottom:18px;
+
+        color:{AZUL_OSCURO};
+
+        font-size:11px;
+
+        line-height:1.5;
+    }}
+
+
+    .login-info-orange {{
+        color:{NARANJA};
+
+        font-weight:700;
+    }}
+
+
+    /* =====================================================
+       PIE LOGIN
+    ===================================================== */
+
+    .login-footer {{
+        text-align:center;
+
+        color:{GRIS_TEXTO};
+
+        font-size:10px;
+
+        margin-top:21px;
+
+        padding-top:16px;
+
+        border-top:1px solid {GRIS_BORDE};
+    }}
+
+
+    .login-security {{
+        display:inline-flex;
+
+        align-items:center;
+
+        gap:5px;
+
+        margin-top:6px;
+
+        color:{VERDE};
+
+        font-weight:700;
+    }}
+
+
+    /* =====================================================
+       INPUTS LOGIN
+    ===================================================== */
+
+    div[data-testid="stTextInput"] label {{
+        color:{AZUL_OSCURO} !important;
+
+        font-weight:700 !important;
+
+        font-size:12px !important;
+    }}
+
+
+    div[data-testid="stTextInput"] input {{
+        border:1px solid {GRIS_BORDE} !important;
+
+        border-radius:10px !important;
+
+        min-height:44px !important;
+
+        background:#FFFFFF !important;
+    }}
+
+
+    div[data-testid="stTextInput"] input:focus {{
+        border-color:{AZUL} !important;
+
+        box-shadow:
+            0 0 0 2px rgba(6,75,155,.10) !important;
+    }}
+
+
+    /* =====================================================
+       BOTÓN LOGIN
+    ===================================================== */
+
+    .login-card .stButton > button {{
+        margin-top:8px;
+
+        min-height:46px;
+
+        border-radius:11px;
+
+        border:0;
+
+        background:
+            linear-gradient(
+                90deg,
+                {AZUL_OSCURO},
+                {AZUL}
+            );
+
+        color:white;
+
+        font-weight:800;
+
+        font-size:14px;
+
+        box-shadow:
+            0 7px 18px rgba(6,75,155,.20);
+
+        transition:.2s;
+    }}
+
+
+    .login-card .stButton > button:hover {{
+        background:
+            linear-gradient(
+                90deg,
+                {AZUL},
+                {NARANJA}
+            );
+
+        transform:translateY(-1px);
+
+        box-shadow:
+            0 9px 22px rgba(245,130,32,.20);
+    }}
+
+
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # ============================================================
@@ -130,64 +402,98 @@ TIEMPO_SESION_MINUTOS = 30
 
 def login():
 
+    # Espacio superior
     st.markdown(
-        "<div style='height:50px;'></div>",
+        "<div style='height:55px;'></div>",
         unsafe_allow_html=True
     )
 
-    col1, col2, col3 = st.columns(
-        [1, 1.15, 1]
+    # ========================================================
+    # CONTENEDOR CENTRAL
+    # ========================================================
+
+    col_izq, col_centro, col_der = st.columns(
+        [1, 1.05, 1]
     )
 
-    with col2:
+    with col_centro:
 
         st.markdown(
-            f"""
-            <div style="
-                background:white;
-                border:1px solid {GRIS_BORDE};
-                border-radius:20px;
-                padding:32px;
-                box-shadow:0 12px 35px rgba(15,23,42,.08);
-                text-align:center;
-            ">
-            """,
+            '<div class="login-card">',
+            unsafe_allow_html=True
+        )
+
+        # ----------------------------------------------------
+        # LOGO
+        # ----------------------------------------------------
+
+        st.markdown(
+            '<div class="login-logo">',
             unsafe_allow_html=True
         )
 
         st.image(
             LOGO_URL,
-            width=220
+            width=235
         )
 
         st.markdown(
-            f"""
-            <div style="
-                font-size:26px;
-                font-weight:800;
-                color:{AZUL_OSCURO};
-                margin-top:5px;
-            ">
+            '</div>',
+            unsafe_allow_html=True
+        )
+
+        # ----------------------------------------------------
+        # TÍTULO
+        # ----------------------------------------------------
+
+        st.markdown(
+            """
+            <div class="login-title">
                 Inventarios ALDC
             </div>
 
-            <div style="
-                color:{GRIS_TEXTO};
-                font-size:13px;
-                margin-top:5px;
-                margin-bottom:20px;
-            ">
+            <div class="login-subtitle">
                 Plataforma de gestión y analítica
             </div>
             """,
             unsafe_allow_html=True
         )
 
+        # ----------------------------------------------------
+        # INFORMACIÓN
+        # ----------------------------------------------------
+
+        st.markdown(
+            f"""
+            <div class="login-info">
+
+                <strong>Acceso institucional</strong><br>
+
+                Ingresa con tus credenciales para acceder
+                al tablero de inventarios.
+
+                <span class="login-info-orange">
+                    Información protegida.
+                </span>
+
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # ----------------------------------------------------
+        # USUARIO
+        # ----------------------------------------------------
+
         usuario = st.text_input(
             "Usuario",
             placeholder="Ingrese su usuario",
             key="login_usuario"
         )
+
+        # ----------------------------------------------------
+        # CONTRASEÑA
+        # ----------------------------------------------------
 
         contraseña = st.text_input(
             "Contraseña",
@@ -196,8 +502,12 @@ def login():
             key="login_contraseña"
         )
 
+        # ----------------------------------------------------
+        # BOTÓN
+        # ----------------------------------------------------
+
         ingresar = st.button(
-            "🔐 Ingresar",
+            "🔐  Ingresar a la plataforma",
             use_container_width=True
         )
 
@@ -216,6 +526,17 @@ def login():
                     datetime.now()
                 )
 
+                # Limpiar campos
+                st.session_state.pop(
+                    "login_usuario",
+                    None
+                )
+
+                st.session_state.pop(
+                    "login_contraseña",
+                    None
+                )
+
                 st.rerun()
 
             else:
@@ -224,21 +545,29 @@ def login():
                     "Usuario o contraseña incorrectos."
                 )
 
+        # ----------------------------------------------------
+        # PIE
+        # ----------------------------------------------------
+
         st.markdown(
             f"""
-            <div style="
-                color:{GRIS_TEXTO};
-                font-size:11px;
-                margin-top:18px;
-            ">
-                Acceso protegido
+            <div class="login-footer">
+
+                Área Limpia D.C. S.A.S. E.S.P.<br>
+
+                Sistema de gestión y análisis de inventarios
+
+                <div class="login-security">
+                    🔒 Acceso protegido
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True
         )
 
         st.markdown(
-            "</div>",
+            '</div>',
             unsafe_allow_html=True
         )
 
@@ -313,7 +642,7 @@ if not st.session_state["autenticado"]:
 
 
 # ============================================================
-# CSS GENERAL
+# CSS GENERAL DE LA APLICACIÓN
 # ============================================================
 
 st.markdown(
@@ -321,7 +650,7 @@ st.markdown(
     <style>
 
     /* =====================================================
-       FONDO GENERAL
+       FONDO
     ===================================================== */
 
     .stApp {{
@@ -340,8 +669,11 @@ st.markdown(
 
     section[data-testid="stSidebar"] {{
         background:{BLANCO};
-        border-right:1px solid {GRIS_BORDE};
+
+        border-right:
+            1px solid {GRIS_BORDE};
     }}
+
 
     section[data-testid="stSidebar"] > div {{
         padding-top:1.2rem;
@@ -352,9 +684,12 @@ st.markdown(
        TEXTOS
     ===================================================== */
 
-    h1, h2, h3 {{
+    h1,
+    h2,
+    h3 {{
         color:{AZUL_OSCURO};
     }}
+
 
     p {{
         color:{GRIS_TEXTO};
@@ -362,15 +697,19 @@ st.markdown(
 
 
     /* =====================================================
-       RADIO / MENÚ
+       MENÚ
     ===================================================== */
 
     div[role="radiogroup"] label {{
         border-radius:10px;
+
         padding:9px 12px;
+
         margin-bottom:4px;
+
         transition:.2s;
     }}
+
 
     div[role="radiogroup"] label:hover {{
         background:{AZUL_SUAVE};
@@ -383,10 +722,14 @@ st.markdown(
 
     div[data-baseweb="select"] > div {{
         border-radius:10px;
+
         border:1px solid {GRIS_BORDE};
+
         background:white;
+
         min-height:42px;
     }}
+
 
     div[data-baseweb="select"] > div:hover {{
         border-color:{NARANJA};
@@ -399,19 +742,30 @@ st.markdown(
 
     .stButton > button {{
         border-radius:10px;
+
         border:1px solid {NARANJA};
+
         background:{NARANJA};
+
         color:white;
+
         font-weight:700;
+
         transition:.2s;
     }}
 
+
     .stButton > button:hover {{
         background:#E56F0A;
+
         border-color:#E56F0A;
+
         color:white;
+
         transform:translateY(-1px);
-        box-shadow:0 5px 14px rgba(245,130,32,.20);
+
+        box-shadow:
+            0 5px 14px rgba(245,130,32,.20);
     }}
 
 
@@ -421,15 +775,22 @@ st.markdown(
 
     .stDownloadButton > button {{
         border-radius:10px;
+
         border:1px solid {NARANJA};
+
         background:white;
+
         color:{NARANJA};
+
         font-weight:700;
     }}
 
+
     .stDownloadButton > button:hover {{
         background:{NARANJA_SUAVE};
+
         color:{NARANJA};
+
         border-color:{NARANJA};
     }}
 
@@ -440,18 +801,26 @@ st.markdown(
 
     div[data-testid="metric-container"] {{
         background:white;
+
         border:1px solid {GRIS_BORDE};
+
         border-radius:15px;
+
         padding:17px;
-        box-shadow:0 7px 20px rgba(15,23,42,.05);
+
+        box-shadow:
+            0 7px 20px rgba(15,23,42,.05);
     }}
+
 
     div[data-testid="stMetricLabel"] {{
         color:{GRIS_TEXTO};
     }}
 
+
     div[data-testid="stMetricValue"] {{
         color:{AZUL_OSCURO};
+
         font-weight:800;
     }}
 
@@ -462,7 +831,9 @@ st.markdown(
 
     div[data-testid="stDataFrame"] {{
         border-radius:12px;
+
         overflow:hidden;
+
         border:1px solid {GRIS_BORDE};
     }}
 
@@ -477,37 +848,49 @@ st.markdown(
 
 
     /* =====================================================
-       TARJETA DE FILTROS
+       FILTROS
     ===================================================== */
 
     .filter-card {{
         background:white;
+
         border:1px solid {GRIS_BORDE};
+
         border-top:4px solid {NARANJA};
+
         border-radius:15px;
+
         padding:18px 20px 8px 20px;
+
         margin-bottom:20px;
-        box-shadow:0 7px 20px rgba(15,23,42,.045);
+
+        box-shadow:
+            0 7px 20px rgba(15,23,42,.045);
     }}
 
 
     .filter-title {{
         color:{AZUL_OSCURO};
+
         font-size:15px;
+
         font-weight:800;
+
         margin-bottom:10px;
     }}
 
 
     .filter-subtitle {{
         color:{GRIS_TEXTO};
+
         font-size:11px;
+
         margin-bottom:12px;
     }}
 
 
     /* =====================================================
-       ENCABEZADO PRINCIPAL
+       ENCABEZADO
     ===================================================== */
 
     .main-header {{
@@ -515,7 +898,7 @@ st.markdown(
             linear-gradient(
                 115deg,
                 {AZUL_OSCURO} 0%,
-                {AZUL} 68%,
+                {AZUL} 67%,
                 {NARANJA} 100%
             );
 
@@ -542,9 +925,11 @@ st.markdown(
         position:absolute;
 
         width:250px;
+
         height:250px;
 
         right:-80px;
+
         top:-150px;
 
         border-radius:50%;
@@ -556,14 +941,18 @@ st.markdown(
 
     .main-header-title {{
         font-size:28px;
+
         font-weight:800;
+
         color:white;
+
         margin-bottom:5px;
     }}
 
 
     .main-header-subtitle {{
         color:#E7F0FA;
+
         font-size:13px;
     }}
 
@@ -574,22 +963,28 @@ st.markdown(
 
     .section-heading {{
         display:flex;
+
         align-items:center;
+
         gap:10px;
 
         margin-top:20px;
+
         margin-bottom:10px;
 
         color:{AZUL_OSCURO};
 
         font-size:17px;
+
         font-weight:800;
     }}
 
 
     .section-heading::before {{
         content:"";
+
         width:4px;
+
         height:22px;
 
         border-radius:5px;
@@ -605,7 +1000,9 @@ st.markdown(
 
     .section-description {{
         color:{GRIS_TEXTO};
+
         font-size:12px;
+
         margin-bottom:12px;
     }}
 
@@ -616,15 +1013,20 @@ st.markdown(
 
     .info-card {{
         background:white;
+
         border:1px solid {GRIS_BORDE};
+
         border-radius:15px;
+
         padding:18px;
-        box-shadow:0 7px 20px rgba(15,23,42,.045);
+
+        box-shadow:
+            0 7px 20px rgba(15,23,42,.045);
     }}
 
 
     /* =====================================================
-       USUARIO SIDEBAR
+       USUARIO
     ===================================================== */
 
     .user-card {{
@@ -647,48 +1049,19 @@ st.markdown(
 
     .user-name {{
         color:{AZUL_OSCURO};
+
         font-weight:800;
+
         font-size:13px;
     }}
 
 
     .user-status {{
         color:{GRIS_TEXTO};
+
         font-size:10px;
+
         margin-top:2px;
-    }}
-
-
-    /* =====================================================
-       BADGES
-    ===================================================== */
-
-    .badge {{
-        display:inline-block;
-        padding:5px 9px;
-        border-radius:20px;
-        font-size:10px;
-        font-weight:700;
-    }}
-
-    .badge-blue {{
-        background:{AZUL_SUAVE};
-        color:{AZUL};
-    }}
-
-    .badge-orange {{
-        background:{NARANJA_SUAVE};
-        color:{NARANJA};
-    }}
-
-    .badge-green {{
-        background:{VERDE_SUAVE};
-        color:{VERDE};
-    }}
-
-    .badge-red {{
-        background:{ROJO_SUAVE};
-        color:{ROJO};
     }}
 
 
@@ -698,14 +1071,20 @@ st.markdown(
 
     .alert-card {{
         background:white;
-        border:1px solid {GRIS_BORDE};
-        border-left:5px solid {ROJO};
-        border-radius:12px;
-        padding:15px;
-        margin-bottom:10px;
-        box-shadow:0 5px 15px rgba(15,23,42,.04);
-    }}
 
+        border:1px solid {GRIS_BORDE};
+
+        border-left:5px solid {ROJO};
+
+        border-radius:12px;
+
+        padding:15px;
+
+        margin-bottom:10px;
+
+        box-shadow:
+            0 5px 15px rgba(15,23,42,.04);
+    }}
 
     </style>
     """,
@@ -969,13 +1348,12 @@ COLORES_AREA_ANTIGUEDAD = {
 
 
 # ============================================================
-# FUNCIONES DE FORMATO
+# FUNCIONES
 # ============================================================
 
 def formato_moneda(valor):
 
     if pd.isna(valor):
-
         return "$0"
 
     return (
@@ -987,7 +1365,6 @@ def formato_moneda(valor):
 def formato_numero(valor):
 
     if pd.isna(valor):
-
         return "0"
 
     return (
@@ -1001,7 +1378,6 @@ def formato_numero(valor):
 def suma_columna(dataframe, columna):
 
     if columna not in dataframe.columns:
-
         return 0
 
     return dataframe[columna].sum()
@@ -1010,15 +1386,10 @@ def suma_columna(dataframe, columna):
 def promedio_columna(dataframe, columna):
 
     if columna not in dataframe.columns:
-
         return 0
 
     return dataframe[columna].mean()
 
-
-# ============================================================
-# CONFIGURACIÓN BASE PARA PLOTLY
-# ============================================================
 
 def configurar_figura(fig):
 
@@ -1124,6 +1495,7 @@ with st.sidebar:
         else "U"
     )
 
+
     st.markdown(
         f"""
         <div class="user-card">
@@ -1138,16 +1510,20 @@ with st.sidebar:
                     width:36px;
                     height:36px;
                     border-radius:50%;
+
                     background:
                         linear-gradient(
                             135deg,
                             {AZUL},
                             {NARANJA}
                         );
+
                     color:white;
+
                     display:flex;
                     align-items:center;
                     justify-content:center;
+
                     font-weight:800;
                     font-size:14px;
                 ">
@@ -1155,6 +1531,7 @@ with st.sidebar:
                 </div>
 
                 <div>
+
                     <div class="user-name">
                         {usuario_actual}
                     </div>
@@ -1162,6 +1539,7 @@ with st.sidebar:
                     <div class="user-status">
                         ● Sesión activa
                     </div>
+
                 </div>
 
             </div>
@@ -1173,7 +1551,7 @@ with st.sidebar:
 
 
     # --------------------------------------------------------
-    # MENÚ
+    # NAVEGACIÓN
     # --------------------------------------------------------
 
     st.markdown(
@@ -1292,7 +1670,6 @@ st.markdown(
             Selecciona los criterios para actualizar
             automáticamente la información del tablero.
         </div>
-
     """,
     unsafe_allow_html=True
 )
@@ -1329,7 +1706,7 @@ with col1:
 
 
 # ============================================================
-# FILTRAR POR ÁREA
+# FILTRO ÁREA
 # ============================================================
 
 df_area = df.copy()
@@ -1400,7 +1777,7 @@ with col2:
 
 
 # ============================================================
-# FILTRAR POR BODEGA
+# FILTRO BODEGA
 # ============================================================
 
 df_bodega = df_area.copy()
@@ -1445,7 +1822,7 @@ with col3:
 
 
 # ============================================================
-# FILTRAR POR ARTÍCULO
+# FILTRO ARTÍCULO
 # ============================================================
 
 df_articulo = df_bodega.copy()
@@ -1468,7 +1845,9 @@ if COL_ANTIGUEDAD in df_articulo.columns:
 
     antiguedades_existentes = (
 
-        df_articulo[COL_ANTIGUEDAD]
+        df_articulo[
+            COL_ANTIGUEDAD
+        ]
         .dropna()
         .astype(str)
         .unique()
@@ -1652,7 +2031,7 @@ if pagina == "📊Dashboard":
 
 
     # ========================================================
-    # GRÁFICO VALOR POR ANTIGÜEDAD
+    # VALOR POR ANTIGÜEDAD
     # ========================================================
 
     with col_a:
@@ -1676,11 +2055,15 @@ if pagina == "📊Dashboard":
 
 
             resumen_edad["Orden"] = (
-                resumen_edad[COL_ANTIGUEDAD]
+                resumen_edad[
+                    COL_ANTIGUEDAD
+                ]
                 .map({
                     edad: i
                     for i, edad
-                    in enumerate(ORDEN_ANTIGUEDAD)
+                    in enumerate(
+                        ORDEN_ANTIGUEDAD
+                    )
                 })
                 .fillna(99)
             )
@@ -1745,7 +2128,7 @@ if pagina == "📊Dashboard":
 
 
     # ========================================================
-    # GRÁFICO VALOR POR ÁREA
+    # VALOR POR ÁREA
     # ========================================================
 
     with col_b:
@@ -1978,10 +2361,6 @@ elif pagina == "📦Inventarios":
         col1, col2 = st.columns(2)
 
 
-        # ----------------------------------------------------
-        # STOCK
-        # ----------------------------------------------------
-
         with col1:
 
             fig_stock = px.bar(
@@ -2017,10 +2396,6 @@ elif pagina == "📦Inventarios":
             )
 
 
-        # ----------------------------------------------------
-        # COSTE
-        # ----------------------------------------------------
-
         with col2:
 
             fig_coste = px.bar(
@@ -2055,10 +2430,6 @@ elif pagina == "📦Inventarios":
                 use_container_width=True
             )
 
-
-        # ----------------------------------------------------
-        # TABLA
-        # ----------------------------------------------------
 
         st.markdown(
             """
@@ -2257,28 +2628,36 @@ elif pagina == "📈Análisis":
             ),
 
             "Costo entradas": (
-                df_filtrado[columnas["costo_entrada"]].sum()
+                df_filtrado[
+                    columnas["costo_entrada"]
+                ].sum()
                 if columnas["costo_entrada"]
                 in df_filtrado.columns
                 else 0
             ),
 
             "Costo salidas": (
-                df_filtrado[columnas["costo_salida"]].sum()
+                df_filtrado[
+                    columnas["costo_salida"]
+                ].sum()
                 if columnas["costo_salida"]
                 in df_filtrado.columns
                 else 0
             ),
 
             "Neto": (
-                df_filtrado[columnas["neto"]].sum()
+                df_filtrado[
+                    columnas["neto"]
+                ].sum()
                 if columnas["neto"]
                 in df_filtrado.columns
                 else 0
             ),
 
             "Rotacion": (
-                df_filtrado[columnas["rotacion"]].mean()
+                df_filtrado[
+                    columnas["rotacion"]
+                ].mean()
                 if columnas["rotacion"]
                 in df_filtrado.columns
                 else 0
@@ -2662,8 +3041,7 @@ elif pagina == "⚠️Alertas":
                 for columna
                 in columnas_alertas
 
-                if columna
-                in df_alertas.columns
+                if columna in df_alertas.columns
             ]
 
 
@@ -2717,7 +3095,7 @@ elif pagina == "📋Detalle":
 
 
     # ========================================================
-    # TOP 15
+    # TOP 15 ARTÍCULOS
     # ========================================================
 
     if (
@@ -2784,7 +3162,7 @@ elif pagina == "📋Detalle":
 
 
     # ========================================================
-    # TABLA DETALLADA
+    # TABLA
     # ========================================================
 
     st.markdown(
@@ -2878,21 +3256,32 @@ st.markdown(
     f"""
     <div style="
         margin-top:35px;
+
         padding:16px 5px;
+
         border-top:1px solid {GRIS_BORDE};
+
         text-align:center;
+
         color:{GRIS_TEXTO};
+
         font-size:10px;
     ">
+
         <strong style="color:{AZUL};">
             Inventarios ALDC
         </strong>
+
         &nbsp; | &nbsp;
+
         Herramienta de análisis y seguimiento de inventarios
+
         &nbsp; | &nbsp;
+
         <span style="color:{NARANJA};">
             Área Limpia D.C.
         </span>
+
     </div>
     """,
     unsafe_allow_html=True
