@@ -453,7 +453,7 @@ def login():
             # =================================================
 
             ingresar = st.button(
-                "🔐  Ingresar a la plataforma",
+                "🔐  Ingresar a la platanforma",
                 use_container_width=True
             )
 
