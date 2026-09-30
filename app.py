@@ -31,7 +31,103 @@ VERDE = "#16A34A"
 ROJO = "#DC2626"
 AMARILLO = "#F59E0B"
 
+# ============================================================
+# AUTENTICACIÓN
+# ============================================================
 
+USUARIOS = {
+    "admin": "ALDC2026",
+    "inventarios": "Inventarios2026"
+}
+
+
+def login():
+
+    st.markdown(
+        f"""
+        <div style="
+            max-width:450px;
+            margin:80px auto 0 auto;
+            background:white;
+            padding:35px;
+            border-radius:15px;
+            border:1px solid {GRIS_BORDE};
+            box-shadow:0 4px 15px rgba(0,0,0,0.08);
+            text-align:center;
+        ">
+
+            <h1 style="
+                color:{AZUL_OSCURO};
+                margin-bottom:5px;
+            ">
+                Inventarios ALDC
+            </h1>
+
+            <p style="
+                color:{GRIS_TEXTO};
+                margin-bottom:25px;
+            ">
+                Acceso al sistema de inventarios
+            </p>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+
+        usuario = st.text_input(
+            "Usuario",
+            placeholder="Ingrese su usuario"
+        )
+
+        contraseña = st.text_input(
+            "Contraseña",
+            type="password",
+            placeholder="Ingrese su contraseña"
+        )
+
+        ingresar = st.button(
+            "🔐 Ingresar",
+            use_container_width=True
+        )
+
+        if ingresar:
+
+            if (
+                usuario in USUARIOS
+                and USUARIOS[usuario] == contraseña
+            ):
+
+                st.session_state["autenticado"] = True
+                st.session_state["usuario"] = usuario
+
+                st.rerun()
+
+            else:
+
+                st.error(
+                    "Usuario o contraseña incorrectos."
+                )
+
+
+# ============================================================
+# VALIDAR SESIÓN
+# ============================================================
+
+if "autenticado" not in st.session_state:
+
+    st.session_state["autenticado"] = False
+
+
+if not st.session_state["autenticado"]:
+
+    login()
+
+    st.stop()
 # ============================================================
 # ESTILOS
 # ============================================================
