@@ -31,6 +31,7 @@ VERDE = "#16A34A"
 ROJO = "#DC2626"
 AMARILLO = "#F59E0B"
 
+LOGO_URL = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
 # ============================================================
 # AUTENTICACIÓN
 # ============================================================
@@ -46,32 +47,9 @@ def login():
     st.markdown(
         f"""
         <div style="
-            max-width:450px;
-            margin:80px auto 20px auto;
-            background:white;
-            padding:35px;
-            border-radius:15px;
-            border:1px solid {GRIS_BORDE};
-            box-shadow:0 4px 15px rgba(0,0,0,0.08);
             text-align:center;
+            margin-top:60px;
         ">
-            <div style="
-                font-size:32px;
-                font-weight:700;
-                color:{AZUL_OSCURO};
-                margin-bottom:8px;
-            ">
-                Inventarios ALDC
-            </div>
-
-            <div style="
-                color:{GRIS_TEXTO};
-                font-size:15px;
-                margin-bottom:25px;
-            ">
-                Acceso al sistema de inventarios
-            </div>
-        </div>
         """,
         unsafe_allow_html=True
     )
@@ -79,6 +57,23 @@ def login():
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
+
+        # Logo
+        st.image(
+            LOGO_URL,
+            width=180
+        )
+
+        # Título
+        st.markdown(
+            f"<h1 style='text-align:center; color:{AZUL_OSCURO};'>Inventarios ALDC</h1>",
+            unsafe_allow_html=True
+        )
+
+        # Subtítulo
+        st.caption("Acceso al sistema de inventarios")
+
+        st.markdown("---")
 
         usuario = st.text_input(
             "Usuario",
@@ -93,12 +88,10 @@ def login():
             key="login_contraseña"
         )
 
-        ingresar = st.button(
+        if st.button(
             "🔐 Ingresar",
             use_container_width=True
-        )
-
-        if ingresar:
+        ):
 
             if usuario in USUARIOS and USUARIOS[usuario] == contraseña:
 
@@ -108,11 +101,7 @@ def login():
                 st.rerun()
 
             else:
-
-                st.error(
-                    "Usuario o contraseña incorrectos."
-                )
-
+                st.error("Usuario o contraseña incorrectos.")
 
 # ============================================================
 # VALIDAR SESIÓN
