@@ -3,8 +3,6 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 
-
-
 # CONFIGURACIÓN GENERAL
 
 st.set_page_config(
@@ -39,7 +37,6 @@ st.markdown(
 
 
 #SIDEBAR
-
 
     section[data-testid="stSidebar"] {{
         background-color: {BLANCO};
@@ -206,7 +203,7 @@ MAPA_BODEGAS = {
 
     "[2] - LUBRICANTES": "Mantenimiento",
 
-    "[7] - HERRAMIENTAS": "Mantenimiento",
+    "[7] - HERRAMIENTAS": "Operaciones",
 
     "[5] - INSUMOS DE MANTENIMIENTO": "Mantenimiento",
 
@@ -571,7 +568,7 @@ if pagina == "📊Dashboard":
     with k2:
 
         st.metric(
-            label="💰 Coste inventario",
+            label="💰 Coste Promedio inventario",
             value=formato_moneda(coste_inventario)
         )
 
