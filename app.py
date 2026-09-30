@@ -713,6 +713,8 @@ if (
 
     fig_valor_edad.update_layout(
 
+        barmode="group",
+
         # Títulos de ejes
         xaxis_title="Antigüedad",
         yaxis_title="Valor del inventario",
@@ -734,16 +736,16 @@ if (
         # Separación de barras
         bargap=0.25,
 
-        # Título centrado
-        title=dict(
-            text="Valor del inventario según antigüedad y área",
-            x=0.5,
-            xanchor="center",
-            font=dict(
-                size=20,
-                color="#003B7A"
-            )
-        ),
+        # # Título centrado
+        # title=dict(
+        #     text="Valor del inventario según antigüedad y área",
+        #     x=0.5,
+        #     xanchor="center",
+        #     font=dict(
+        #         size=20,
+        #         color="#003B7A"
+        #     )
+        # ),
 
         # Eje X
         xaxis=dict(
