@@ -833,322 +833,321 @@ COLORES_AREA_ANTIGUEDAD = {
 # ============================================================
 # INVENTARIO POR BODEGA, ÁREA Y ANTIGÜEDAD
 # ============================================================
-
-    st.markdown(
-        """
-        <div style="
-            text-align: center;
-            font-size: 20px;
-            font-weight: 700;
-            color: #003B7A;
-            margin-top: 10px;
-            margin-bottom: 15px;
-        ">
-            Valor del inventario por bodega, área y antigüedad
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-    if (
-        "Bodega" in df_filtrado.columns
-        and "AREA" in df_filtrado.columns
-        and COL_ANTIGUEDAD in df_filtrado.columns
-    ):
-
-        # ====================================================
-        # ORDEN DE LAS ÁREAS
-        # ====================================================
-
-        ORDEN_AREAS = [
-            "Mantenimiento",
-            "Operaciones",
-            "RRHH",
-            "Calidad",
-            "Sin asignar"
-        ]
-
-
-        # ====================================================
-        # ORDEN DE ANTIGÜEDAD
-        # ====================================================
-
-        ORDEN_ANTIGUEDAD = [
-            "Entre 0 y 3 meses",
-            "Entre 4 y 6 meses",
-            "Entre 7 y 12 meses",
-            "Mayor a 12 meses"
-        ]
-
-
-        # ====================================================
-        # AGRUPAR
-        # Área + Bodega + Antigüedad
-        # ====================================================
-
-        df_bodega_grafico = (
-            df_filtrado
-            .groupby(
-                ["AREA", "Bodega", COL_ANTIGUEDAD],
-                as_index=False
-            )
-            .agg(
-                Stock=(COL_STOCK, "sum"),
-                Coste=(COL_COSTE, "sum")
-            )
+        st.markdown(
+            """
+            <div style="
+                text-align: center;
+                font-size: 20px;
+                font-weight: 700;
+                color: #003B7A;
+                margin-top: 10px;
+                margin-bottom: 15px;
+            ">
+                Valor del inventario por bodega, área y antigüedad
+            </div>
+            """,
+            unsafe_allow_html=True
         )
-
-
-        # ====================================================
-        # CATEGORÍAS
-        # ====================================================
-
-        df_bodega_grafico["AREA"] = pd.Categorical(
-            df_bodega_grafico["AREA"],
-            categories=ORDEN_AREAS,
-            ordered=True
-        )
-
-        df_bodega_grafico[COL_ANTIGUEDAD] = pd.Categorical(
-            df_bodega_grafico[COL_ANTIGUEDAD],
-            categories=ORDEN_ANTIGUEDAD,
-            ordered=True
-        )
-
-
-        # ====================================================
-        # CALCULAR VALOR TOTAL POR BODEGA
-        # Para ordenar las bodegas de mayor a menor
-        # dentro de cada área
-        # ====================================================
-
-        orden_bodegas = (
-            df_bodega_grafico
-            .groupby(
-                ["AREA", "Bodega"],
-                observed=True,
-                as_index=False
-            )["Coste"]
-            .sum()
-            .sort_values(
-                ["AREA", "Coste"],
-                ascending=[True, False]
-            )
-        )
-
-
-        # Crear lista final de bodegas
-        orden_bodegas = orden_bodegas["Bodega"].tolist()
-
-
-        # ====================================================
-        # CREAR IDENTIFICADOR ÁREA + ANTIGÜEDAD
-        # ====================================================
-
-        df_bodega_grafico["AREA_ANTIGUEDAD"] = (
-            df_bodega_grafico["AREA"].astype(str)
-            + " | "
-            + df_bodega_grafico[COL_ANTIGUEDAD].astype(str)
-        )
-
-
-        # ====================================================
-        # PALETA ÁREA + ANTIGÜEDAD
-        # ====================================================
-
-        COLORES_AREA_ANTIGUEDAD = {
-
-            "Mantenimiento": {
-                "Entre 0 y 3 meses": "#BFDBFE",
-                "Entre 4 y 6 meses": "#60A5FA",
-                "Entre 7 y 12 meses": "#2563EB",
-                "Mayor a 12 meses": "#064B9B"
-            },
-
-            "Operaciones": {
-                "Entre 0 y 3 meses": "#FED7AA",
-                "Entre 4 y 6 meses": "#FB923C",
-                "Entre 7 y 12 meses": "#F97316",
-                "Mayor a 12 meses": "#C2410C"
-            },
-
-            "RRHH": {
-                "Entre 0 y 3 meses": "#BBF7D0",
-                "Entre 4 y 6 meses": "#4ADE80",
-                "Entre 7 y 12 meses": "#16A34A",
-                "Mayor a 12 meses": "#166534"
-            },
-
-            "Calidad": {
-                "Entre 0 y 3 meses": "#DDD6FE",
-                "Entre 4 y 6 meses": "#A78BFA",
-                "Entre 7 y 12 meses": "#7C3AED",
-                "Mayor a 12 meses": "#5B21B6"
-            },
-
-            "Sin asignar": {
-                "Entre 0 y 3 meses": "#E5E7EB",
-                "Entre 4 y 6 meses": "#9CA3AF",
-                "Entre 7 y 12 meses": "#6B7280",
-                "Mayor a 12 meses": "#374151"
-            }
-        }
-
-
-        # ====================================================
-        # CONSTRUIR PALETA PARA PLOTLY
-        # ====================================================
-
-        PALETA_GRAFICO = {}
-
-        for area, colores in COLORES_AREA_ANTIGUEDAD.items():
-
-            for antiguedad, color in colores.items():
-
-                PALETA_GRAFICO[
-                    f"{area} | {antiguedad}"
-                ] = color
-
-
-        # ====================================================
-        # CREAR GRÁFICO
-        # ====================================================
-
-        fig_bodega = px.bar(
-            df_bodega_grafico,
-
-            x="Bodega",
-
-            y="Coste",
-
-            color="AREA_ANTIGUEDAD",
-
-            color_discrete_map=PALETA_GRAFICO,
-
-            category_orders={
-                "Bodega": orden_bodegas
-            },
-
-            custom_data=[
-                "AREA",
-                "Bodega",
-                "Stock",
-                "Coste",
-                COL_ANTIGUEDAD
+    
+    
+        if (
+            "Bodega" in df_filtrado.columns
+            and "AREA" in df_filtrado.columns
+            and COL_ANTIGUEDAD in df_filtrado.columns
+        ):
+    
+            # ====================================================
+            # ORDEN DE LAS ÁREAS
+            # ====================================================
+    
+            ORDEN_AREAS = [
+                "Mantenimiento",
+                "Operaciones",
+                "RRHH",
+                "Calidad",
+                "Sin asignar"
             ]
-        )
-
-
-        # ====================================================
-        # HOVER
-        # ====================================================
-
-        fig_bodega.update_traces(
-            hovertemplate=
-                "<b>%{customdata[1]}</b><br>"
-                "Área: %{customdata[0]}<br>"
-                "Antigüedad: %{customdata[4]}<br>"
-                "Cantidad: %{customdata[2]:,.0f}<br>"
-                "Valor inventario: $%{customdata[3]:,.0f}"
-                "<extra></extra>"
-        )
-
-
-        # ====================================================
-        # DISEÑO
-        # ====================================================
-
-        fig_bodega.update_layout(
-
-            # Apilar por antigüedad
-            barmode="stack",
-
-            # ------------------------------------------------
-            # TÍTULO
-            # ------------------------------------------------
-
-            title=dict(
-                text="Valor del inventario por bodega, área y antigüedad",
-                x=0.5,
-                xanchor="center",
-                font=dict(
-                    size=20,
-                    color="#003B7A"
+    
+    
+            # ====================================================
+            # ORDEN DE ANTIGÜEDAD
+            # ====================================================
+    
+            ORDEN_ANTIGUEDAD = [
+                "Entre 0 y 3 meses",
+                "Entre 4 y 6 meses",
+                "Entre 7 y 12 meses",
+                "Mayor a 12 meses"
+            ]
+    
+    
+            # ====================================================
+            # AGRUPAR
+            # Área + Bodega + Antigüedad
+            # ====================================================
+    
+            df_bodega_grafico = (
+                df_filtrado
+                .groupby(
+                    ["AREA", "Bodega", COL_ANTIGUEDAD],
+                    as_index=False
                 )
-            ),
-
-            # ------------------------------------------------
-            # EJES
-            # ------------------------------------------------
-
-            xaxis_title="Bodega",
-
-            yaxis_title="Valor del inventario ($)",
-
-            xaxis=dict(
-                categoryorder="array",
-                categoryarray=orden_bodegas,
-                tickangle=-45
-            ),
-
-            yaxis=dict(
-                tickprefix="$ ",
-                tickformat=",.0f",
-                gridcolor="#E5E7EB",
-                zerolinecolor="#E5E7EB"
-            ),
-
-            # ------------------------------------------------
-            # FONDO
-            # ------------------------------------------------
-
-            plot_bgcolor="white",
-            paper_bgcolor="white",
-
-            # ------------------------------------------------
-            # LEYENDA
-            # ------------------------------------------------
-
-            legend_title_text="Área / Antigüedad",
-
-            legend=dict(
-                orientation="h",
-                yanchor="bottom",
-                y=1.02,
-                xanchor="center",
-                x=0.5
-            ),
-
-            # ------------------------------------------------
-            # BARRAS
-            # ------------------------------------------------
-
-            bargap=0.25,
-
-            # ------------------------------------------------
-            # MÁRGENES
-            # ------------------------------------------------
-
-            margin=dict(
-                l=90,
-                r=30,
-                t=110,
-                b=140
+                .agg(
+                    Stock=(COL_STOCK, "sum"),
+                    Coste=(COL_COSTE, "sum")
+                )
             )
-        )
-
-
-        # ====================================================
-        # MOSTRAR
-        # ====================================================
-
-        st.plotly_chart(
-            fig_bodega,
-            use_container_width=True
-        )
-
-
+    
+    
+            # ====================================================
+            # CATEGORÍAS
+            # ====================================================
+    
+            df_bodega_grafico["AREA"] = pd.Categorical(
+                df_bodega_grafico["AREA"],
+                categories=ORDEN_AREAS,
+                ordered=True
+            )
+    
+            df_bodega_grafico[COL_ANTIGUEDAD] = pd.Categorical(
+                df_bodega_grafico[COL_ANTIGUEDAD],
+                categories=ORDEN_ANTIGUEDAD,
+                ordered=True
+            )
+    
+    
+            # ====================================================
+            # CALCULAR VALOR TOTAL POR BODEGA
+            # Para ordenar las bodegas de mayor a menor
+            # dentro de cada área
+            # ====================================================
+    
+            orden_bodegas = (
+                df_bodega_grafico
+                .groupby(
+                    ["AREA", "Bodega"],
+                    observed=True,
+                    as_index=False
+                )["Coste"]
+                .sum()
+                .sort_values(
+                    ["AREA", "Coste"],
+                    ascending=[True, False]
+                )
+            )
+    
+    
+            # Crear lista final de bodegas
+            orden_bodegas = orden_bodegas["Bodega"].tolist()
+    
+    
+            # ====================================================
+            # CREAR IDENTIFICADOR ÁREA + ANTIGÜEDAD
+            # ====================================================
+    
+            df_bodega_grafico["AREA_ANTIGUEDAD"] = (
+                df_bodega_grafico["AREA"].astype(str)
+                + " | "
+                + df_bodega_grafico[COL_ANTIGUEDAD].astype(str)
+            )
+    
+    
+            # ====================================================
+            # PALETA ÁREA + ANTIGÜEDAD
+            # ====================================================
+    
+            COLORES_AREA_ANTIGUEDAD = {
+    
+                "Mantenimiento": {
+                    "Entre 0 y 3 meses": "#BFDBFE",
+                    "Entre 4 y 6 meses": "#60A5FA",
+                    "Entre 7 y 12 meses": "#2563EB",
+                    "Mayor a 12 meses": "#064B9B"
+                },
+    
+                "Operaciones": {
+                    "Entre 0 y 3 meses": "#FED7AA",
+                    "Entre 4 y 6 meses": "#FB923C",
+                    "Entre 7 y 12 meses": "#F97316",
+                    "Mayor a 12 meses": "#C2410C"
+                },
+    
+                "RRHH": {
+                    "Entre 0 y 3 meses": "#BBF7D0",
+                    "Entre 4 y 6 meses": "#4ADE80",
+                    "Entre 7 y 12 meses": "#16A34A",
+                    "Mayor a 12 meses": "#166534"
+                },
+    
+                "Calidad": {
+                    "Entre 0 y 3 meses": "#DDD6FE",
+                    "Entre 4 y 6 meses": "#A78BFA",
+                    "Entre 7 y 12 meses": "#7C3AED",
+                    "Mayor a 12 meses": "#5B21B6"
+                },
+    
+                "Sin asignar": {
+                    "Entre 0 y 3 meses": "#E5E7EB",
+                    "Entre 4 y 6 meses": "#9CA3AF",
+                    "Entre 7 y 12 meses": "#6B7280",
+                    "Mayor a 12 meses": "#374151"
+                }
+            }
+    
+    
+            # ====================================================
+            # CONSTRUIR PALETA PARA PLOTLY
+            # ====================================================
+    
+            PALETA_GRAFICO = {}
+    
+            for area, colores in COLORES_AREA_ANTIGUEDAD.items():
+    
+                for antiguedad, color in colores.items():
+    
+                    PALETA_GRAFICO[
+                        f"{area} | {antiguedad}"
+                    ] = color
+    
+    
+            # ====================================================
+            # CREAR GRÁFICO
+            # ====================================================
+    
+            fig_bodega = px.bar(
+                df_bodega_grafico,
+    
+                x="Bodega",
+    
+                y="Coste",
+    
+                color="AREA_ANTIGUEDAD",
+    
+                color_discrete_map=PALETA_GRAFICO,
+    
+                category_orders={
+                    "Bodega": orden_bodegas
+                },
+    
+                custom_data=[
+                    "AREA",
+                    "Bodega",
+                    "Stock",
+                    "Coste",
+                    COL_ANTIGUEDAD
+                ]
+            )
+    
+    
+            # ====================================================
+            # HOVER
+            # ====================================================
+    
+            fig_bodega.update_traces(
+                hovertemplate=
+                    "<b>%{customdata[1]}</b><br>"
+                    "Área: %{customdata[0]}<br>"
+                    "Antigüedad: %{customdata[4]}<br>"
+                    "Cantidad: %{customdata[2]:,.0f}<br>"
+                    "Valor inventario: $%{customdata[3]:,.0f}"
+                    "<extra></extra>"
+            )
+    
+    
+            # ====================================================
+            # DISEÑO
+            # ====================================================
+    
+            fig_bodega.update_layout(
+    
+                # Apilar por antigüedad
+                barmode="stack",
+    
+                # ------------------------------------------------
+                # TÍTULO
+                # ------------------------------------------------
+    
+                title=dict(
+                    text="Valor del inventario por bodega, área y antigüedad",
+                    x=0.5,
+                    xanchor="center",
+                    font=dict(
+                        size=20,
+                        color="#003B7A"
+                    )
+                ),
+    
+                # ------------------------------------------------
+                # EJES
+                # ------------------------------------------------
+    
+                xaxis_title="Bodega",
+    
+                yaxis_title="Valor del inventario ($)",
+    
+                xaxis=dict(
+                    categoryorder="array",
+                    categoryarray=orden_bodegas,
+                    tickangle=-45
+                ),
+    
+                yaxis=dict(
+                    tickprefix="$ ",
+                    tickformat=",.0f",
+                    gridcolor="#E5E7EB",
+                    zerolinecolor="#E5E7EB"
+                ),
+    
+                # ------------------------------------------------
+                # FONDO
+                # ------------------------------------------------
+    
+                plot_bgcolor="white",
+                paper_bgcolor="white",
+    
+                # ------------------------------------------------
+                # LEYENDA
+                # ------------------------------------------------
+    
+                legend_title_text="Área / Antigüedad",
+    
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="center",
+                    x=0.5
+                ),
+    
+                # ------------------------------------------------
+                # BARRAS
+                # ------------------------------------------------
+    
+                bargap=0.25,
+    
+                # ------------------------------------------------
+                # MÁRGENES
+                # ------------------------------------------------
+    
+                margin=dict(
+                    l=90,
+                    r=30,
+                    t=110,
+                    b=140
+                )
+            )
+    
+    
+            # ====================================================
+            # MOSTRAR
+            # ====================================================
+    
+            st.plotly_chart(
+                fig_bodega,
+                use_container_width=True
+            )
+    
+    
 # ============================================================
 # PÁGINA: INVENTARIOS
 # ============================================================
