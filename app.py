@@ -4,9 +4,8 @@ import streamlit as st
 import plotly.express as px
 
 
-# ============================================================
+
 # CONFIGURACIÓN GENERAL
-# ============================================================
 
 st.set_page_config(
     page_title="Inventarios ALDC",
@@ -15,10 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
-# ============================================================
 # COLORES
-# ============================================================
 
 AZUL = "#064B9B"
 AZUL_OSCURO = "#003B7A"
@@ -31,10 +27,7 @@ VERDE = "#16A34A"
 ROJO = "#DC2626"
 AMARILLO = "#F59E0B"
 
-
-# ============================================================
 # ESTILOS
-# ============================================================
 
 st.markdown(
     f"""
@@ -44,9 +37,9 @@ st.markdown(
         background-color: {GRIS_FONDO};
     }}
 
-    /* ================================
-       SIDEBAR
-       ================================ */
+
+#SIDEBAR
+
 
     section[data-testid="stSidebar"] {{
         background-color: {BLANCO};
@@ -78,9 +71,7 @@ st.markdown(
         margin-bottom: 5px;
     }}
 
-    /* ================================
-       TÍTULOS
-       ================================ */
+#TÍTULOS
 
     h1 {{
         color: {AZUL_OSCURO};
@@ -94,9 +85,7 @@ st.markdown(
         color: {AZUL_OSCURO};
     }}
 
-    /* ================================
-       TARJETAS KPI
-       ================================ */
+#TARJETAS KPI
 
     .kpi-card {{
         background-color: {BLANCO};
@@ -119,9 +108,8 @@ st.markdown(
         font-weight: 700;
     }}
 
-    /* ================================
-       SECCIONES
-       ================================ */
+  
+# SECCIONES
 
     .section-title {{
         color: {AZUL_OSCURO};
@@ -137,9 +125,8 @@ st.markdown(
         margin-bottom: 15px;
     }}
 
-    /* ================================
-       ALERTAS
-       ================================ */
+
+# ALERTAS
 
     .alert-card {{
         background-color: {BLANCO};
@@ -157,10 +144,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-# ============================================================
 # CARGA DEL ARCHIVO
-# ============================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -168,7 +152,6 @@ ARCHIVO_EXCEL = os.path.join(
     BASE_DIR,
     "RESULTADO_PYTHON_ROTACION_MAYO_2026.xlsx"
 )
-
 
 @st.cache_data
 def cargar_datos():
@@ -188,7 +171,6 @@ def cargar_datos():
 
     return df
 
-
 try:
 
     df = cargar_datos()
@@ -203,10 +185,8 @@ except Exception as e:
 
     st.stop()
 
-
-# ============================================================
 # MAPEO DE BODEGAS A ÁREAS
-# ============================================================
+
 #
 # IMPORTANTE:
 # Estas áreas son una agrupación para el dashboard.
@@ -214,7 +194,7 @@ except Exception as e:
 #
 # Si posteriormente quieres cambiar la clasificación,
 # solamente modificamos este diccionario.
-# ============================================================
+
 
 MAPA_BODEGAS = {
 
@@ -248,9 +228,7 @@ MAPA_BODEGAS = {
 }
 
 
-# ============================================================
 # CREAR COLUMNA ÁREA
-# ============================================================
 
 if "Bodega" in df.columns:
 
@@ -266,10 +244,7 @@ else:
 
     df["AREA"] = "Sin asignar"
 
-
-# ============================================================
 # CONVERSIÓN DE CAMPOS NUMÉRICOS
-# ============================================================
 
 COLUMNAS_TEXTO = [
     "Bodega",
@@ -289,10 +264,7 @@ for columna in df.columns:
             errors="coerce"
         )
 
-
-# ============================================================
 # COLUMNAS PRINCIPALES
-# ============================================================
 
 COL_STOCK = "STOCK TOTAL"
 
@@ -305,9 +277,8 @@ COL_DIAS = "DIAS 2025"
 COL_ANTIGUEDAD = "MESES"
 
 
-# ============================================================
 # FUNCIÓN FORMATO MONEDA
-# ============================================================
+
 
 def formato_moneda(valor):
 
@@ -316,10 +287,8 @@ def formato_moneda(valor):
 
     return f"${valor:,.0f}".replace(",", ".")
 
-
-# ============================================================
 # FUNCIÓN FORMATO NÚMERO
-# ============================================================
+
 
 def formato_numero(valor):
 
@@ -329,18 +298,12 @@ def formato_numero(valor):
     return f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-# ============================================================
 # SIDEBAR
-# ============================================================
 
-# SIDEBAR
-# ============================================================
 
 with st.sidebar:
 
-    # ========================================================
     # LOGO ALDC
-    # ========================================================
 
     LOGO_ALDC = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
 
@@ -375,9 +338,7 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-    # ========================================================
     # MENÚ LATERAL
-    # ========================================================
 
     st.markdown("### Menú")
 
@@ -401,9 +362,7 @@ with st.sidebar:
     )
 
 
-# ============================================================
 # FILTROS SUPERIORES
-# ============================================================
 
 st.markdown(
     "<div class='section-title'>Filtros</div>",
@@ -411,9 +370,7 @@ st.markdown(
 )
 
 
-# ============================================================
 # FILTRO 1 - ÁREA
-# ============================================================
 
 areas = sorted(
     df["AREA"]
@@ -437,9 +394,7 @@ with col1:
     )
 
 
-# ============================================================
 # FILTRO 2 - BODEGA
-# ============================================================
 
 df_area = df.copy()
 
@@ -469,9 +424,7 @@ with col2:
     )
 
 
-# ============================================================
 # FILTRO 3 - ARTÍCULO
-# ============================================================
 
 df_bodega = df_area.copy()
 
@@ -502,9 +455,7 @@ with col3:
     )
 
 
-# ============================================================
 # FILTRO 4 - ANTIGÜEDAD
-# ============================================================
 
 df_articulo = df_bodega.copy()
 
@@ -542,9 +493,7 @@ with col4:
     )
 
 
-# ============================================================
 # APLICAR FILTRO DE ANTIGÜEDAD
-# ============================================================
 
 df_filtrado = df_articulo.copy()
 
@@ -558,9 +507,7 @@ if antiguedad_seleccionada != "Todas":
     ]
 
 
-# ============================================================
 # RESUMEN DEL FILTRO
-# ============================================================
 
 st.caption(
     f"Registros encontrados: **{len(df_filtrado):,}**"
@@ -572,9 +519,7 @@ st.markdown("---")
 
 
 # ============================================================
-# ============================================================
 # PÁGINA: DASHBOARD
-# ============================================================
 # ============================================================
 
 if pagina == "Dashboard":
@@ -586,9 +531,7 @@ if pagina == "Dashboard":
     )
 
 
-# ========================================================
 # KPIs
-# ========================================================
 
 stock_total = (
     df_filtrado[COL_STOCK].sum()
@@ -615,9 +558,7 @@ dias = (
 )
 
 
-# ========================================================
 # MOSTRAR KPIs
-# ========================================================
 
 k1, k2, k3, k4 = st.columns(4)
 
@@ -656,16 +597,11 @@ with k4:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-    # ========================================================
     # GRÁFICO 1 - STOCK POR ANTIGÜEDAD
-    # ========================================================
-    #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
     # Actualmente muestra:
     # MESES vs STOCK TOTAL
-    #
-    # ========================================================
 
        st.markdown(
         "<div class='section-title'>Stock por antigüedad</div>",
@@ -704,13 +640,10 @@ st.markdown("<br>", unsafe_allow_html=True)
         )
 
 
-    # ========================================================
     # GRÁFICO 2 - VALOR DEL INVENTARIO POR ANTIGÜEDAD
-    # ========================================================
     #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
-    # ========================================================
 
     st.markdown(
         "<div class='section-title'>Valor del inventario por antigüedad</div>",
@@ -750,13 +683,10 @@ st.markdown("<br>", unsafe_allow_html=True)
         )
 
 
-    # ========================================================
     # GRÁFICO 3 - INVENTARIO POR BODEGA
     # ========================================================
-    #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
-    # ========================================================
 
     st.markdown(
         "<div class='section-title'>Inventario por bodega</div>",
@@ -796,9 +726,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 
 # ============================================================
-# ============================================================
 # PÁGINA: INVENTARIOS
-# ============================================================
 # ============================================================
 
 elif pagina == "Inventarios":
@@ -810,13 +738,10 @@ elif pagina == "Inventarios":
     )
 
 
-    # ========================================================
     # GRÁFICO 4 - STOCK POR BODEGA
-    # ========================================================
     #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
-    # ========================================================
 
     if "Bodega" in df_filtrado.columns:
 
@@ -849,13 +774,10 @@ elif pagina == "Inventarios":
         )
 
 
-    # ========================================================
     # GRÁFICO 5 - COSTE POR BODEGA
     # ========================================================
     #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
-    #
-    # ========================================================
 
     if "Bodega" in df_filtrado.columns:
 
@@ -879,7 +801,6 @@ elif pagina == "Inventarios":
         )
 
 
-    # ========================================================
     # TABLA - INVENTARIO POR BODEGA
     # ========================================================
 
@@ -909,9 +830,7 @@ elif pagina == "Inventarios":
 
 
 # ============================================================
-# ============================================================
 # PÁGINA: ANÁLISIS
-# ============================================================
 # ============================================================
 
 elif pagina == "Análisis":
@@ -1123,13 +1042,10 @@ elif pagina == "Análisis":
     df_mensual = pd.DataFrame(datos_mensuales)
 
 
-    # ========================================================
     # GRÁFICO 6 - ENTRADAS Y SALIDAS MENSUALES
     # ========================================================
-    #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
-    # ========================================================
 
     st.markdown(
         "<div class='section-title'>Entradas y salidas mensuales</div>",
@@ -1160,13 +1076,11 @@ elif pagina == "Análisis":
     )
 
 
-    # ========================================================
     # GRÁFICO 7 - COSTOS DE ENTRADAS Y SALIDAS
     # ========================================================
     #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
-    # ========================================================
 
     st.markdown(
         "<div class='section-title'>Costos de entradas y salidas</div>",
@@ -1200,13 +1114,11 @@ elif pagina == "Análisis":
     )
 
 
-    # ========================================================
     # GRÁFICO 8 - NETO MENSUAL
     # ========================================================
     #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
-    # ========================================================
 
     st.markdown(
         "<div class='section-title'>Movimiento neto</div>",
@@ -1237,13 +1149,10 @@ elif pagina == "Análisis":
     )
 
 
-    # ========================================================
     # GRÁFICO 9 - ROTACIÓN MENSUAL
     # ========================================================
-    #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
-    # ========================================================
 
     st.markdown(
         "<div class='section-title'>Rotación mensual</div>",
@@ -1275,9 +1184,7 @@ elif pagina == "Análisis":
 
 
 # ============================================================
-# ============================================================
 # PÁGINA: ALERTAS
-# ============================================================
 # ============================================================
 
 elif pagina == "Alertas":
@@ -1289,13 +1196,10 @@ elif pagina == "Alertas":
     )
 
 
-    # ========================================================
     # ALERTA - INVENTARIO MAYOR A 12 MESES
     # ========================================================
     #
     # ESTE BLOQUE LO PODEMOS AJUSTAR POSTERIORMENTE.
-    #
-    # ========================================================
 
     if COL_ANTIGUEDAD in df_filtrado.columns:
 
@@ -1354,13 +1258,10 @@ elif pagina == "Alertas":
         st.markdown("---")
 
 
-        # ====================================================
         # GRÁFICO 10 - TOP ARTÍCULOS CON MAYOR ANTIGÜEDAD
         # ====================================================
-        #
         # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
         #
-        # ====================================================
 
         if len(df_alertas) > 0:
 
@@ -1424,9 +1325,7 @@ elif pagina == "Alertas":
 
 
 # ============================================================
-# ============================================================
 # PÁGINA: DETALLE
-# ============================================================
 # ============================================================
 
 elif pagina == "Detalle":
@@ -1438,13 +1337,11 @@ elif pagina == "Detalle":
     )
 
 
-    # ========================================================
     # GRÁFICO 11 - TOP 15 ARTÍCULOS POR VALOR
     # ========================================================
     #
     # ESTE GRÁFICO LO PODEMOS AJUSTAR POSTERIORMENTE.
     #
-    # ========================================================
 
     if (
         COL_COSTE in df_filtrado.columns
@@ -1493,7 +1390,6 @@ elif pagina == "Detalle":
         )
 
 
-    # ========================================================
     # TABLA DETALLADA
     # ========================================================
 
@@ -1537,7 +1433,6 @@ elif pagina == "Detalle":
     )
 
 
-    # ========================================================
     # DESCARGA CSV
     # ========================================================
 
@@ -1555,7 +1450,6 @@ elif pagina == "Detalle":
     )
 
 
-# ============================================================
 # PIE DE PÁGINA
 # ============================================================
 
