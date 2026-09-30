@@ -19,38 +19,96 @@ st.set_page_config(
 
 
 # ============================================================
-# COLORES
+# PALETA INSTITUCIONAL
 # ============================================================
 
 AZUL = "#064B9B"
 AZUL_OSCURO = "#003B7A"
+AZUL_CLARO = "#3B82F6"
+AZUL_SUAVE = "#EAF2FB"
+
 NARANJA = "#F58220"
-GRIS_FONDO = "#F5F6F8"
-GRIS_BORDE = "#E5E7EB"
-GRIS_TEXTO = "#6B7280"
-BLANCO = "#FFFFFF"
+NARANJA_CLARO = "#FB923C"
+NARANJA_SUAVE = "#FFF1E6"
+
 VERDE = "#16A34A"
+VERDE_CLARO = "#4ADE80"
+VERDE_SUAVE = "#ECFDF3"
+
 ROJO = "#DC2626"
+ROJO_CLARO = "#F87171"
+ROJO_SUAVE = "#FEF2F2"
+
+MORADO = "#7C3AED"
+MORADO_CLARO = "#A78BFA"
+MORADO_SUAVE = "#F5F3FF"
+
 AMARILLO = "#F59E0B"
+AMARILLO_SUAVE = "#FFFBEB"
+
+GRIS_FONDO = "#F4F7FA"
+GRIS_PANEL = "#FFFFFF"
+GRIS_BORDE = "#DCE3EA"
+GRIS_GRID = "#E8EDF2"
+GRIS_TEXTO = "#64748B"
+GRIS_OSCURO = "#334155"
+
+BLANCO = "#FFFFFF"
 
 
 # ============================================================
-# LOGO
+# PALETAS PARA GRÁFICOS
+# ============================================================
+
+PALETA_ALDC = [
+    AZUL,
+    NARANJA,
+    VERDE,
+    MORADO,
+    AMARILLO,
+    ROJO,
+    AZUL_CLARO,
+    NARANJA_CLARO
+]
+
+PALETA_MOVIMIENTO = {
+    "Entradas": VERDE,
+    "Salidas": ROJO
+}
+
+PALETA_COSTOS = {
+    "Costo entradas": AZUL,
+    "Costo salidas": NARANJA
+}
+
+PALETA_ANALISIS = {
+    "Neto": AZUL,
+    "Rotacion": MORADO
+}
+
+PALETA_ALERTAS = {
+    "Valor": ROJO
+}
+
+PALETA_INVENTARIO = {
+    "Stock": AZUL,
+    "Coste": NARANJA
+}
+
+
+# ============================================================
+# LOGO ÁREA LIMPIA
 # ============================================================
 
 LOGO_URL = (
     "https://encrypted-tbn0.gstatic.com/images?"
-    "q=tbn:ANd9GcSOWAwmUTCXo33vv5X0je9OZupTMa7_aaL2p2E-P0ocLA&s=10"
+    "q=tbn:ANd9GcT4PEaUuLJVbFJSpTZEJ0g0M20hUiko7iba-wcW1MdcEQ&s"
 )
 
 
 # ============================================================
 # AUTENTICACIÓN
 # ============================================================
-
-# ------------------------------------------------------------
-# CARGAR USUARIOS DESDE STREAMLIT SECRETS
-# ------------------------------------------------------------
 
 try:
 
@@ -63,10 +121,6 @@ except Exception:
     USUARIOS = {}
 
 
-# ------------------------------------------------------------
-# TIEMPO MÁXIMO DE SESIÓN
-# ------------------------------------------------------------
-
 TIEMPO_SESION_MINUTOS = 30
 
 
@@ -77,69 +131,57 @@ TIEMPO_SESION_MINUTOS = 30
 def login():
 
     st.markdown(
-        "<div style='height:60px;'></div>",
+        "<div style='height:50px;'></div>",
         unsafe_allow_html=True
     )
 
-    # ========================================================
-    # LOGO CENTRADO
-    # ========================================================
-
     col1, col2, col3 = st.columns(
-        [1, 2, 1]
+        [1, 1.15, 1]
     )
 
     with col2:
+
+        st.markdown(
+            f"""
+            <div style="
+                background:white;
+                border:1px solid {GRIS_BORDE};
+                border-radius:20px;
+                padding:32px;
+                box-shadow:0 12px 35px rgba(15,23,42,.08);
+                text-align:center;
+            ">
+            """,
+            unsafe_allow_html=True
+        )
 
         st.image(
             LOGO_URL,
-            width=180
+            width=220
         )
 
-    # ========================================================
-    # TÍTULO
-    # ========================================================
+        st.markdown(
+            f"""
+            <div style="
+                font-size:26px;
+                font-weight:800;
+                color:{AZUL_OSCURO};
+                margin-top:5px;
+            ">
+                Inventarios ALDC
+            </div>
 
-    st.markdown(
-        f"""
-        <h1 style="
-            text-align:center;
-            color:{AZUL_OSCURO};
-            margin-bottom:5px;
-        ">
-            Inventarios ALDC
-        </h1>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # ========================================================
-    # SUBTÍTULO
-    # ========================================================
-
-    st.markdown(
-        """
-        <div style="
-            text-align:center;
-            color:#6B7280;
-            font-size:15px;
-            margin-bottom:25px;
-        ">
-            Acceso al sistema de inventarios
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # ========================================================
-    # FORMULARIO CENTRADO
-    # ========================================================
-
-    col1, col2, col3 = st.columns(
-        [1, 2, 1]
-    )
-
-    with col2:
+            <div style="
+                color:{GRIS_TEXTO};
+                font-size:13px;
+                margin-top:5px;
+                margin-bottom:20px;
+            ">
+                Plataforma de gestión y analítica
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         usuario = st.text_input(
             "Usuario",
@@ -154,10 +196,12 @@ def login():
             key="login_contraseña"
         )
 
-        if st.button(
+        ingresar = st.button(
             "🔐 Ingresar",
             use_container_width=True
-        ):
+        )
+
+        if ingresar:
 
             if (
                 usuario in USUARIOS
@@ -180,6 +224,24 @@ def login():
                     "Usuario o contraseña incorrectos."
                 )
 
+        st.markdown(
+            f"""
+            <div style="
+                color:{GRIS_TEXTO};
+                font-size:11px;
+                margin-top:18px;
+            ">
+                Acceso protegido
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True
+        )
+
 
 # ============================================================
 # INICIALIZAR SESIÓN
@@ -191,7 +253,7 @@ if "autenticado" not in st.session_state:
 
 
 # ============================================================
-# VALIDAR TIEMPO DE SESIÓN
+# VALIDAR SESIÓN
 # ============================================================
 
 if st.session_state["autenticado"]:
@@ -240,7 +302,7 @@ if st.session_state["autenticado"]:
 
 
 # ============================================================
-# MOSTRAR LOGIN SI NO ESTÁ AUTENTICADO
+# MOSTRAR LOGIN
 # ============================================================
 
 if not st.session_state["autenticado"]:
@@ -251,103 +313,399 @@ if not st.session_state["autenticado"]:
 
 
 # ============================================================
-# ESTILOS
+# CSS GENERAL
 # ============================================================
 
 st.markdown(
     f"""
     <style>
 
+    /* =====================================================
+       FONDO GENERAL
+    ===================================================== */
+
     .stApp {{
-        background-color: {GRIS_FONDO};
+        background:
+            linear-gradient(
+                180deg,
+                #F4F7FA 0%,
+                #F8FAFC 100%
+            );
     }}
+
+
+    /* =====================================================
+       SIDEBAR
+    ===================================================== */
 
     section[data-testid="stSidebar"] {{
-        background-color: {BLANCO};
-        border-right: 1px solid {GRIS_BORDE};
+        background:{BLANCO};
+        border-right:1px solid {GRIS_BORDE};
     }}
 
-    .logo-container {{
-        padding: 10px 5px 20px 5px;
-        border-bottom: 1px solid {GRIS_BORDE};
-        margin-bottom: 20px;
+    section[data-testid="stSidebar"] > div {{
+        padding-top:1.2rem;
     }}
 
-    .logo-title {{
-        font-size: 22px;
-        font-weight: 700;
-        color: {AZUL_OSCURO};
-        line-height: 1.2;
+
+    /* =====================================================
+       TEXTOS
+    ===================================================== */
+
+    h1, h2, h3 {{
+        color:{AZUL_OSCURO};
     }}
 
-    .logo-subtitle {{
-        font-size: 12px;
-        color: {GRIS_TEXTO};
-        margin-top: 4px;
+    p {{
+        color:{GRIS_TEXTO};
     }}
 
-    .logo-icon {{
-        font-size: 32px;
-        margin-bottom: 5px;
+
+    /* =====================================================
+       RADIO / MENÚ
+    ===================================================== */
+
+    div[role="radiogroup"] label {{
+        border-radius:10px;
+        padding:9px 12px;
+        margin-bottom:4px;
+        transition:.2s;
     }}
 
-    h1 {{
-        color: {AZUL_OSCURO};
+    div[role="radiogroup"] label:hover {{
+        background:{AZUL_SUAVE};
     }}
 
-    h2 {{
-        color: {AZUL_OSCURO};
+
+    /* =====================================================
+       SELECTBOX
+    ===================================================== */
+
+    div[data-baseweb="select"] > div {{
+        border-radius:10px;
+        border:1px solid {GRIS_BORDE};
+        background:white;
+        min-height:42px;
     }}
 
-    h3 {{
-        color: {AZUL_OSCURO};
+    div[data-baseweb="select"] > div:hover {{
+        border-color:{NARANJA};
     }}
 
-    .kpi-card {{
-        background-color: {BLANCO};
-        border: 1px solid {GRIS_BORDE};
-        border-radius: 10px;
-        padding: 18px;
-        min-height: 115px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+
+    /* =====================================================
+       BOTONES
+    ===================================================== */
+
+    .stButton > button {{
+        border-radius:10px;
+        border:1px solid {NARANJA};
+        background:{NARANJA};
+        color:white;
+        font-weight:700;
+        transition:.2s;
     }}
 
-    .kpi-title {{
-        color: {GRIS_TEXTO};
-        font-size: 13px;
-        margin-bottom: 8px;
+    .stButton > button:hover {{
+        background:#E56F0A;
+        border-color:#E56F0A;
+        color:white;
+        transform:translateY(-1px);
+        box-shadow:0 5px 14px rgba(245,130,32,.20);
     }}
 
-    .kpi-value {{
-        color: {AZUL_OSCURO};
-        font-size: 25px;
-        font-weight: 700;
+
+    /* =====================================================
+       DOWNLOAD
+    ===================================================== */
+
+    .stDownloadButton > button {{
+        border-radius:10px;
+        border:1px solid {NARANJA};
+        background:white;
+        color:{NARANJA};
+        font-weight:700;
     }}
 
-    .section-title {{
-        color: {AZUL_OSCURO};
-        font-size: 20px;
-        font-weight: 700;
-        margin-top: 15px;
-        margin-bottom: 10px;
+    .stDownloadButton > button:hover {{
+        background:{NARANJA_SUAVE};
+        color:{NARANJA};
+        border-color:{NARANJA};
     }}
 
-    .section-subtitle {{
-        color: {GRIS_TEXTO};
-        font-size: 13px;
-        margin-bottom: 15px;
+
+    /* =====================================================
+       MÉTRICAS
+    ===================================================== */
+
+    div[data-testid="metric-container"] {{
+        background:white;
+        border:1px solid {GRIS_BORDE};
+        border-radius:15px;
+        padding:17px;
+        box-shadow:0 7px 20px rgba(15,23,42,.05);
     }}
+
+    div[data-testid="stMetricLabel"] {{
+        color:{GRIS_TEXTO};
+    }}
+
+    div[data-testid="stMetricValue"] {{
+        color:{AZUL_OSCURO};
+        font-weight:800;
+    }}
+
+
+    /* =====================================================
+       DATAFRAME
+    ===================================================== */
+
+    div[data-testid="stDataFrame"] {{
+        border-radius:12px;
+        overflow:hidden;
+        border:1px solid {GRIS_BORDE};
+    }}
+
+
+    /* =====================================================
+       DIVISOR
+    ===================================================== */
+
+    hr {{
+        border-color:{GRIS_BORDE};
+    }}
+
+
+    /* =====================================================
+       TARJETA DE FILTROS
+    ===================================================== */
+
+    .filter-card {{
+        background:white;
+        border:1px solid {GRIS_BORDE};
+        border-top:4px solid {NARANJA};
+        border-radius:15px;
+        padding:18px 20px 8px 20px;
+        margin-bottom:20px;
+        box-shadow:0 7px 20px rgba(15,23,42,.045);
+    }}
+
+
+    .filter-title {{
+        color:{AZUL_OSCURO};
+        font-size:15px;
+        font-weight:800;
+        margin-bottom:10px;
+    }}
+
+
+    .filter-subtitle {{
+        color:{GRIS_TEXTO};
+        font-size:11px;
+        margin-bottom:12px;
+    }}
+
+
+    /* =====================================================
+       ENCABEZADO PRINCIPAL
+    ===================================================== */
+
+    .main-header {{
+        background:
+            linear-gradient(
+                115deg,
+                {AZUL_OSCURO} 0%,
+                {AZUL} 68%,
+                {NARANJA} 100%
+            );
+
+        border-radius:18px;
+
+        padding:25px 29px;
+
+        margin-bottom:20px;
+
+        color:white;
+
+        position:relative;
+
+        overflow:hidden;
+
+        box-shadow:
+            0 10px 28px rgba(0,59,122,.16);
+    }}
+
+
+    .main-header::after {{
+        content:"";
+
+        position:absolute;
+
+        width:250px;
+        height:250px;
+
+        right:-80px;
+        top:-150px;
+
+        border-radius:50%;
+
+        background:
+            rgba(255,255,255,.09);
+    }}
+
+
+    .main-header-title {{
+        font-size:28px;
+        font-weight:800;
+        color:white;
+        margin-bottom:5px;
+    }}
+
+
+    .main-header-subtitle {{
+        color:#E7F0FA;
+        font-size:13px;
+    }}
+
+
+    /* =====================================================
+       TÍTULOS DE SECCIÓN
+    ===================================================== */
+
+    .section-heading {{
+        display:flex;
+        align-items:center;
+        gap:10px;
+
+        margin-top:20px;
+        margin-bottom:10px;
+
+        color:{AZUL_OSCURO};
+
+        font-size:17px;
+        font-weight:800;
+    }}
+
+
+    .section-heading::before {{
+        content:"";
+        width:4px;
+        height:22px;
+
+        border-radius:5px;
+
+        background:
+            linear-gradient(
+                180deg,
+                {AZUL},
+                {NARANJA}
+            );
+    }}
+
+
+    .section-description {{
+        color:{GRIS_TEXTO};
+        font-size:12px;
+        margin-bottom:12px;
+    }}
+
+
+    /* =====================================================
+       TARJETAS
+    ===================================================== */
+
+    .info-card {{
+        background:white;
+        border:1px solid {GRIS_BORDE};
+        border-radius:15px;
+        padding:18px;
+        box-shadow:0 7px 20px rgba(15,23,42,.045);
+    }}
+
+
+    /* =====================================================
+       USUARIO SIDEBAR
+    ===================================================== */
+
+    .user-card {{
+        background:
+            linear-gradient(
+                135deg,
+                #F5F9FE,
+                #FFF7F0
+            );
+
+        border:1px solid #E1E8EF;
+
+        border-radius:14px;
+
+        padding:12px;
+
+        margin:10px 0 18px;
+    }}
+
+
+    .user-name {{
+        color:{AZUL_OSCURO};
+        font-weight:800;
+        font-size:13px;
+    }}
+
+
+    .user-status {{
+        color:{GRIS_TEXTO};
+        font-size:10px;
+        margin-top:2px;
+    }}
+
+
+    /* =====================================================
+       BADGES
+    ===================================================== */
+
+    .badge {{
+        display:inline-block;
+        padding:5px 9px;
+        border-radius:20px;
+        font-size:10px;
+        font-weight:700;
+    }}
+
+    .badge-blue {{
+        background:{AZUL_SUAVE};
+        color:{AZUL};
+    }}
+
+    .badge-orange {{
+        background:{NARANJA_SUAVE};
+        color:{NARANJA};
+    }}
+
+    .badge-green {{
+        background:{VERDE_SUAVE};
+        color:{VERDE};
+    }}
+
+    .badge-red {{
+        background:{ROJO_SUAVE};
+        color:{ROJO};
+    }}
+
+
+    /* =====================================================
+       ALERTAS
+    ===================================================== */
 
     .alert-card {{
-        background-color: {BLANCO};
-        border-left: 5px solid {NARANJA};
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 10px;
-        border-top: 1px solid {GRIS_BORDE};
-        border-right: 1px solid {GRIS_BORDE};
-        border-bottom: 1px solid {GRIS_BORDE};
+        background:white;
+        border:1px solid {GRIS_BORDE};
+        border-left:5px solid {ROJO};
+        border-radius:12px;
+        padding:15px;
+        margin-bottom:10px;
+        box-shadow:0 5px 15px rgba(15,23,42,.04);
     }}
+
 
     </style>
     """,
@@ -356,7 +714,7 @@ st.markdown(
 
 
 # ============================================================
-# CARGA DEL ARCHIVO
+# CARGA DEL EXCEL
 # ============================================================
 
 BASE_DIR = os.path.dirname(
@@ -403,7 +761,7 @@ except Exception as e:
 
 
 # ============================================================
-# MAPEO DE BODEGAS A ÁREAS
+# MAPEO DE BODEGAS
 # ============================================================
 
 MAPA_BODEGAS = {
@@ -439,23 +797,25 @@ MAPA_BODEGAS = {
 
 
 # ============================================================
-# PALETA INSTITUCIONAL POR ÁREA
+# COLORES POR ÁREA
 # ============================================================
 
 COLORES_AREA = {
 
-    "Mantenimiento": "#064B9B",
+    "Mantenimiento": AZUL,
 
-    "Operaciones": "#F58220",
+    "Operaciones": NARANJA,
 
-    "RRHH": "#16A34A",
+    "RRHH": VERDE,
 
-    "Sin asignar": "#6B7280"
+    "Calidad": MORADO,
+
+    "Sin asignar": GRIS_TEXTO
 }
 
 
 # ============================================================
-# CREAR COLUMNA ÁREA
+# CREAR ÁREA
 # ============================================================
 
 if "Bodega" in df.columns:
@@ -474,19 +834,14 @@ else:
 
 
 # ============================================================
-# CONVERSIÓN DE CAMPOS NUMÉRICOS
+# CONVERSIÓN NUMÉRICA
 # ============================================================
 
 COLUMNAS_TEXTO = [
-
     "Bodega",
-
     "Codigo Articulo",
-
     "Articulo",
-
     "MESES",
-
     "AREA"
 ]
 
@@ -551,7 +906,7 @@ ORDEN_AREAS = [
 
 
 # ============================================================
-# PALETA ÁREA + ANTIGÜEDAD
+# COLORES ÁREA + ANTIGÜEDAD
 # ============================================================
 
 COLORES_AREA_ANTIGUEDAD = {
@@ -562,18 +917,18 @@ COLORES_AREA_ANTIGUEDAD = {
 
         "Entre 4 y 6 meses": "#60A5FA",
 
-        "Entre 7 y 12 meses": "#2563EB",
+        "Entre 7 y 12 meses": AZUL_CLARO,
 
-        "Mayor a 12 meses": "#064B9B"
+        "Mayor a 12 meses": AZUL
     },
 
     "Operaciones": {
 
         "Entre 0 y 3 meses": "#FED7AA",
 
-        "Entre 4 y 6 meses": "#FB923C",
+        "Entre 4 y 6 meses": NARANJA_CLARO,
 
-        "Entre 7 y 12 meses": "#F97316",
+        "Entre 7 y 12 meses": NARANJA,
 
         "Mayor a 12 meses": "#C2410C"
     },
@@ -582,9 +937,9 @@ COLORES_AREA_ANTIGUEDAD = {
 
         "Entre 0 y 3 meses": "#BBF7D0",
 
-        "Entre 4 y 6 meses": "#4ADE80",
+        "Entre 4 y 6 meses": VERDE_CLARO,
 
-        "Entre 7 y 12 meses": "#16A34A",
+        "Entre 7 y 12 meses": VERDE,
 
         "Mayor a 12 meses": "#166534"
     },
@@ -593,9 +948,9 @@ COLORES_AREA_ANTIGUEDAD = {
 
         "Entre 0 y 3 meses": "#DDD6FE",
 
-        "Entre 4 y 6 meses": "#A78BFA",
+        "Entre 4 y 6 meses": MORADO_CLARO,
 
-        "Entre 7 y 12 meses": "#7C3AED",
+        "Entre 7 y 12 meses": MORADO,
 
         "Mayor a 12 meses": "#5B21B6"
     },
@@ -614,7 +969,7 @@ COLORES_AREA_ANTIGUEDAD = {
 
 
 # ============================================================
-# FUNCIÓN FORMATO MONEDA
+# FUNCIONES DE FORMATO
 # ============================================================
 
 def formato_moneda(valor):
@@ -623,12 +978,11 @@ def formato_moneda(valor):
 
         return "$0"
 
-    return f"${valor:,.0f}".replace(",", ".")
+    return (
+        f"${valor:,.0f}"
+        .replace(",", ".")
+    )
 
-
-# ============================================================
-# FUNCIÓN FORMATO NÚMERO
-# ============================================================
 
 def formato_numero(valor):
 
@@ -644,37 +998,205 @@ def formato_numero(valor):
     )
 
 
+def suma_columna(dataframe, columna):
+
+    if columna not in dataframe.columns:
+
+        return 0
+
+    return dataframe[columna].sum()
+
+
+def promedio_columna(dataframe, columna):
+
+    if columna not in dataframe.columns:
+
+        return 0
+
+    return dataframe[columna].mean()
+
+
+# ============================================================
+# CONFIGURACIÓN BASE PARA PLOTLY
+# ============================================================
+
+def configurar_figura(fig):
+
+    fig.update_layout(
+
+        plot_bgcolor=BLANCO,
+
+        paper_bgcolor=BLANCO,
+
+        font=dict(
+            family="Segoe UI, Arial",
+            color=GRIS_OSCURO
+        ),
+
+        title=dict(
+            font=dict(
+                size=16,
+                color=AZUL_OSCURO
+            )
+        ),
+
+        margin=dict(
+            l=45,
+            r=25,
+            t=60,
+            b=45
+        ),
+
+        xaxis=dict(
+            showgrid=False,
+            linecolor=GRIS_BORDE
+        ),
+
+        yaxis=dict(
+            showgrid=True,
+            gridcolor=GRIS_GRID,
+            zeroline=False
+        ),
+
+        legend=dict(
+            bgcolor="rgba(255,255,255,0.85)",
+            bordercolor=GRIS_BORDE,
+            borderwidth=1
+        )
+    )
+
+    return fig
+
+
 # ============================================================
 # SIDEBAR
 # ============================================================
 
 with st.sidebar:
 
-    LOGO_ALDC = LOGO_URL
-
     # --------------------------------------------------------
     # LOGO
     # --------------------------------------------------------
 
-    col_logo1, col_logo2, col_logo3 = st.columns(
-        [1, 2, 1]
+    st.markdown(
+        f"""
+        <div style="
+            text-align:center;
+            padding:8px 5px 18px;
+            border-bottom:1px solid {GRIS_BORDE};
+        ">
+        """,
+        unsafe_allow_html=True
     )
 
-    with col_logo2:
+    st.image(
+        LOGO_URL,
+        width=185
+    )
 
-        st.image(
-            LOGO_ALDC,
-            width=150
-        )
+    st.markdown(
+        f"""
+        <div style="
+            color:{GRIS_TEXTO};
+            font-size:10px;
+            margin-top:-2px;
+        ">
+            Gestión y Analítica de Inventarios
+        </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+    # --------------------------------------------------------
+    # USUARIO
+    # --------------------------------------------------------
+
+    usuario_actual = st.session_state.get(
+        "usuario",
+        ""
+    )
+
+    inicial = (
+        usuario_actual[:1].upper()
+        if usuario_actual
+        else "U"
+    )
+
+    st.markdown(
+        f"""
+        <div class="user-card">
+
+            <div style="
+                display:flex;
+                align-items:center;
+                gap:10px;
+            ">
+
+                <div style="
+                    width:36px;
+                    height:36px;
+                    border-radius:50%;
+                    background:
+                        linear-gradient(
+                            135deg,
+                            {AZUL},
+                            {NARANJA}
+                        );
+                    color:white;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-weight:800;
+                    font-size:14px;
+                ">
+                    {inicial}
+                </div>
+
+                <div>
+                    <div class="user-name">
+                        {usuario_actual}
+                    </div>
+
+                    <div class="user-status">
+                        ● Sesión activa
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
     # --------------------------------------------------------
     # MENÚ
     # --------------------------------------------------------
 
-    st.markdown("### Menú")
+    st.markdown(
+        f"""
+        <div style="
+            color:#94A3B8;
+            font-size:10px;
+            font-weight:800;
+            letter-spacing:1px;
+            margin:10px 8px 7px;
+            text-transform:uppercase;
+        ">
+            Navegación
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
 
     pagina = st.radio(
+
         "Navegación",
+
         [
             "📊Dashboard",
             "📦Inventarios",
@@ -682,18 +1204,16 @@ with st.sidebar:
             "⚠️Alertas",
             "📋Detalle"
         ],
+
         label_visibility="collapsed"
     )
 
-    # --------------------------------------------------------
-    # INFORMACIÓN DEL USUARIO
-    # --------------------------------------------------------
 
-    st.markdown("---")
-
-    st.caption(
-        f"Usuario: **{st.session_state.get('usuario', '')}**"
+    st.markdown(
+        "<div style='height:25px'></div>",
+        unsafe_allow_html=True
     )
+
 
     # --------------------------------------------------------
     # CERRAR SESIÓN
@@ -718,29 +1238,71 @@ with st.sidebar:
 
         st.rerun()
 
+
     # --------------------------------------------------------
-    # DESCRIPCIÓN
+    # PIE SIDEBAR
     # --------------------------------------------------------
 
-    st.markdown("---")
+    st.markdown(
+        f"""
+        <div style="
+            position:relative;
+            margin-top:25px;
+            padding:13px;
+            border-radius:12px;
+            background:{NARANJA_SUAVE};
+            border:1px solid #FDE0C5;
+        ">
 
-    st.caption(
-        "Sistema de análisis de inventarios"
+            <div style="
+                color:{NARANJA};
+                font-size:11px;
+                font-weight:800;
+            ">
+                Área Limpia D.C.
+            </div>
+
+            <div style="
+                color:{GRIS_TEXTO};
+                font-size:10px;
+                margin-top:3px;
+            ">
+                Sistema de análisis de inventarios
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
 # ============================================================
-# FILTROS SUPERIORES
+# FILTROS EN CASCADA
 # ============================================================
 
 st.markdown(
-    "<div class='section-title'>Filtros</div>",
+    """
+    <div class="filter-card">
+
+        <div class="filter-title">
+            🔎 Filtros de consulta
+        </div>
+
+        <div class="filter-subtitle">
+            Selecciona los criterios para actualizar
+            automáticamente la información del tablero.
+        </div>
+
+    """,
     unsafe_allow_html=True
 )
 
 
+col1, col2, col3, col4 = st.columns(4)
+
+
 # ============================================================
-# FILTRO 1 - ÁREA
+# ÁREA
 # ============================================================
 
 areas = [
@@ -752,9 +1314,10 @@ areas = [
     if area in df["AREA"].dropna().unique()
 ]
 
-areas_opciones = ["Todas"] + areas
 
-col1, col2, col3, col4 = st.columns(4)
+areas_opciones = [
+    "Todas"
+] + areas
 
 
 with col1:
@@ -766,7 +1329,7 @@ with col1:
 
 
 # ============================================================
-# FILTRO 2 - BODEGA
+# FILTRAR POR ÁREA
 # ============================================================
 
 df_area = df.copy()
@@ -779,18 +1342,27 @@ if area_seleccionada != "Todas":
     ]
 
 
+# ============================================================
+# BODEGA
+# ============================================================
+
 orden_bodegas = list(
     MAPA_BODEGAS.keys()
 )
 
 
 bodegas_existentes = (
+
     df_area["Bodega"]
     .dropna()
     .astype(str)
     .str.strip()
     .unique()
     .tolist()
+
+    if "Bodega" in df_area.columns
+
+    else []
 )
 
 
@@ -819,21 +1391,16 @@ bodegas.extend(
 )
 
 
-bodegas_opciones = [
-    "Todas"
-] + bodegas
-
-
 with col2:
 
     bodega_seleccionada = st.selectbox(
         "Bodega",
-        bodegas_opciones
+        ["Todas"] + bodegas
     )
 
 
 # ============================================================
-# FILTRO 3 - ARTÍCULO
+# FILTRAR POR BODEGA
 # ============================================================
 
 df_bodega = df_area.copy()
@@ -842,36 +1409,43 @@ df_bodega = df_area.copy()
 if bodega_seleccionada != "Todas":
 
     df_bodega = df_bodega[
-        df_bodega["Bodega"].astype(str)
+        df_bodega["Bodega"]
+        .astype(str)
+        .str.strip()
         == bodega_seleccionada
     ]
 
 
-articulos = sorted(
+# ============================================================
+# ARTÍCULO
+# ============================================================
 
-    df_bodega["Articulo"]
-    .dropna()
-    .astype(str)
-    .unique()
-    .tolist()
+articulos = (
+
+    sorted(
+        df_bodega["Articulo"]
+        .dropna()
+        .astype(str)
+        .unique()
+        .tolist()
+    )
+
+    if "Articulo" in df_bodega.columns
+
+    else []
 )
-
-
-articulos_opciones = [
-    "Todos"
-] + articulos
 
 
 with col3:
 
     articulo_seleccionado = st.selectbox(
         "Artículo",
-        articulos_opciones
+        ["Todos"] + articulos
     )
 
 
 # ============================================================
-# FILTRO 4 - ANTIGÜEDAD
+# FILTRAR POR ARTÍCULO
 # ============================================================
 
 df_articulo = df_bodega.copy()
@@ -880,12 +1454,17 @@ df_articulo = df_bodega.copy()
 if articulo_seleccionado != "Todos":
 
     df_articulo = df_articulo[
-        df_articulo["Articulo"].astype(str)
+        df_articulo["Articulo"]
+        .astype(str)
         == articulo_seleccionado
     ]
 
 
-if COL_ANTIGUEDAD in df.columns:
+# ============================================================
+# ANTIGÜEDAD
+# ============================================================
+
+if COL_ANTIGUEDAD in df_articulo.columns:
 
     antiguedades_existentes = (
 
@@ -921,21 +1500,16 @@ else:
     antiguedades = []
 
 
-antiguedades_opciones = [
-    "Todas"
-] + antiguedades
-
-
 with col4:
 
     antiguedad_seleccionada = st.selectbox(
         "Antigüedad",
-        antiguedades_opciones
+        ["Todas"] + antiguedades
     )
 
 
 # ============================================================
-# APLICAR FILTRO DE ANTIGÜEDAD
+# FILTRO FINAL
 # ============================================================
 
 df_filtrado = df_articulo.copy()
@@ -950,73 +1524,72 @@ if antiguedad_seleccionada != "Todas":
     ]
 
 
-# ============================================================
-# RESUMEN DEL FILTRO
-# ============================================================
+st.markdown(
+    f"""
+    <div style="
+        margin-top:8px;
+        color:{GRIS_TEXTO};
+        font-size:11px;
+    ">
+        Registros encontrados:
+        <strong style="color:{AZUL};">
+            {len(df_filtrado):,}
+        </strong>
+    </div>
 
-st.caption(
-    f"Registros encontrados: **{len(df_filtrado):,}**"
-    .replace(",", ".")
+    </div>
+    """.replace(",", "."),
+    unsafe_allow_html=True
 )
 
-st.markdown("---")
-
 
 # ============================================================
-# PÁGINA: DASHBOARD
+# DASHBOARD
 # ============================================================
 
 if pagina == "📊Dashboard":
 
-    st.title(
-        "Dashboard de Inventarios"
+    st.markdown(
+        """
+        <div class="main-header">
+
+            <div class="main-header-title">
+                📊 Dashboard de Inventarios
+            </div>
+
+            <div class="main-header-subtitle">
+                Vista general del comportamiento y gestión
+                del inventario
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    st.caption(
-        "Vista general del comportamiento del inventario."
-    )
 
     # ========================================================
     # KPIs
     # ========================================================
 
-    stock_total = (
-
-        df_filtrado[COL_STOCK].sum()
-
-        if COL_STOCK in df_filtrado.columns
-
-        else 0
+    stock_total = suma_columna(
+        df_filtrado,
+        COL_STOCK
     )
 
-
-    coste_inventario = (
-
-        df_filtrado[COL_COSTE].sum()
-
-        if COL_COSTE in df_filtrado.columns
-
-        else 0
+    coste_inventario = suma_columna(
+        df_filtrado,
+        COL_COSTE
     )
 
-
-    rotacion = (
-
-        df_filtrado[COL_ROTACION].mean()
-
-        if COL_ROTACION in df_filtrado.columns
-
-        else 0
+    rotacion = promedio_columna(
+        df_filtrado,
+        COL_ROTACION
     )
 
-
-    dias = (
-
-        df_filtrado[COL_DIAS].mean()
-
-        if COL_DIAS in df_filtrado.columns
-
-        else 0
+    dias = promedio_columna(
+        df_filtrado,
+        COL_DIAS
     )
 
 
@@ -1026,285 +1599,237 @@ if pagina == "📊Dashboard":
     with k1:
 
         st.metric(
-            label="📦 Stock total",
-            value=formato_numero(stock_total)
+            "📦 Stock total",
+            formato_numero(stock_total)
         )
 
 
     with k2:
 
         st.metric(
-            label="💰 Coste Promedio inventario",
-            value=formato_moneda(coste_inventario)
+            "💰 Valor inventario",
+            formato_moneda(coste_inventario)
         )
 
 
     with k3:
 
         st.metric(
-            label="🔄 Rotación",
-            value=formato_numero(rotacion)
+            "🔄 Rotación promedio",
+            formato_numero(rotacion)
         )
 
 
     with k4:
 
         st.metric(
-            label="📅 Días",
-            value=formato_numero(dias)
+            "⏱️ Días promedio",
+            formato_numero(dias)
         )
 
 
-    st.markdown(
-        "<br>",
-        unsafe_allow_html=True
-    )
-
-
     # ========================================================
-    # GRÁFICO 1
+    # RESUMEN
     # ========================================================
 
     st.markdown(
         """
-        <div style="
-            text-align: center;
-            font-size: 20px;
-            font-weight: 700;
-            color: #003B7A;
-            margin-top: 10px;
-            margin-bottom: 15px;
-        ">
-            Valor del inventario por antigüedad y área
+        <div class="section-heading">
+            Resumen del inventario
+        </div>
+
+        <div class="section-description">
+            Distribución del inventario según área y antigüedad.
         </div>
         """,
         unsafe_allow_html=True
     )
 
 
-    if (
+    col_a, col_b = st.columns(
+        [1.25, 1]
+    )
 
-        COL_ANTIGUEDAD in df_filtrado.columns
 
-        and COL_COSTE in df_filtrado.columns
+    # ========================================================
+    # GRÁFICO VALOR POR ANTIGÜEDAD
+    # ========================================================
 
-        and "AREA" in df_filtrado.columns
+    with col_a:
 
-    ):
+        if (
+            COL_COSTE in df_filtrado.columns
+            and COL_ANTIGUEDAD in df_filtrado.columns
+        ):
 
-        df_valor_edad = (
+            resumen_edad = (
 
-            df_filtrado
+                df_filtrado
 
-            .groupby(
-                [
+                .groupby(
+                    COL_ANTIGUEDAD,
+                    as_index=False
+                )[COL_COSTE]
+
+                .sum()
+            )
+
+
+            resumen_edad["Orden"] = (
+                resumen_edad[COL_ANTIGUEDAD]
+                .map({
+                    edad: i
+                    for i, edad
+                    in enumerate(ORDEN_ANTIGUEDAD)
+                })
+                .fillna(99)
+            )
+
+
+            resumen_edad = (
+                resumen_edad
+                .sort_values("Orden")
+            )
+
+
+            fig_edad = px.bar(
+
+                resumen_edad,
+
+                x=COL_ANTIGUEDAD,
+
+                y=COL_COSTE,
+
+                color=COL_ANTIGUEDAD,
+
+                category_orders={
+                    COL_ANTIGUEDAD:
+                    ORDEN_ANTIGUEDAD
+                },
+
+                color_discrete_map={
+
+                    "Entre 0 y 3 meses":
+                        "#BFDBFE",
+
+                    "Entre 4 y 6 meses":
+                        "#60A5FA",
+
+                    "Entre 7 y 12 meses":
+                        AZUL_CLARO,
+
+                    "Mayor a 12 meses":
+                        AZUL
+                },
+
+                title="Valor del inventario por antigüedad"
+            )
+
+
+            fig_edad.update_layout(
+                showlegend=False,
+                xaxis_title="",
+                yaxis_title="Valor"
+            )
+
+
+            configurar_figura(
+                fig_edad
+            )
+
+
+            st.plotly_chart(
+                fig_edad,
+                use_container_width=True
+            )
+
+
+    # ========================================================
+    # GRÁFICO VALOR POR ÁREA
+    # ========================================================
+
+    with col_b:
+
+        if (
+            COL_COSTE in df_filtrado.columns
+            and "AREA" in df_filtrado.columns
+        ):
+
+            resumen_area = (
+
+                df_filtrado
+
+                .groupby(
                     "AREA",
-                    COL_ANTIGUEDAD
-                ],
-                as_index=False,
-                observed=True
+                    as_index=False
+                )[COL_COSTE]
+
+                .sum()
             )
 
-            .agg(
-                Valor_Inventario=(
-                    COL_COSTE,
-                    "sum"
-                ),
 
-                Cantidad_Stock=(
-                    COL_STOCK,
-                    "sum"
-                )
-            )
-        )
+            fig_area = px.bar(
 
+                resumen_area,
 
-        df_valor_edad[
-            COL_ANTIGUEDAD
-        ] = pd.Categorical(
+                x=COL_COSTE,
 
-            df_valor_edad[
-                COL_ANTIGUEDAD
-            ],
-
-            categories=ORDEN_ANTIGUEDAD,
-
-            ordered=True
-        )
-
-
-        df_valor_edad["AREA"] = pd.Categorical(
-
-            df_valor_edad["AREA"],
-
-            categories=ORDEN_AREAS,
-
-            ordered=True
-        )
-
-
-        df_valor_edad = df_valor_edad.sort_values(
-            [
-                "AREA",
-                COL_ANTIGUEDAD
-            ]
-        )
-
-
-        fig_valor_edad = px.bar(
-
-            df_valor_edad,
-
-            x=COL_ANTIGUEDAD,
-
-            y="Valor_Inventario",
-
-            color="AREA",
-
-            color_discrete_map=COLORES_AREA,
-
-            custom_data=[
-                "Cantidad_Stock",
-                "Valor_Inventario",
-                "AREA"
-            ]
-        )
-
-
-        fig_valor_edad.update_traces(
-
-            hovertemplate=
-
-                "<b>%{customdata[2]}</b><br>"
-
-                "Antigüedad: %{x}<br>"
-
-                "Cantidad: %{customdata[0]:,.0f}<br>"
-
-                "Valor inventario: $%{customdata[1]:,.0f}"
-
-                "<extra></extra>"
-        )
-
-
-        fig_valor_edad.update_layout(
-
-            barmode="group",
-
-            xaxis_title="Antigüedad",
-
-            yaxis_title="Valor del inventario",
-
-            plot_bgcolor="white",
-
-            paper_bgcolor="white",
-
-            legend_title_text="Área",
-
-            legend=dict(
+                y="AREA",
 
                 orientation="h",
 
-                yanchor="bottom",
+                color="AREA",
 
-                y=1.02,
+                color_discrete_map=COLORES_AREA,
 
-                xanchor="center",
-
-                x=0.5
-            ),
-
-            bargap=0.25,
-
-            xaxis=dict(
-
-                categoryorder="array",
-
-                categoryarray=ORDEN_ANTIGUEDAD,
-
-                tickangle=0
-            ),
-
-            yaxis=dict(
-
-                tickprefix="$ ",
-
-                tickformat=",.0f",
-
-                gridcolor="#E5E7EB",
-
-                zerolinecolor="#E5E7EB"
-            ),
-
-            margin=dict(
-
-                l=70,
-
-                r=30,
-
-                t=100,
-
-                b=70
+                title="Valor del inventario por área"
             )
-        )
 
 
-        st.plotly_chart(
+            fig_area.update_layout(
+                xaxis_title="Valor",
+                yaxis_title=""
+            )
 
-            fig_valor_edad,
 
-            use_container_width=True
-        )
+            configurar_figura(
+                fig_area
+            )
+
+
+            st.plotly_chart(
+                fig_area,
+                use_container_width=True
+            )
 
 
     # ========================================================
-    # GRÁFICO 2
+    # DISTRIBUCIÓN POR BODEGA
     # ========================================================
 
     st.markdown(
         """
-        <div style="
-            text-align: center;
-            font-size: 20px;
-            font-weight: 700;
-            color: #003B7A;
-            margin-top: 30px;
-            margin-bottom: 10px;
-        ">
-            Valor del inventario por bodega, área y antigüedad
+        <div class="section-heading">
+            Distribución por bodega
+        </div>
+
+        <div class="section-description">
+            Comparación del stock y valor de inventario entre bodegas.
         </div>
         """,
         unsafe_allow_html=True
     )
 
 
-    if (
+    if "Bodega" in df_filtrado.columns:
 
-        "Bodega" in df_filtrado.columns
-
-        and "AREA" in df_filtrado.columns
-
-        and COL_ANTIGUEDAD in df_filtrado.columns
-
-        and COL_COSTE in df_filtrado.columns
-
-    ):
-
-        df_bodega_grafico = (
+        resumen_bodega = (
 
             df_filtrado
 
             .groupby(
-
-                [
-                    "AREA",
-                    "Bodega",
-                    COL_ANTIGUEDAD
-                ],
-
-                as_index=False,
-
-                observed=True
+                "Bodega",
+                as_index=False
             )
 
             .agg(
@@ -1322,569 +1847,106 @@ if pagina == "📊Dashboard":
         )
 
 
-        df_bodega_grafico["AREA"] = pd.Categorical(
-
-            df_bodega_grafico["AREA"],
-
-            categories=ORDEN_AREAS,
-
-            ordered=True
-        )
+        col_c, col_d = st.columns(2)
 
 
-        df_bodega_grafico[
-            COL_ANTIGUEDAD
-        ] = pd.Categorical(
+        with col_c:
 
-            df_bodega_grafico[
-                COL_ANTIGUEDAD
-            ],
+            fig_stock = px.bar(
 
-            categories=ORDEN_ANTIGUEDAD,
+                resumen_bodega,
 
-            ordered=True
-        )
+                x="Bodega",
 
+                y="Stock",
 
-        orden_bodegas_df = (
-
-            df_bodega_grafico
-
-            .groupby(
-
-                [
-                    "AREA",
-                    "Bodega"
+                color_discrete_sequence=[
+                    AZUL
                 ],
 
-                observed=True,
+                title="Stock por bodega"
+            )
 
-                as_index=False
-            )["Coste"]
 
-            .sum()
+            fig_stock.update_layout(
+                xaxis_title="",
+                yaxis_title="Stock"
+            )
 
-            .sort_values(
 
-                [
-                    "AREA",
-                    "Coste"
+            configurar_figura(
+                fig_stock
+            )
+
+
+            st.plotly_chart(
+                fig_stock,
+                use_container_width=True
+            )
+
+
+        with col_d:
+
+            fig_coste = px.bar(
+
+                resumen_bodega,
+
+                x="Bodega",
+
+                y="Coste",
+
+                color_discrete_sequence=[
+                    NARANJA
                 ],
 
-                ascending=[
-                    True,
-                    False
-                ]
-            )
-        )
-
-
-        orden_bodegas = (
-            orden_bodegas_df[
-                "Bodega"
-            ].tolist()
-        )
-
-
-        df_bodega_grafico[
-            "AREA_TEXTO"
-        ] = (
-
-            df_bodega_grafico[
-                "AREA"
-            ]
-
-            .astype(str)
-
-            .replace(
-                "nan",
-                "Sin asignar"
-            )
-        )
-
-
-        df_bodega_grafico[
-            "ANTIGUEDAD_TEXTO"
-        ] = (
-
-            df_bodega_grafico[
-                COL_ANTIGUEDAD
-            ]
-
-            .astype(str)
-
-            .replace(
-                "nan",
-                ""
-            )
-        )
-
-
-        df_bodega_grafico[
-            "AREA_ANTIGUEDAD"
-        ] = (
-
-            df_bodega_grafico[
-                "AREA_TEXTO"
-            ]
-
-            + " | "
-
-            + df_bodega_grafico[
-                "ANTIGUEDAD_TEXTO"
-            ]
-        )
-
-
-        PALETA_GRAFICO = {}
-
-
-        for area, colores in (
-            COLORES_AREA_ANTIGUEDAD.items()
-        ):
-
-            for antiguedad, color in colores.items():
-
-                PALETA_GRAFICO[
-                    f"{area} | {antiguedad}"
-                ] = color
-
-
-        fig_bodega = px.bar(
-
-            df_bodega_grafico,
-
-            x="Bodega",
-
-            y="Coste",
-
-            color="AREA_ANTIGUEDAD",
-
-            color_discrete_map=PALETA_GRAFICO,
-
-            category_orders={
-                "Bodega": orden_bodegas
-            },
-
-            custom_data=[
-
-                "AREA_TEXTO",
-
-                "Bodega",
-
-                "Stock",
-
-                "Coste",
-
-                "ANTIGUEDAD_TEXTO"
-            ]
-        )
-
-
-        fig_bodega.update_traces(
-
-            hovertemplate=
-
-                "<b>%{customdata[1]}</b><br>"
-
-                "Área: %{customdata[0]}<br>"
-
-                "Antigüedad: %{customdata[4]}<br>"
-
-                "Cantidad: %{customdata[2]:,.0f}<br>"
-
-                "Valor inventario: $%{customdata[3]:,.0f}"
-
-                "<extra></extra>"
-        )
-
-
-        fig_bodega.update_layout(
-
-            showlegend=False,
-
-            barmode="stack",
-
-            xaxis_title="Bodega",
-
-            yaxis_title="Valor del inventario ($)",
-
-            xaxis=dict(
-
-                categoryorder="array",
-
-                categoryarray=orden_bodegas,
-
-                tickangle=-45
-            ),
-
-            yaxis=dict(
-
-                tickprefix="$ ",
-
-                tickformat=",.0f",
-
-                gridcolor="#E5E7EB",
-
-                zerolinecolor="#E5E7EB"
-            ),
-
-            plot_bgcolor="white",
-
-            paper_bgcolor="white",
-
-            bargap=0.25,
-
-            margin=dict(
-
-                l=90,
-
-                r=30,
-
-                t=30,
-
-                b=140
-            )
-        )
-
-
-        areas_presentes = [
-
-            area
-
-            for area in ORDEN_AREAS
-
-            if area in
-            df_bodega_grafico[
-                "AREA_TEXTO"
-            ].unique()
-        ]
-
-
-        elementos_leyenda = []
-
-
-        for area in areas_presentes:
-
-            color = COLORES_AREA.get(
-
-                area,
-
-                "#6B7280"
+                title="Valor por bodega"
             )
 
 
-            elemento = (
-
-                '<span style="'
-
-                'display:inline-flex;'
-
-                'align-items:center;'
-
-                'margin-right:20px;'
-
-                'color:#374151;'
-
-                'white-space:nowrap;'
-
-                '">'
-
-                '<span style="'
-
-                'display:inline-block;'
-
-                'width:12px;'
-
-                'height:12px;'
-
-                'border-radius:3px;'
-
-                f'background-color:{color};'
-
-                'margin-right:6px;'
-
-                '"></span>'
-
-                f'{area}'
-
-                '</span>'
+            fig_coste.update_layout(
+                xaxis_title="",
+                yaxis_title="Valor"
             )
 
 
-            elementos_leyenda.append(
-                elemento
+            configurar_figura(
+                fig_coste
             )
 
 
-        leyenda_areas = "".join(
-            elementos_leyenda
-        )
-
-
-        elementos_antiguedad = []
-
-
-        for antiguedad in ORDEN_ANTIGUEDAD:
-
-            color = (
-                COLORES_AREA_ANTIGUEDAD[
-                    "Mantenimiento"
-                ][
-                    antiguedad
-                ]
+            st.plotly_chart(
+                fig_coste,
+                use_container_width=True
             )
-
-
-            if antiguedad == "Entre 0 y 3 meses":
-
-                nombre = "0–3 meses"
-
-            elif antiguedad == "Entre 4 y 6 meses":
-
-                nombre = "4–6 meses"
-
-            elif antiguedad == "Entre 7 y 12 meses":
-
-                nombre = "7–12 meses"
-
-            else:
-
-                nombre = "Mayor a 12 meses"
-
-
-            elemento = (
-
-                '<span style="'
-
-                'display:inline-flex;'
-
-                'align-items:center;'
-
-                'margin-right:15px;'
-
-                'color:#6B7280;'
-
-                'white-space:nowrap;'
-
-                '">'
-
-                '<span style="'
-
-                'display:inline-block;'
-
-                'width:12px;'
-
-                'height:12px;'
-
-                'border-radius:3px;'
-
-                f'background-color:{color};'
-
-                'margin-right:5px;'
-
-                '"></span>'
-
-                f'{nombre}'
-
-                '</span>'
-            )
-
-
-            elementos_antiguedad.append(
-                elemento
-            )
-
-
-        leyenda_antiguedad = "".join(
-            elementos_antiguedad
-        )
-
-
-        st.markdown(
-
-            f"""
-            <div style="
-                text-align:center;
-                margin-top:5px;
-                margin-bottom:8px;
-                font-size:13px;
-                color:#374151;
-            ">
-                <span style="
-                    font-weight:700;
-                    color:#003B7A;
-                    margin-right:10px;
-                ">
-                    Área:
-                </span>
-                {leyenda_areas}
-            </div>
-            """,
-
-            unsafe_allow_html=True
-        )
-
-
-        st.markdown(
-
-            f"""
-            <div style="
-                text-align:center;
-                margin-top:0px;
-                margin-bottom:15px;
-                font-size:12px;
-                color:#6B7280;
-            ">
-                <span style="
-                    font-weight:700;
-                    color:#003B7A;
-                    margin-right:8px;
-                ">
-                    Antigüedad:
-                </span>
-                {leyenda_antiguedad}
-            </div>
-            """,
-
-            unsafe_allow_html=True
-        )
-
-
-        st.plotly_chart(
-
-            fig_bodega,
-
-            use_container_width=True
-        )
 
 
 # ============================================================
-# PÁGINA: INVENTARIOS
+# INVENTARIOS
 # ============================================================
 
 elif pagina == "📦Inventarios":
 
-    st.title("Inventarios")
+    st.markdown(
+        """
+        <div class="main-header">
 
-    st.caption(
-        "Comportamiento del inventario por bodega y artículo."
+            <div class="main-header-title">
+                📦 Inventarios
+            </div>
+
+            <div class="main-header-subtitle">
+                Comportamiento del inventario por bodega y artículo
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
     if "Bodega" in df_filtrado.columns:
 
         inventario_bodega = (
-
-            df_filtrado
-
-            .groupby(
-                "Bodega",
-                as_index=False
-            )
-
-            .agg(
-
-                Stock=(
-                    COL_STOCK,
-                    "sum"
-                ),
-
-                Coste=(
-                    COL_COSTE,
-                    "sum"
-                )
-            )
-        )
-
-
-        # ----------------------------------------------------
-        # STOCK
-        # ----------------------------------------------------
-
-        fig = px.bar(
-
-            inventario_bodega,
-
-            x="Bodega",
-
-            y="Stock",
-
-            title="Stock por bodega"
-        )
-
-
-        fig.update_layout(
-
-            xaxis_title="Bodega",
-
-            yaxis_title="Stock",
-
-            plot_bgcolor="white",
-
-            paper_bgcolor="white"
-        )
-
-
-        st.plotly_chart(
-
-            fig,
-
-            use_container_width=True
-        )
-
-
-        # ----------------------------------------------------
-        # COSTE
-        # ----------------------------------------------------
-
-        fig_coste = px.bar(
-
-            inventario_bodega,
-
-            x="Bodega",
-
-            y="Coste",
-
-            title="Valor del inventario por bodega"
-        )
-
-
-        fig_coste.update_layout(
-
-            xaxis_title="Bodega",
-
-            yaxis_title="Valor",
-
-            plot_bgcolor="white",
-
-            paper_bgcolor="white"
-        )
-
-
-        st.plotly_chart(
-
-            fig_coste,
-
-            use_container_width=True
-        )
-
-
-    # ========================================================
-    # TABLA POR BODEGA
-    # ========================================================
-
-    st.markdown(
-
-        "<div class='section-title'>Resumen por bodega</div>",
-
-        unsafe_allow_html=True
-    )
-
-
-    if "Bodega" in df_filtrado.columns:
-
-        tabla_bodega = (
 
             df_filtrado
 
@@ -1913,53 +1975,145 @@ elif pagina == "📦Inventarios":
         )
 
 
+        col1, col2 = st.columns(2)
+
+
+        # ----------------------------------------------------
+        # STOCK
+        # ----------------------------------------------------
+
+        with col1:
+
+            fig_stock = px.bar(
+
+                inventario_bodega,
+
+                x="Bodega",
+
+                y="Stock",
+
+                color_discrete_sequence=[
+                    AZUL
+                ],
+
+                title="Stock por bodega"
+            )
+
+
+            fig_stock.update_layout(
+                xaxis_title="",
+                yaxis_title="Stock"
+            )
+
+
+            configurar_figura(
+                fig_stock
+            )
+
+
+            st.plotly_chart(
+                fig_stock,
+                use_container_width=True
+            )
+
+
+        # ----------------------------------------------------
+        # COSTE
+        # ----------------------------------------------------
+
+        with col2:
+
+            fig_coste = px.bar(
+
+                inventario_bodega,
+
+                x="Bodega",
+
+                y="Coste",
+
+                color_discrete_sequence=[
+                    NARANJA
+                ],
+
+                title="Valor del inventario por bodega"
+            )
+
+
+            fig_coste.update_layout(
+                xaxis_title="",
+                yaxis_title="Valor"
+            )
+
+
+            configurar_figura(
+                fig_coste
+            )
+
+
+            st.plotly_chart(
+                fig_coste,
+                use_container_width=True
+            )
+
+
+        # ----------------------------------------------------
+        # TABLA
+        # ----------------------------------------------------
+
+        st.markdown(
+            """
+            <div class="section-heading">
+                Resumen por bodega
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+
         st.dataframe(
-
-            tabla_bodega,
-
+            inventario_bodega,
             use_container_width=True,
-
             hide_index=True
         )
 
 
 # ============================================================
-# PÁGINA: ANÁLISIS
+# ANÁLISIS
 # ============================================================
 
 elif pagina == "📈Análisis":
 
-    st.title("Análisis")
+    st.markdown(
+        """
+        <div class="main-header">
 
-    st.caption(
-        "Análisis del movimiento y rotación del inventario."
+            <div class="main-header-title">
+                📈 Análisis
+            </div>
+
+            <div class="main-header-subtitle">
+                Movimiento mensual, costos y rotación del inventario
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
     MESES_NOMBRES = [
 
         "JUNIO",
-
         "JULIO",
-
         "AGOSTO",
-
         "SEPTIEMBRE",
-
         "OCTUBRE",
-
         "NOVIEMBRE",
-
         "DICIEMBRE",
-
         "ENERO",
-
         "FEBRERO",
-
         "MARZO",
-
         "ABRIL",
-
         "MAYO"
     ]
 
@@ -1967,193 +2121,110 @@ elif pagina == "📈Análisis":
     MOVIMIENTO_MENSUAL = {
 
         "JUNIO": {
-
             "entrada": "ENTRADA",
-
             "salida": "SALIDA",
-
             "costo_entrada": "COSTO ENTRADA",
-
             "costo_salida": "COSTO SALIDA",
-
             "neto": "NETO",
-
             "rotacion": "ROTACION"
         },
 
-
         "JULIO": {
-
             "entrada": "ENTRADA2",
-
             "salida": "SALIDA3",
-
             "costo_entrada": "COSTO ENTRADA4",
-
             "costo_salida": "COSTO SALIDA5",
-
             "neto": "NETO6",
-
             "rotacion": "ROTACION 68"
         },
 
-
         "AGOSTO": {
-
             "entrada": "ENTRADA8",
-
             "salida": "SALIDA9",
-
             "costo_entrada": "COSTO ENTRADA10",
-
             "costo_salida": "COSTO SALIDA11",
-
             "neto": "NETO12",
-
             "rotacion": "ROTACION 69"
         },
 
-
         "SEPTIEMBRE": {
-
             "entrada": "ENTRADA14",
-
             "salida": "SALIDA15",
-
             "costo_entrada": "COSTO ENTRADA16",
-
             "costo_salida": "COSTO SALIDA17",
-
             "neto": "NETO18",
-
             "rotacion": "ROTACION 70"
         },
 
-
         "OCTUBRE": {
-
             "entrada": "ENTRADA20",
-
             "salida": "SALIDA21",
-
             "costo_entrada": "COSTO ENTRADA22",
-
             "costo_salida": "COSTO SALIDA23",
-
             "neto": "NETO24",
-
             "rotacion": "ROTACION 71"
         },
 
-
         "NOVIEMBRE": {
-
             "entrada": "ENTRADA26",
-
             "salida": "SALIDA27",
-
             "costo_entrada": "COSTO ENTRADA28",
-
             "costo_salida": "COSTO SALIDA29",
-
             "neto": "NETO30",
-
             "rotacion": "ROTACION 72"
         },
 
-
         "DICIEMBRE": {
-
             "entrada": "ENTRADA32",
-
             "salida": "SALIDA33",
-
             "costo_entrada": "COSTO ENTRADA34",
-
             "costo_salida": "COSTO SALIDA35",
-
             "neto": "NETO36",
-
             "rotacion": "ROTACION 73"
         },
 
-
         "ENERO": {
-
             "entrada": "ENTRADA38",
-
             "salida": "SALIDA39",
-
             "costo_entrada": "COSTO ENTRADA40",
-
             "costo_salida": "COSTO SALIDA41",
-
             "neto": "NETO42",
-
             "rotacion": "ROTACION 74"
         },
 
-
         "FEBRERO": {
-
             "entrada": "ENTRADA44",
-
             "salida": "SALIDA45",
-
             "costo_entrada": "COSTO ENTRADA46",
-
             "costo_salida": "COSTO SALIDA47",
-
             "neto": "NETO48",
-
             "rotacion": "ROTACION 75"
         },
 
-
         "MARZO": {
-
             "entrada": "ENTRADA50",
-
             "salida": "SALIDA51",
-
             "costo_entrada": "COSTO ENTRADA52",
-
             "costo_salida": "COSTO SALIDA53",
-
             "neto": "NETO54",
-
             "rotacion": "ROTACION 76"
         },
 
-
         "ABRIL": {
-
             "entrada": "ENTRADA56",
-
             "salida": "SALIDA57",
-
             "costo_entrada": "COSTO ENTRADA58",
-
             "costo_salida": "COSTO SALIDA59",
-
             "neto": "NETO60",
-
             "rotacion": "ROTACION 77"
         },
 
-
         "MAYO": {
-
             "entrada": "ENTRADA62",
-
             "salida": "SALIDA63",
-
             "costo_entrada": "COSTO ENTRADA64",
-
             "costo_salida": "COSTO SALIDA65",
-
             "neto": "NETO66",
-
             "rotacion": "ROTACION 78"
         }
     }
@@ -2172,74 +2243,44 @@ elif pagina == "📈Análisis":
             "Mes": mes,
 
             "Entradas": (
-
-                df_filtrado[
-                    columnas["entrada"]
-                ].sum()
-
+                df_filtrado[columnas["entrada"]].sum()
                 if columnas["entrada"]
                 in df_filtrado.columns
-
                 else 0
             ),
 
             "Salidas": (
-
-                df_filtrado[
-                    columnas["salida"]
-                ].sum()
-
+                df_filtrado[columnas["salida"]].sum()
                 if columnas["salida"]
                 in df_filtrado.columns
-
                 else 0
             ),
 
             "Costo entradas": (
-
-                df_filtrado[
-                    columnas["costo_entrada"]
-                ].sum()
-
+                df_filtrado[columnas["costo_entrada"]].sum()
                 if columnas["costo_entrada"]
                 in df_filtrado.columns
-
                 else 0
             ),
 
             "Costo salidas": (
-
-                df_filtrado[
-                    columnas["costo_salida"]
-                ].sum()
-
+                df_filtrado[columnas["costo_salida"]].sum()
                 if columnas["costo_salida"]
                 in df_filtrado.columns
-
                 else 0
             ),
 
             "Neto": (
-
-                df_filtrado[
-                    columnas["neto"]
-                ].sum()
-
+                df_filtrado[columnas["neto"]].sum()
                 if columnas["neto"]
                 in df_filtrado.columns
-
                 else 0
             ),
 
             "Rotacion": (
-
-                df_filtrado[
-                    columnas["rotacion"]
-                ].mean()
-
+                df_filtrado[columnas["rotacion"]].mean()
                 if columnas["rotacion"]
                 in df_filtrado.columns
-
                 else 0
             )
         })
@@ -2255,9 +2296,15 @@ elif pagina == "📈Análisis":
     # ========================================================
 
     st.markdown(
+        """
+        <div class="section-heading">
+            Entradas y salidas mensuales
+        </div>
 
-        "<div class='section-title'>Entradas y salidas mensuales</div>",
-
+        <div class="section-description">
+            Evolución de los movimientos físicos del inventario.
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -2275,26 +2322,25 @@ elif pagina == "📈Análisis":
 
         markers=True,
 
+        color_discrete_map=PALETA_MOVIMIENTO,
+
         title="Movimiento mensual de inventario"
     )
 
 
     fig_movimiento.update_layout(
+        xaxis_title="",
+        yaxis_title="Cantidad"
+    )
 
-        xaxis_title="Mes",
 
-        yaxis_title="Cantidad",
-
-        plot_bgcolor="white",
-
-        paper_bgcolor="white"
+    configurar_figura(
+        fig_movimiento
     )
 
 
     st.plotly_chart(
-
         fig_movimiento,
-
         use_container_width=True
     )
 
@@ -2304,9 +2350,15 @@ elif pagina == "📈Análisis":
     # ========================================================
 
     st.markdown(
+        """
+        <div class="section-heading">
+            Costos de entradas y salidas
+        </div>
 
-        "<div class='section-title'>Costos de entradas y salidas</div>",
-
+        <div class="section-description">
+            Evolución mensual del valor asociado a los movimientos.
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -2324,26 +2376,25 @@ elif pagina == "📈Análisis":
 
         markers=True,
 
+        color_discrete_map=PALETA_COSTOS,
+
         title="Movimiento de costos"
     )
 
 
     fig_costos.update_layout(
+        xaxis_title="",
+        yaxis_title="Valor"
+    )
 
-        xaxis_title="Mes",
 
-        yaxis_title="Valor",
-
-        plot_bgcolor="white",
-
-        paper_bgcolor="white"
+    configurar_figura(
+        fig_costos
     )
 
 
     st.plotly_chart(
-
         fig_costos,
-
         use_container_width=True
     )
 
@@ -2353,9 +2404,11 @@ elif pagina == "📈Análisis":
     # ========================================================
 
     st.markdown(
-
-        "<div class='section-title'>Movimiento neto</div>",
-
+        """
+        <div class="section-heading">
+            Movimiento neto
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -2368,28 +2421,27 @@ elif pagina == "📈Análisis":
 
         y="Neto",
 
-        text_auto=".2f",
+        color_discrete_sequence=[
+            AZUL
+        ],
 
         title="Movimiento neto mensual"
     )
 
 
     fig_neto.update_layout(
+        xaxis_title="",
+        yaxis_title="Neto"
+    )
 
-        xaxis_title="Mes",
 
-        yaxis_title="Neto",
-
-        plot_bgcolor="white",
-
-        paper_bgcolor="white"
+    configurar_figura(
+        fig_neto
     )
 
 
     st.plotly_chart(
-
         fig_neto,
-
         use_container_width=True
     )
 
@@ -2399,9 +2451,11 @@ elif pagina == "📈Análisis":
     # ========================================================
 
     st.markdown(
-
-        "<div class='section-title'>Rotación mensual</div>",
-
+        """
+        <div class="section-heading">
+            Rotación mensual
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -2416,86 +2470,79 @@ elif pagina == "📈Análisis":
 
         markers=True,
 
+        color_discrete_sequence=[
+            MORADO
+        ],
+
         title="Rotación mensual"
     )
 
 
     fig_rotacion.update_layout(
+        xaxis_title="",
+        yaxis_title="Rotación"
+    )
 
-        xaxis_title="Mes",
 
-        yaxis_title="Rotación",
-
-        plot_bgcolor="white",
-
-        paper_bgcolor="white"
+    configurar_figura(
+        fig_rotacion
     )
 
 
     st.plotly_chart(
-
         fig_rotacion,
-
         use_container_width=True
     )
 
 
 # ============================================================
-# PÁGINA: ALERTAS
+# ALERTAS
 # ============================================================
 
 elif pagina == "⚠️Alertas":
 
-    st.title("Alertas")
+    st.markdown(
+        """
+        <div class="main-header">
 
-    st.caption(
-        "Identificación de inventarios con mayor antigüedad."
+            <div class="main-header-title">
+                ⚠️ Alertas
+            </div>
+
+            <div class="main-header-subtitle">
+                Identificación de inventarios con mayor antigüedad
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
     if COL_ANTIGUEDAD in df_filtrado.columns:
 
         df_alertas = df_filtrado[
-
             df_filtrado[
                 COL_ANTIGUEDAD
             ]
-
             .astype(str)
-
             .str.contains(
-
                 "Mayor a 12 meses",
-
                 case=False,
-
                 na=False
             )
-
         ].copy()
 
 
-        stock_alerta = (
-
-            df_alertas[
-                COL_STOCK
-            ].sum()
-
-            if COL_STOCK in df_alertas.columns
-
-            else 0
+        stock_alerta = suma_columna(
+            df_alertas,
+            COL_STOCK
         )
 
 
-        valor_alerta = (
-
-            df_alertas[
-                COL_COSTE
-            ].sum()
-
-            if COL_COSTE in df_alertas.columns
-
-            else 0
+        valor_alerta = suma_columna(
+            df_alertas,
+            COL_COSTE
         )
 
 
@@ -2505,39 +2552,41 @@ elif pagina == "⚠️Alertas":
         with a1:
 
             st.metric(
-
-                "Artículos alertados",
-
-                f"{len(df_alertas):,}"
-                .replace(",", ".")
+                "⚠️ Artículos alertados",
+                f"{len(df_alertas):,}".replace(
+                    ",", "."
+                )
             )
 
 
         with a2:
 
             st.metric(
-
-                "Stock",
-
-                formato_numero(
-                    stock_alerta
-                )
+                "📦 Stock",
+                formato_numero(stock_alerta)
             )
 
 
         with a3:
 
             st.metric(
-
-                "Valor inventario",
-
-                formato_moneda(
-                    valor_alerta
-                )
+                "💰 Valor inventario",
+                formato_moneda(valor_alerta)
             )
 
 
-        st.markdown("---")
+        st.markdown(
+            """
+            <div class="section-heading">
+                Inventario con mayor antigüedad
+            </div>
+
+            <div class="section-description">
+                Artículos cuya antigüedad supera los 12 meses.
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 
         if len(df_alertas) > 0:
@@ -2547,9 +2596,7 @@ elif pagina == "⚠️Alertas":
                 df_alertas
 
                 .sort_values(
-
                     COL_COSTE,
-
                     ascending=False
                 )
 
@@ -2567,57 +2614,66 @@ elif pagina == "⚠️Alertas":
 
                 orientation="h",
 
-                title=(
-                    "Artículos con mayor valor "
-                    "y antigüedad"
-                )
+                color_discrete_sequence=[
+                    ROJO
+                ],
+
+                title="Artículos con mayor valor y antigüedad"
             )
 
 
             fig_alertas.update_layout(
-
                 xaxis_title="Valor inventario",
+                yaxis_title="Artículo"
+            )
 
-                yaxis_title="Artículo",
 
-                plot_bgcolor="white",
-
-                paper_bgcolor="white"
+            configurar_figura(
+                fig_alertas
             )
 
 
             st.plotly_chart(
-
                 fig_alertas,
-
                 use_container_width=True
             )
+
+
+            columnas_alertas = [
+
+                "Bodega",
+
+                "Codigo Articulo",
+
+                "Articulo",
+
+                COL_STOCK,
+
+                COL_COSTE,
+
+                COL_ANTIGUEDAD
+            ]
+
+
+            columnas_alertas = [
+
+                columna
+
+                for columna
+                in columnas_alertas
+
+                if columna
+                in df_alertas.columns
+            ]
 
 
             st.dataframe(
 
                 df_alertas[
-
-                    [
-                        "Bodega",
-
-                        "Codigo Articulo",
-
-                        "Articulo",
-
-                        COL_STOCK,
-
-                        COL_COSTE,
-
-                        COL_ANTIGUEDAD
-                    ]
-
+                    columnas_alertas
                 ]
-
                 .sort_values(
-
                     COL_COSTE,
-
                     ascending=False
                 ),
 
@@ -2630,39 +2686,43 @@ elif pagina == "⚠️Alertas":
         else:
 
             st.success(
-
-                "No se encontraron artículos "
-                "con antigüedad superior a 12 meses "
+                "No se encontraron artículos con "
+                "antigüedad superior a 12 meses "
                 "para los filtros seleccionados."
             )
 
 
 # ============================================================
-# PÁGINA: DETALLE
+# DETALLE
 # ============================================================
 
 elif pagina == "📋Detalle":
 
-    st.title(
-        "Detalle del inventario"
-    )
+    st.markdown(
+        """
+        <div class="main-header">
 
-    st.caption(
-        "Detalle de los registros incluidos "
-        "en los filtros seleccionados."
+            <div class="main-header-title">
+                📋 Detalle del inventario
+            </div>
+
+            <div class="main-header-subtitle">
+                Registros incluidos en los filtros seleccionados
+            </div>
+
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
 
     # ========================================================
-    # TOP 15 ARTÍCULOS
+    # TOP 15
     # ========================================================
 
     if (
-
         COL_COSTE in df_filtrado.columns
-
         and "Articulo" in df_filtrado.columns
-
     ):
 
         top_articulos = (
@@ -2670,21 +2730,17 @@ elif pagina == "📋Detalle":
             df_filtrado
 
             .groupby(
-
                 [
                     "Articulo",
                     "Bodega"
                 ],
-
                 as_index=False
             )[COL_COSTE]
 
             .sum()
 
             .sort_values(
-
                 COL_COSTE,
-
                 ascending=False
             )
 
@@ -2704,29 +2760,25 @@ elif pagina == "📋Detalle":
 
             orientation="h",
 
-            title=(
-                "Top 15 artículos "
-                "por valor de inventario"
-            )
+            color_discrete_sequence=PALETA_ALDC,
+
+            title="Top 15 artículos por valor de inventario"
         )
 
 
         fig_top.update_layout(
-
             xaxis_title="Valor inventario",
+            yaxis_title="Artículo"
+        )
 
-            yaxis_title="Artículo",
 
-            plot_bgcolor="white",
-
-            paper_bgcolor="white"
+        configurar_figura(
+            fig_top
         )
 
 
         st.plotly_chart(
-
             fig_top,
-
             use_container_width=True
         )
 
@@ -2736,9 +2788,15 @@ elif pagina == "📋Detalle":
     # ========================================================
 
     st.markdown(
+        """
+        <div class="section-heading">
+            Detalle
+        </div>
 
-        "<div class='section-title'>Detalle</div>",
-
+        <div class="section-description">
+            Información detallada de los registros seleccionados.
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
@@ -2791,13 +2849,11 @@ elif pagina == "📋Detalle":
 
 
     # ========================================================
-    # DESCARGA CSV
+    # DESCARGA
     # ========================================================
 
     csv = df_detalle.to_csv(
-
         index=False,
-
         encoding="utf-8-sig"
     )
 
@@ -2818,9 +2874,26 @@ elif pagina == "📋Detalle":
 # PIE DE PÁGINA
 # ============================================================
 
-st.markdown("---")
-
-st.caption(
-    "Inventarios ALDC | Herramienta de análisis "
-    "y seguimiento de inventarios"
+st.markdown(
+    f"""
+    <div style="
+        margin-top:35px;
+        padding:16px 5px;
+        border-top:1px solid {GRIS_BORDE};
+        text-align:center;
+        color:{GRIS_TEXTO};
+        font-size:10px;
+    ">
+        <strong style="color:{AZUL};">
+            Inventarios ALDC
+        </strong>
+        &nbsp; | &nbsp;
+        Herramienta de análisis y seguimiento de inventarios
+        &nbsp; | &nbsp;
+        <span style="color:{NARANJA};">
+            Área Limpia D.C.
+        </span>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
