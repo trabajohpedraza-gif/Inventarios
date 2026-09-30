@@ -111,9 +111,7 @@ LOGO_URL = (
 # ============================================================
 
 try:
-    USUARIOS = dict(
-        st.secrets["usuarios"]
-    )
+    USUARIOS = dict(st.secrets["usuarios"])
 except Exception:
     USUARIOS = {}
 
@@ -121,7 +119,14 @@ TIEMPO_SESION_MINUTOS = 30
 
 
 # ============================================================
-# CSS DEL LOGIN
+# CSS
+#
+# IMPORTANTE:
+# Este es el ÚNICO lugar donde utilizamos HTML.
+# Es únicamente CSS dentro de <style>.
+#
+# No se utiliza HTML visible para construir textos,
+# tarjetas, títulos, leyendas, etc.
 # ============================================================
 
 st.markdown(
@@ -129,266 +134,224 @@ st.markdown(
     <style>
 
     /* =====================================================
-       FONDO LOGIN
+       FONDO GENERAL
     ===================================================== */
 
-    .login-background {{
-        min-height: 100vh;
-
+    .stApp {{
         background:
-            radial-gradient(
-                circle at 10% 20%,
-                rgba(6,75,155,.08),
-                transparent 32%
-            ),
-            radial-gradient(
-                circle at 90% 80%,
-                rgba(245,130,32,.10),
-                transparent 32%
-            ),
             linear-gradient(
                 135deg,
                 #F4F7FA 0%,
-                #FFFFFF 50%,
+                #FFFFFF 55%,
                 #FFF8F2 100%
             );
     }}
 
 
     /* =====================================================
-       CONTENEDOR LOGIN
+       SIDEBAR
     ===================================================== */
 
-    .login-card {{
-        background:white;
-
-        border:1px solid {GRIS_BORDE};
-
-        border-radius:24px;
-
-        padding:38px 40px 32px;
-
-        box-shadow:
-            0 20px 50px rgba(15,23,42,.10);
-
-        position:relative;
-
-        overflow:hidden;
+    section[data-testid="stSidebar"] {{
+        background: #FFFFFF;
+        border-right: 1px solid {GRIS_BORDE};
     }}
 
-
-    /* línea superior institucional */
-
-    .login-card::before {{
-        content:"";
-
-        position:absolute;
-
-        top:0;
-        left:0;
-        right:0;
-
-        height:5px;
-
-        background:
-            linear-gradient(
-                90deg,
-                {AZUL_OSCURO} 0%,
-                {AZUL} 60%,
-                {NARANJA} 100%
-            );
+    section[data-testid="stSidebar"] > div {{
+        padding-top: 1rem;
     }}
 
 
     /* =====================================================
-       LOGO
+       TÍTULOS
     ===================================================== */
 
-    .login-logo {{
-        text-align:center;
+    h1,
+    h2,
+    h3 {{
+        color: {AZUL_OSCURO} !important;
+    }}
 
-        margin-top:8px;
-
-        margin-bottom:18px;
+    p {{
+        color: {GRIS_TEXTO};
     }}
 
 
     /* =====================================================
-       TÍTULO
+       RADIO
     ===================================================== */
 
-    .login-title {{
-        text-align:center;
-
-        color:{AZUL_OSCURO};
-
-        font-size:27px;
-
-        font-weight:800;
-
-        margin-bottom:5px;
+    div[role="radiogroup"] label {{
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin-bottom: 3px;
+        transition: 0.2s;
     }}
 
-
-    .login-subtitle {{
-        text-align:center;
-
-        color:{GRIS_TEXTO};
-
-        font-size:13px;
-
-        margin-bottom:27px;
+    div[role="radiogroup"] label:hover {{
+        background: {AZUL_SUAVE};
     }}
 
 
     /* =====================================================
-       FRANJA INFORMATIVA
+       SELECTBOX
     ===================================================== */
 
-    .login-info {{
-        background:
-            linear-gradient(
-                90deg,
-                {AZUL_SUAVE},
-                #F8FBFF
-            );
-
-        border:1px solid #DCEAF8;
-
-        border-radius:12px;
-
-        padding:11px 13px;
-
-        margin-bottom:18px;
-
-        color:{AZUL_OSCURO};
-
-        font-size:11px;
-
-        line-height:1.5;
+    div[data-baseweb="select"] > div {{
+        border-radius: 10px;
+        border: 1px solid {GRIS_BORDE};
+        background: white;
+        min-height: 42px;
     }}
 
-
-    .login-info-orange {{
-        color:{NARANJA};
-
-        font-weight:700;
+    div[data-baseweb="select"] > div:hover {{
+        border-color: {NARANJA};
     }}
 
 
     /* =====================================================
-       PIE LOGIN
-    ===================================================== */
-
-    .login-footer {{
-        text-align:center;
-
-        color:{GRIS_TEXTO};
-
-        font-size:10px;
-
-        margin-top:21px;
-
-        padding-top:16px;
-
-        border-top:1px solid {GRIS_BORDE};
-    }}
-
-
-    .login-security {{
-        display:inline-flex;
-
-        align-items:center;
-
-        gap:5px;
-
-        margin-top:6px;
-
-        color:{VERDE};
-
-        font-weight:700;
-    }}
-
-
-    /* =====================================================
-       INPUTS LOGIN
+       TEXT INPUT
     ===================================================== */
 
     div[data-testid="stTextInput"] label {{
-        color:{AZUL_OSCURO} !important;
-
-        font-weight:700 !important;
-
-        font-size:12px !important;
+        color: {AZUL_OSCURO} !important;
+        font-weight: 700 !important;
+        font-size: 12px !important;
     }}
-
 
     div[data-testid="stTextInput"] input {{
-        border:1px solid {GRIS_BORDE} !important;
-
-        border-radius:10px !important;
-
-        min-height:44px !important;
-
-        background:#FFFFFF !important;
+        border: 1px solid {GRIS_BORDE} !important;
+        border-radius: 10px !important;
+        min-height: 44px !important;
+        background: #FFFFFF !important;
     }}
 
-
     div[data-testid="stTextInput"] input:focus {{
-        border-color:{AZUL} !important;
-
-        box-shadow:
-            0 0 0 2px rgba(6,75,155,.10) !important;
+        border-color: {AZUL} !important;
+        box-shadow: 0 0 0 2px rgba(6, 75, 155, 0.10) !important;
     }}
 
 
     /* =====================================================
-       BOTÓN LOGIN
+       BOTONES
     ===================================================== */
 
-    .login-card .stButton > button {{
-        margin-top:8px;
+    .stButton > button {{
+        border-radius: 10px;
+        border: 1px solid {NARANJA};
+        background: {NARANJA};
+        color: white;
+        font-weight: 700;
+        transition: 0.2s;
+    }}
 
-        min-height:46px;
-
-        border-radius:11px;
-
-        border:0;
-
-        background:
-            linear-gradient(
-                90deg,
-                {AZUL_OSCURO},
-                {AZUL}
-            );
-
-        color:white;
-
-        font-weight:800;
-
-        font-size:14px;
-
-        box-shadow:
-            0 7px 18px rgba(6,75,155,.20);
-
-        transition:.2s;
+    .stButton > button:hover {{
+        background: #E56F0A;
+        border-color: #E56F0A;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 5px 14px rgba(245, 130, 32, 0.20);
     }}
 
 
-    .login-card .stButton > button:hover {{
-        background:
-            linear-gradient(
-                90deg,
-                {AZUL},
-                {NARANJA}
-            );
+    /* =====================================================
+       DOWNLOAD
+    ===================================================== */
 
-        transform:translateY(-1px);
-
-        box-shadow:
-            0 9px 22px rgba(245,130,32,.20);
+    .stDownloadButton > button {{
+        border-radius: 10px;
+        border: 1px solid {NARANJA};
+        background: white;
+        color: {NARANJA};
+        font-weight: 700;
     }}
 
+    .stDownloadButton > button:hover {{
+        background: {NARANJA_SUAVE};
+        color: {NARANJA};
+        border-color: {NARANJA};
+    }}
+
+
+    /* =====================================================
+       MÉTRICAS
+    ===================================================== */
+
+    div[data-testid="metric-container"] {{
+        background: white;
+        border: 1px solid {GRIS_BORDE};
+        border-radius: 15px;
+        padding: 17px;
+        box-shadow: 0 7px 20px rgba(15, 23, 42, 0.05);
+    }}
+
+    div[data-testid="stMetricLabel"] {{
+        color: {GRIS_TEXTO};
+    }}
+
+    div[data-testid="stMetricValue"] {{
+        color: {AZUL_OSCURO};
+        font-weight: 800;
+    }}
+
+
+    /* =====================================================
+       DATAFRAME
+    ===================================================== */
+
+    div[data-testid="stDataFrame"] {{
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid {GRIS_BORDE};
+    }}
+
+
+    /* =====================================================
+       CONTENEDORES CON BORDE
+    ===================================================== */
+
+    div[data-testid="stVerticalBlockBorderWrapper"] {{
+        border-radius: 15px !important;
+        border-color: {GRIS_BORDE} !important;
+        background: white !important;
+    }}
+
+
+    /* =====================================================
+       ALERTAS
+    ===================================================== */
+
+    div[data-testid="stAlert"] {{
+        border-radius: 12px;
+    }}
+
+
+    /* =====================================================
+       DIVISOR
+    ===================================================== */
+
+    hr {{
+        border-color: {GRIS_BORDE};
+    }}
+
+
+    /* =====================================================
+       IMÁGENES
+    ===================================================== */
+
+    img {{
+        object-fit: contain;
+    }}
+
+
+    /* =====================================================
+       ESPACIADO
+    ===================================================== */
+
+    .block-container {{
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }}
 
     </style>
     """,
@@ -398,19 +361,14 @@ st.markdown(
 
 # ============================================================
 # FUNCIÓN LOGIN
+#
+# SIN HTML VISIBLE
 # ============================================================
 
 def login():
 
-    # Espacio superior
-    st.markdown(
-        "<div style='height:55px;'></div>",
-        unsafe_allow_html=True
-    )
-
-    # ========================================================
-    # CONTENEDOR CENTRAL
-    # ========================================================
+    # Fondo superior
+    st.write("")
 
     col_izq, col_centro, col_der = st.columns(
         [1, 1.05, 1]
@@ -418,158 +376,137 @@ def login():
 
     with col_centro:
 
-        st.markdown(
-            '<div class="login-card">',
-            unsafe_allow_html=True
-        )
+        # ====================================================
+        # TARJETA NATIVA
+        # ====================================================
 
-        # ----------------------------------------------------
-        # LOGO
-        # ----------------------------------------------------
+        with st.container(border=True):
 
-        st.markdown(
-            '<div class="login-logo">',
-            unsafe_allow_html=True
-        )
+            # =================================================
+            # LOGO
+            # =================================================
 
-        st.image(
-            LOGO_URL,
-            width=235
-        )
+            col_logo_izq, col_logo, col_logo_der = st.columns(
+                [0.8, 2, 0.8]
+            )
 
-        st.markdown(
-            '</div>',
-            unsafe_allow_html=True
-        )
+            with col_logo:
 
-        # ----------------------------------------------------
-        # TÍTULO
-        # ----------------------------------------------------
-
-        st.markdown(
-            """
-            <div class="login-title">
-                Inventarios ALDC
-            </div>
-
-            <div class="login-subtitle">
-                Plataforma de gestión y analítica
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # ----------------------------------------------------
-        # INFORMACIÓN
-        # ----------------------------------------------------
-
-        st.markdown(
-            f"""
-            <div class="login-info">
-
-                <strong>Acceso institucional</strong><br>
-
-                Ingresa con tus credenciales para acceder
-                al tablero de inventarios.
-
-                <span class="login-info-orange">
-                    Información protegida.
-                </span>
-
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # ----------------------------------------------------
-        # USUARIO
-        # ----------------------------------------------------
-
-        usuario = st.text_input(
-            "Usuario",
-            placeholder="Ingrese su usuario",
-            key="login_usuario"
-        )
-
-        # ----------------------------------------------------
-        # CONTRASEÑA
-        # ----------------------------------------------------
-
-        contraseña = st.text_input(
-            "Contraseña",
-            type="password",
-            placeholder="Ingrese su contraseña",
-            key="login_contraseña"
-        )
-
-        # ----------------------------------------------------
-        # BOTÓN
-        # ----------------------------------------------------
-
-        ingresar = st.button(
-            "🔐  Ingresar a la plataforma",
-            use_container_width=True
-        )
-
-        if ingresar:
-
-            if (
-                usuario in USUARIOS
-                and USUARIOS[usuario] == contraseña
-            ):
-
-                st.session_state["autenticado"] = True
-
-                st.session_state["usuario"] = usuario
-
-                st.session_state["inicio_sesion"] = (
-                    datetime.now()
+                st.image(
+                    LOGO_URL,
+                    width=235
                 )
 
-                # Limpiar campos
-                st.session_state.pop(
-                    "login_usuario",
-                    None
-                )
 
-                st.session_state.pop(
-                    "login_contraseña",
-                    None
-                )
+            # =================================================
+            # TÍTULO
+            # =================================================
 
-                st.rerun()
+            st.markdown(
+                "<h2 style='text-align:center;'>Inventarios ALDC</h2>",
+                unsafe_allow_html=True
+            )
 
-            else:
+            st.markdown(
+                "<p style='text-align:center;'>Plataforma de gestión y analítica</p>",
+                unsafe_allow_html=True
+            )
 
-                st.error(
-                    "Usuario o contraseña incorrectos."
-                )
 
-        # ----------------------------------------------------
-        # PIE
-        # ----------------------------------------------------
+            # =================================================
+            # INFORMACIÓN
+            # =================================================
 
-        st.markdown(
-            f"""
-            <div class="login-footer">
+            st.info(
+                "🔐 **Acceso institucional**\n\n"
+                "Ingresa con tus credenciales para acceder "
+                "al tablero de inventarios.\n\n"
+                "🟠 **Información protegida.**"
+            )
 
-                Área Limpia D.C. S.A.S. E.S.P.<br>
 
-                Sistema de gestión y análisis de inventarios
+            # =================================================
+            # USUARIO
+            # =================================================
 
-                <div class="login-security">
-                    🔒 Acceso protegido
-                </div>
+            usuario = st.text_input(
+                "Usuario",
+                placeholder="Ingrese su usuario",
+                key="login_usuario"
+            )
 
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
 
-        st.markdown(
-            '</div>',
-            unsafe_allow_html=True
-        )
+            # =================================================
+            # CONTRASEÑA
+            # =================================================
+
+            contraseña = st.text_input(
+                "Contraseña",
+                type="password",
+                placeholder="Ingrese su contraseña",
+                key="login_contraseña"
+            )
+
+
+            # =================================================
+            # BOTÓN
+            # =================================================
+
+            ingresar = st.button(
+                "🔐  Ingresar a la plataforma",
+                use_container_width=True
+            )
+
+
+            if ingresar:
+
+                if (
+                    usuario in USUARIOS
+                    and USUARIOS[usuario] == contraseña
+                ):
+
+                    st.session_state["autenticado"] = True
+
+                    st.session_state["usuario"] = usuario
+
+                    st.session_state["inicio_sesion"] = datetime.now()
+
+                    st.session_state.pop(
+                        "login_usuario",
+                        None
+                    )
+
+                    st.session_state.pop(
+                        "login_contraseña",
+                        None
+                    )
+
+                    st.rerun()
+
+                else:
+
+                    st.error(
+                        "Usuario o contraseña incorrectos."
+                    )
+
+
+            # =================================================
+            # PIE LOGIN
+            # =================================================
+
+            st.divider()
+
+            st.markdown(
+                "**Área Limpia D.C. S.A.S. E.S.P.**"
+            )
+
+            st.caption(
+                "Sistema de gestión y análisis de inventarios"
+            )
+
+            st.success(
+                "🔒 Acceso protegido"
+            )
 
 
 # ============================================================
@@ -642,457 +579,6 @@ if not st.session_state["autenticado"]:
 
 
 # ============================================================
-# CSS GENERAL DE LA APLICACIÓN
-# ============================================================
-
-st.markdown(
-    f"""
-    <style>
-
-    /* =====================================================
-       FONDO
-    ===================================================== */
-
-    .stApp {{
-        background:
-            linear-gradient(
-                180deg,
-                #F4F7FA 0%,
-                #F8FAFC 100%
-            );
-    }}
-
-
-    /* =====================================================
-       SIDEBAR
-    ===================================================== */
-
-    section[data-testid="stSidebar"] {{
-        background:{BLANCO};
-
-        border-right:
-            1px solid {GRIS_BORDE};
-    }}
-
-
-    section[data-testid="stSidebar"] > div {{
-        padding-top:1.2rem;
-    }}
-
-
-    /* =====================================================
-       TEXTOS
-    ===================================================== */
-
-    h1,
-    h2,
-    h3 {{
-        color:{AZUL_OSCURO};
-    }}
-
-
-    p {{
-        color:{GRIS_TEXTO};
-    }}
-
-
-    /* =====================================================
-       MENÚ
-    ===================================================== */
-
-    div[role="radiogroup"] label {{
-        border-radius:10px;
-
-        padding:9px 12px;
-
-        margin-bottom:4px;
-
-        transition:.2s;
-    }}
-
-
-    div[role="radiogroup"] label:hover {{
-        background:{AZUL_SUAVE};
-    }}
-
-
-    /* =====================================================
-       SELECTBOX
-    ===================================================== */
-
-    div[data-baseweb="select"] > div {{
-        border-radius:10px;
-
-        border:1px solid {GRIS_BORDE};
-
-        background:white;
-
-        min-height:42px;
-    }}
-
-
-    div[data-baseweb="select"] > div:hover {{
-        border-color:{NARANJA};
-    }}
-
-
-    /* =====================================================
-       BOTONES
-    ===================================================== */
-
-    .stButton > button {{
-        border-radius:10px;
-
-        border:1px solid {NARANJA};
-
-        background:{NARANJA};
-
-        color:white;
-
-        font-weight:700;
-
-        transition:.2s;
-    }}
-
-
-    .stButton > button:hover {{
-        background:#E56F0A;
-
-        border-color:#E56F0A;
-
-        color:white;
-
-        transform:translateY(-1px);
-
-        box-shadow:
-            0 5px 14px rgba(245,130,32,.20);
-    }}
-
-
-    /* =====================================================
-       DOWNLOAD
-    ===================================================== */
-
-    .stDownloadButton > button {{
-        border-radius:10px;
-
-        border:1px solid {NARANJA};
-
-        background:white;
-
-        color:{NARANJA};
-
-        font-weight:700;
-    }}
-
-
-    .stDownloadButton > button:hover {{
-        background:{NARANJA_SUAVE};
-
-        color:{NARANJA};
-
-        border-color:{NARANJA};
-    }}
-
-
-    /* =====================================================
-       MÉTRICAS
-    ===================================================== */
-
-    div[data-testid="metric-container"] {{
-        background:white;
-
-        border:1px solid {GRIS_BORDE};
-
-        border-radius:15px;
-
-        padding:17px;
-
-        box-shadow:
-            0 7px 20px rgba(15,23,42,.05);
-    }}
-
-
-    div[data-testid="stMetricLabel"] {{
-        color:{GRIS_TEXTO};
-    }}
-
-
-    div[data-testid="stMetricValue"] {{
-        color:{AZUL_OSCURO};
-
-        font-weight:800;
-    }}
-
-
-    /* =====================================================
-       DATAFRAME
-    ===================================================== */
-
-    div[data-testid="stDataFrame"] {{
-        border-radius:12px;
-
-        overflow:hidden;
-
-        border:1px solid {GRIS_BORDE};
-    }}
-
-
-    /* =====================================================
-       DIVISOR
-    ===================================================== */
-
-    hr {{
-        border-color:{GRIS_BORDE};
-    }}
-
-
-    /* =====================================================
-       FILTROS
-    ===================================================== */
-
-    .filter-card {{
-        background:white;
-
-        border:1px solid {GRIS_BORDE};
-
-        border-top:4px solid {NARANJA};
-
-        border-radius:15px;
-
-        padding:18px 20px 8px 20px;
-
-        margin-bottom:20px;
-
-        box-shadow:
-            0 7px 20px rgba(15,23,42,.045);
-    }}
-
-
-    .filter-title {{
-        color:{AZUL_OSCURO};
-
-        font-size:15px;
-
-        font-weight:800;
-
-        margin-bottom:10px;
-    }}
-
-
-    .filter-subtitle {{
-        color:{GRIS_TEXTO};
-
-        font-size:11px;
-
-        margin-bottom:12px;
-    }}
-
-
-    /* =====================================================
-       ENCABEZADO
-    ===================================================== */
-
-    .main-header {{
-        background:
-            linear-gradient(
-                115deg,
-                {AZUL_OSCURO} 0%,
-                {AZUL} 67%,
-                {NARANJA} 100%
-            );
-
-        border-radius:18px;
-
-        padding:25px 29px;
-
-        margin-bottom:20px;
-
-        color:white;
-
-        position:relative;
-
-        overflow:hidden;
-
-        box-shadow:
-            0 10px 28px rgba(0,59,122,.16);
-    }}
-
-
-    .main-header::after {{
-        content:"";
-
-        position:absolute;
-
-        width:250px;
-
-        height:250px;
-
-        right:-80px;
-
-        top:-150px;
-
-        border-radius:50%;
-
-        background:
-            rgba(255,255,255,.09);
-    }}
-
-
-    .main-header-title {{
-        font-size:28px;
-
-        font-weight:800;
-
-        color:white;
-
-        margin-bottom:5px;
-    }}
-
-
-    .main-header-subtitle {{
-        color:#E7F0FA;
-
-        font-size:13px;
-    }}
-
-
-    /* =====================================================
-       TÍTULOS DE SECCIÓN
-    ===================================================== */
-
-    .section-heading {{
-        display:flex;
-
-        align-items:center;
-
-        gap:10px;
-
-        margin-top:20px;
-
-        margin-bottom:10px;
-
-        color:{AZUL_OSCURO};
-
-        font-size:17px;
-
-        font-weight:800;
-    }}
-
-
-    .section-heading::before {{
-        content:"";
-
-        width:4px;
-
-        height:22px;
-
-        border-radius:5px;
-
-        background:
-            linear-gradient(
-                180deg,
-                {AZUL},
-                {NARANJA}
-            );
-    }}
-
-
-    .section-description {{
-        color:{GRIS_TEXTO};
-
-        font-size:12px;
-
-        margin-bottom:12px;
-    }}
-
-
-    /* =====================================================
-       TARJETAS
-    ===================================================== */
-
-    .info-card {{
-        background:white;
-
-        border:1px solid {GRIS_BORDE};
-
-        border-radius:15px;
-
-        padding:18px;
-
-        box-shadow:
-            0 7px 20px rgba(15,23,42,.045);
-    }}
-
-
-    /* =====================================================
-       USUARIO
-    ===================================================== */
-
-    .user-card {{
-        background:
-            linear-gradient(
-                135deg,
-                #F5F9FE,
-                #FFF7F0
-            );
-
-        border:1px solid #E1E8EF;
-
-        border-radius:14px;
-
-        padding:12px;
-
-        margin:10px 0 18px;
-    }}
-
-
-    .user-name {{
-        color:{AZUL_OSCURO};
-
-        font-weight:800;
-
-        font-size:13px;
-    }}
-
-
-    .user-status {{
-        color:{GRIS_TEXTO};
-
-        font-size:10px;
-
-        margin-top:2px;
-    }}
-
-
-    /* =====================================================
-       ALERTAS
-    ===================================================== */
-
-    .alert-card {{
-        background:white;
-
-        border:1px solid {GRIS_BORDE};
-
-        border-left:5px solid {ROJO};
-
-        border-radius:12px;
-
-        padding:15px;
-
-        margin-bottom:10px;
-
-        box-shadow:
-            0 5px 15px rgba(15,23,42,.04);
-    }}
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
 # CARGA DEL EXCEL
 # ============================================================
 
@@ -1146,31 +632,18 @@ except Exception as e:
 MAPA_BODEGAS = {
 
     "[1] - REPUESTOS": "Mantenimiento",
-
     "[2] - LUBRICANTES": "Mantenimiento",
-
     "[3] - COMBUSTIBLES": "Operaciones",
-
     "[4] - DOTACIONES": "RRHH",
-
     "[5] - INSUMOS DE MANTENIMIENTO": "Mantenimiento",
-
     "[7] - HERRAMIENTAS": "Operaciones",
-
     "[8] - LLANTAS": "Mantenimiento",
-
     "[9] - IMPORTACIONES": "Mantenimiento",
-
     "[13] - INSUMOS OPERATIVOS": "Operaciones",
-
     "[14] - INSUMOS REP. CONTENEDORES": "Mantenimiento",
-
     "[15] - INSUMOS REP LOCATIVAS": "Mantenimiento",
-
     "[16] - INSUMOS RRHH Y SST": "RRHH",
-
     "[44] - OBSOLETOS": "Sin asignar",
-
     "[46] - GESTIÓN DE CALIDAD": "RRHH"
 }
 
@@ -1182,13 +655,9 @@ MAPA_BODEGAS = {
 COLORES_AREA = {
 
     "Mantenimiento": AZUL,
-
     "Operaciones": NARANJA,
-
     "RRHH": VERDE,
-
     "Calidad": MORADO,
-
     "Sin asignar": GRIS_TEXTO
 }
 
@@ -1257,11 +726,8 @@ COL_ANTIGUEDAD = "MESES"
 ORDEN_ANTIGUEDAD = [
 
     "Entre 0 y 3 meses",
-
     "Entre 4 y 6 meses",
-
     "Entre 7 y 12 meses",
-
     "Mayor a 12 meses"
 ]
 
@@ -1273,13 +739,9 @@ ORDEN_ANTIGUEDAD = [
 ORDEN_AREAS = [
 
     "Mantenimiento",
-
     "Operaciones",
-
     "RRHH",
-
     "Calidad",
-
     "Sin asignar"
 ]
 
@@ -1291,57 +753,37 @@ ORDEN_AREAS = [
 COLORES_AREA_ANTIGUEDAD = {
 
     "Mantenimiento": {
-
         "Entre 0 y 3 meses": "#BFDBFE",
-
         "Entre 4 y 6 meses": "#60A5FA",
-
         "Entre 7 y 12 meses": AZUL_CLARO,
-
         "Mayor a 12 meses": AZUL
     },
 
     "Operaciones": {
-
         "Entre 0 y 3 meses": "#FED7AA",
-
         "Entre 4 y 6 meses": NARANJA_CLARO,
-
         "Entre 7 y 12 meses": NARANJA,
-
         "Mayor a 12 meses": "#C2410C"
     },
 
     "RRHH": {
-
         "Entre 0 y 3 meses": "#BBF7D0",
-
         "Entre 4 y 6 meses": VERDE_CLARO,
-
         "Entre 7 y 12 meses": VERDE,
-
         "Mayor a 12 meses": "#166534"
     },
 
     "Calidad": {
-
         "Entre 0 y 3 meses": "#DDD6FE",
-
         "Entre 4 y 6 meses": MORADO_CLARO,
-
         "Entre 7 y 12 meses": MORADO,
-
         "Mayor a 12 meses": "#5B21B6"
     },
 
     "Sin asignar": {
-
         "Entre 0 y 3 meses": "#E5E7EB",
-
         "Entre 4 y 6 meses": "#9CA3AF",
-
         "Entre 7 y 12 meses": "#6B7280",
-
         "Mayor a 12 meses": "#374151"
     }
 }
@@ -1445,44 +887,25 @@ def configurar_figura(fig):
 
 with st.sidebar:
 
-    # --------------------------------------------------------
+    # ========================================================
     # LOGO
-    # --------------------------------------------------------
-
-    st.markdown(
-        f"""
-        <div style="
-            text-align:center;
-            padding:8px 5px 18px;
-            border-bottom:1px solid {GRIS_BORDE};
-        ">
-        """,
-        unsafe_allow_html=True
-    )
+    # ========================================================
 
     st.image(
         LOGO_URL,
         width=185
     )
 
-    st.markdown(
-        f"""
-        <div style="
-            color:{GRIS_TEXTO};
-            font-size:10px;
-            margin-top:-2px;
-        ">
-            Gestión y Analítica de Inventarios
-        </div>
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Gestión y Analítica de Inventarios"
     )
 
+    st.divider()
 
-    # --------------------------------------------------------
+
+    # ========================================================
     # USUARIO
-    # --------------------------------------------------------
+    # ========================================================
 
     usuario_actual = st.session_state.get(
         "usuario",
@@ -1496,79 +919,17 @@ with st.sidebar:
     )
 
 
-    st.markdown(
-        f"""
-        <div class="user-card">
-
-            <div style="
-                display:flex;
-                align-items:center;
-                gap:10px;
-            ">
-
-                <div style="
-                    width:36px;
-                    height:36px;
-                    border-radius:50%;
-
-                    background:
-                        linear-gradient(
-                            135deg,
-                            {AZUL},
-                            {NARANJA}
-                        );
-
-                    color:white;
-
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-
-                    font-weight:800;
-                    font-size:14px;
-                ">
-                    {inicial}
-                </div>
-
-                <div>
-
-                    <div class="user-name">
-                        {usuario_actual}
-                    </div>
-
-                    <div class="user-status">
-                        ● Sesión activa
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.info(
+        f"👤 **{usuario_actual}**\n\n"
+        "🟢 Sesión activa"
     )
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # NAVEGACIÓN
-    # --------------------------------------------------------
+    # ========================================================
 
-    st.markdown(
-        f"""
-        <div style="
-            color:#94A3B8;
-            font-size:10px;
-            font-weight:800;
-            letter-spacing:1px;
-            margin:10px 8px 7px;
-            text-transform:uppercase;
-        ">
-            Navegación
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.caption("NAVEGACIÓN")
 
 
     pagina = st.radio(
@@ -1587,15 +948,12 @@ with st.sidebar:
     )
 
 
-    st.markdown(
-        "<div style='height:25px'></div>",
-        unsafe_allow_html=True
-    )
+    st.write("")
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # CERRAR SESIÓN
-    # --------------------------------------------------------
+    # ========================================================
 
     if st.button(
         "🔓 Cerrar sesión",
@@ -1617,40 +975,18 @@ with st.sidebar:
         st.rerun()
 
 
-    # --------------------------------------------------------
+    # ========================================================
     # PIE SIDEBAR
-    # --------------------------------------------------------
+    # ========================================================
 
-    st.markdown(
-        f"""
-        <div style="
-            position:relative;
-            margin-top:25px;
-            padding:13px;
-            border-radius:12px;
-            background:{NARANJA_SUAVE};
-            border:1px solid #FDE0C5;
-        ">
+    st.divider()
 
-            <div style="
-                color:{NARANJA};
-                font-size:11px;
-                font-weight:800;
-            ">
-                Área Limpia D.C.
-            </div>
+    st.caption(
+        "Área Limpia D.C."
+    )
 
-            <div style="
-                color:{GRIS_TEXTO};
-                font-size:10px;
-                margin-top:3px;
-            ">
-                Sistema de análisis de inventarios
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Sistema de análisis de inventarios"
     )
 
 
@@ -1658,268 +994,258 @@ with st.sidebar:
 # FILTROS EN CASCADA
 # ============================================================
 
-st.markdown(
-    """
-    <div class="filter-card">
+with st.container(border=True):
 
-        <div class="filter-title">
-            🔎 Filtros de consulta
-        </div>
+    st.subheader(
+        "🔎 Filtros de consulta"
+    )
 
-        <div class="filter-subtitle">
-            Selecciona los criterios para actualizar
-            automáticamente la información del tablero.
-        </div>
-    """,
-    unsafe_allow_html=True
-)
-
-
-col1, col2, col3, col4 = st.columns(4)
-
-
-# ============================================================
-# ÁREA
-# ============================================================
-
-areas = [
-
-    area
-
-    for area in ORDEN_AREAS
-
-    if area in df["AREA"].dropna().unique()
-]
-
-
-areas_opciones = [
-    "Todas"
-] + areas
-
-
-with col1:
-
-    area_seleccionada = st.selectbox(
-        "Área",
-        areas_opciones
+    st.caption(
+        "Selecciona los criterios para actualizar "
+        "automáticamente la información del tablero."
     )
 
 
-# ============================================================
-# FILTRO ÁREA
-# ============================================================
-
-df_area = df.copy()
+    col1, col2, col3, col4 = st.columns(4)
 
 
-if area_seleccionada != "Todas":
+    # ========================================================
+    # ÁREA
+    # ========================================================
 
-    df_area = df_area[
-        df_area["AREA"] == area_seleccionada
+    areas = [
+
+        area
+
+        for area in ORDEN_AREAS
+
+        if area in df["AREA"].dropna().unique()
     ]
 
 
-# ============================================================
-# BODEGA
-# ============================================================
-
-orden_bodegas = list(
-    MAPA_BODEGAS.keys()
-)
+    areas_opciones = [
+        "Todas"
+    ] + areas
 
 
-bodegas_existentes = (
+    with col1:
 
-    df_area["Bodega"]
-    .dropna()
-    .astype(str)
-    .str.strip()
-    .unique()
-    .tolist()
-
-    if "Bodega" in df_area.columns
-
-    else []
-)
-
-
-bodegas = [
-
-    bodega
-
-    for bodega in orden_bodegas
-
-    if bodega in bodegas_existentes
-]
-
-
-bodegas_no_mapeadas = [
-
-    bodega
-
-    for bodega in bodegas_existentes
-
-    if bodega not in orden_bodegas
-]
-
-
-bodegas.extend(
-    sorted(bodegas_no_mapeadas)
-)
-
-
-with col2:
-
-    bodega_seleccionada = st.selectbox(
-        "Bodega",
-        ["Todas"] + bodegas
-    )
-
-
-# ============================================================
-# FILTRO BODEGA
-# ============================================================
-
-df_bodega = df_area.copy()
-
-
-if bodega_seleccionada != "Todas":
-
-    df_bodega = df_bodega[
-        df_bodega["Bodega"]
-        .astype(str)
-        .str.strip()
-        == bodega_seleccionada
-    ]
-
-
-# ============================================================
-# ARTÍCULO
-# ============================================================
-
-articulos = (
-
-    sorted(
-        df_bodega["Articulo"]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
-    if "Articulo" in df_bodega.columns
-
-    else []
-)
-
-
-with col3:
-
-    articulo_seleccionado = st.selectbox(
-        "Artículo",
-        ["Todos"] + articulos
-    )
-
-
-# ============================================================
-# FILTRO ARTÍCULO
-# ============================================================
-
-df_articulo = df_bodega.copy()
-
-
-if articulo_seleccionado != "Todos":
-
-    df_articulo = df_articulo[
-        df_articulo["Articulo"]
-        .astype(str)
-        == articulo_seleccionado
-    ]
-
-
-# ============================================================
-# ANTIGÜEDAD
-# ============================================================
-
-if COL_ANTIGUEDAD in df_articulo.columns:
-
-    antiguedades_existentes = (
-
-        df_articulo[
-            COL_ANTIGUEDAD
-        ]
-        .dropna()
-        .astype(str)
-        .unique()
-        .tolist()
-    )
-
-    antiguedades = [
-
-        edad
-
-        for edad in ORDEN_ANTIGUEDAD
-
-        if edad in antiguedades_existentes
-    ]
-
-    antiguedades += [
-
-        edad
-
-        for edad in sorted(
-            antiguedades_existentes
+        area_seleccionada = st.selectbox(
+            "Área",
+            areas_opciones
         )
 
-        if edad not in antiguedades
-    ]
 
-else:
+    # ========================================================
+    # FILTRO ÁREA
+    # ========================================================
 
-    antiguedades = []
+    df_area = df.copy()
 
 
-with col4:
+    if area_seleccionada != "Todas":
 
-    antiguedad_seleccionada = st.selectbox(
-        "Antigüedad",
-        ["Todas"] + antiguedades
+        df_area = df_area[
+            df_area["AREA"] == area_seleccionada
+        ]
+
+
+    # ========================================================
+    # BODEGA
+    # ========================================================
+
+    orden_bodegas = list(
+        MAPA_BODEGAS.keys()
     )
 
 
-# ============================================================
-# FILTRO FINAL
-# ============================================================
+    bodegas_existentes = (
 
-df_filtrado = df_articulo.copy()
-
-
-if antiguedad_seleccionada != "Todas":
-
-    df_filtrado = df_filtrado[
-        df_filtrado[COL_ANTIGUEDAD]
+        df_area["Bodega"]
+        .dropna()
         .astype(str)
-        == antiguedad_seleccionada
+        .str.strip()
+        .unique()
+        .tolist()
+
+        if "Bodega" in df_area.columns
+
+        else []
+    )
+
+
+    bodegas = [
+
+        bodega
+
+        for bodega in orden_bodegas
+
+        if bodega in bodegas_existentes
     ]
 
 
-st.markdown(
-    f"""
-    <div style="
-        margin-top:8px;
-        color:{GRIS_TEXTO};
-        font-size:11px;
-    ">
-        Registros encontrados:
-        <strong style="color:{AZUL};">
-            {len(df_filtrado):,}
-        </strong>
-    </div>
+    bodegas_no_mapeadas = [
 
-    </div>
-    """.replace(",", "."),
-    unsafe_allow_html=True
-)
+        bodega
+
+        for bodega in bodegas_existentes
+
+        if bodega not in orden_bodegas
+    ]
+
+
+    bodegas.extend(
+        sorted(bodegas_no_mapeadas)
+    )
+
+
+    with col2:
+
+        bodega_seleccionada = st.selectbox(
+            "Bodega",
+            ["Todas"] + bodegas
+        )
+
+
+    # ========================================================
+    # FILTRO BODEGA
+    # ========================================================
+
+    df_bodega = df_area.copy()
+
+
+    if bodega_seleccionada != "Todas":
+
+        df_bodega = df_bodega[
+            df_bodega["Bodega"]
+            .astype(str)
+            .str.strip()
+            == bodega_seleccionada
+        ]
+
+
+    # ========================================================
+    # ARTÍCULO
+    # ========================================================
+
+    articulos = (
+
+        sorted(
+            df_bodega["Articulo"]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        if "Articulo" in df_bodega.columns
+
+        else []
+    )
+
+
+    with col3:
+
+        articulo_seleccionado = st.selectbox(
+            "Artículo",
+            ["Todos"] + articulos
+        )
+
+
+    # ========================================================
+    # FILTRO ARTÍCULO
+    # ========================================================
+
+    df_articulo = df_bodega.copy()
+
+
+    if articulo_seleccionado != "Todos":
+
+        df_articulo = df_articulo[
+            df_articulo["Articulo"]
+            .astype(str)
+            == articulo_seleccionado
+        ]
+
+
+    # ========================================================
+    # ANTIGÜEDAD
+    # ========================================================
+
+    if COL_ANTIGUEDAD in df_articulo.columns:
+
+        antiguedades_existentes = (
+
+            df_articulo[
+                COL_ANTIGUEDAD
+            ]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
+        )
+
+        antiguedades = [
+
+            edad
+
+            for edad in ORDEN_ANTIGUEDAD
+
+            if edad in antiguedades_existentes
+        ]
+
+        antiguedades += [
+
+            edad
+
+            for edad in sorted(
+                antiguedades_existentes
+            )
+
+            if edad not in antiguedades
+        ]
+
+    else:
+
+        antiguedades = []
+
+
+    with col4:
+
+        antiguedad_seleccionada = st.selectbox(
+            "Antigüedad",
+            ["Todas"] + antiguedades
+        )
+
+
+    # ========================================================
+    # FILTRO FINAL
+    # ========================================================
+
+    df_filtrado = df_articulo.copy()
+
+
+    if antiguedad_seleccionada != "Todas":
+
+        df_filtrado = df_filtrado[
+            df_filtrado[COL_ANTIGUEDAD]
+            .astype(str)
+            == antiguedad_seleccionada
+        ]
+
+
+    # ========================================================
+    # REGISTROS
+    # ========================================================
+
+    registros_formateados = (
+        f"{len(df_filtrado):,}"
+        .replace(",", ".")
+    )
+
+    st.caption(
+        f"Registros encontrados: {registros_formateados}"
+    )
 
 
 # ============================================================
@@ -1928,28 +1254,14 @@ st.markdown(
 
 if pagina == "📊Dashboard":
 
-    st.markdown(
-        """
-        <div class="main-header">
-
-            <div class="main-header-title">
-                📊 Dashboard de Inventarios
-            </div>
-
-            <div class="main-header-subtitle">
-                Vista general del comportamiento y gestión
-                del inventario
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.title(
+        "📊 Dashboard de Inventarios"
     )
 
+    st.caption(
+        "Vista general del comportamiento y gestión del inventario"
+    )
 
-    # ========================================================
-    # KPIs
-    # ========================================================
 
     stock_total = suma_columna(
         df_filtrado,
@@ -2011,23 +1323,16 @@ if pagina == "📊Dashboard":
     # RESUMEN
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="section-heading">
-            Resumen del inventario
-        </div>
+    st.subheader(
+        "Resumen del inventario"
+    )
 
-        <div class="section-description">
-            Distribución del inventario según área y antigüedad.
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Distribución del inventario según área y antigüedad."
     )
 
 
-    col_a, col_b = st.columns(
-        [1.25, 1]
-    )
+    col_a, col_b = st.columns([1.25, 1])
 
 
     # ========================================================
@@ -2055,9 +1360,11 @@ if pagina == "📊Dashboard":
 
 
             resumen_edad["Orden"] = (
+
                 resumen_edad[
                     COL_ANTIGUEDAD
                 ]
+
                 .map({
                     edad: i
                     for i, edad
@@ -2065,6 +1372,7 @@ if pagina == "📊Dashboard":
                         ORDEN_ANTIGUEDAD
                     )
                 })
+
                 .fillna(99)
             )
 
@@ -2190,17 +1498,12 @@ if pagina == "📊Dashboard":
     # DISTRIBUCIÓN POR BODEGA
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="section-heading">
-            Distribución por bodega
-        </div>
+    st.subheader(
+        "Distribución por bodega"
+    )
 
-        <div class="section-description">
-            Comparación del stock y valor de inventario entre bodegas.
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Comparación del stock y valor de inventario entre bodegas."
     )
 
 
@@ -2309,21 +1612,12 @@ if pagina == "📊Dashboard":
 
 elif pagina == "📦Inventarios":
 
-    st.markdown(
-        """
-        <div class="main-header">
+    st.title(
+        "📦 Inventarios"
+    )
 
-            <div class="main-header-title">
-                📦 Inventarios
-            </div>
-
-            <div class="main-header-subtitle">
-                Comportamiento del inventario por bodega y artículo
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Comportamiento del inventario por bodega y artículo"
     )
 
 
@@ -2431,13 +1725,8 @@ elif pagina == "📦Inventarios":
             )
 
 
-        st.markdown(
-            """
-            <div class="section-heading">
-                Resumen por bodega
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.subheader(
+            "Resumen por bodega"
         )
 
 
@@ -2454,21 +1743,12 @@ elif pagina == "📦Inventarios":
 
 elif pagina == "📈Análisis":
 
-    st.markdown(
-        """
-        <div class="main-header">
+    st.title(
+        "📈 Análisis"
+    )
 
-            <div class="main-header-title">
-                📈 Análisis
-            </div>
-
-            <div class="main-header-subtitle">
-                Movimiento mensual, costos y rotación del inventario
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Movimiento mensual, costos y rotación del inventario"
     )
 
 
@@ -2674,17 +1954,12 @@ elif pagina == "📈Análisis":
     # ENTRADAS Y SALIDAS
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="section-heading">
-            Entradas y salidas mensuales
-        </div>
+    st.subheader(
+        "Entradas y salidas mensuales"
+    )
 
-        <div class="section-description">
-            Evolución de los movimientos físicos del inventario.
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Evolución de los movimientos físicos del inventario."
     )
 
 
@@ -2728,17 +2003,12 @@ elif pagina == "📈Análisis":
     # COSTOS
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="section-heading">
-            Costos de entradas y salidas
-        </div>
+    st.subheader(
+        "Costos de entradas y salidas"
+    )
 
-        <div class="section-description">
-            Evolución mensual del valor asociado a los movimientos.
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Evolución mensual del valor asociado a los movimientos."
     )
 
 
@@ -2782,13 +2052,8 @@ elif pagina == "📈Análisis":
     # NETO
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="section-heading">
-            Movimiento neto
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.subheader(
+        "Movimiento neto"
     )
 
 
@@ -2829,13 +2094,8 @@ elif pagina == "📈Análisis":
     # ROTACIÓN
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="section-heading">
-            Rotación mensual
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.subheader(
+        "Rotación mensual"
     )
 
 
@@ -2880,21 +2140,12 @@ elif pagina == "📈Análisis":
 
 elif pagina == "⚠️Alertas":
 
-    st.markdown(
-        """
-        <div class="main-header">
+    st.title(
+        "⚠️ Alertas"
+    )
 
-            <div class="main-header-title">
-                ⚠️ Alertas
-            </div>
-
-            <div class="main-header-subtitle">
-                Identificación de inventarios con mayor antigüedad
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Identificación de inventarios con mayor antigüedad"
     )
 
 
@@ -2954,17 +2205,12 @@ elif pagina == "⚠️Alertas":
             )
 
 
-        st.markdown(
-            """
-            <div class="section-heading">
-                Inventario con mayor antigüedad
-            </div>
+        st.subheader(
+            "Inventario con mayor antigüedad"
+        )
 
-            <div class="section-description">
-                Artículos cuya antigüedad supera los 12 meses.
-            </div>
-            """,
-            unsafe_allow_html=True
+        st.caption(
+            "Artículos cuya antigüedad supera los 12 meses."
         )
 
 
@@ -3021,15 +2267,10 @@ elif pagina == "⚠️Alertas":
             columnas_alertas = [
 
                 "Bodega",
-
                 "Codigo Articulo",
-
                 "Articulo",
-
                 COL_STOCK,
-
                 COL_COSTE,
-
                 COL_ANTIGUEDAD
             ]
 
@@ -3076,21 +2317,12 @@ elif pagina == "⚠️Alertas":
 
 elif pagina == "📋Detalle":
 
-    st.markdown(
-        """
-        <div class="main-header">
+    st.title(
+        "📋 Detalle del inventario"
+    )
 
-            <div class="main-header-title">
-                📋 Detalle del inventario
-            </div>
-
-            <div class="main-header-subtitle">
-                Registros incluidos en los filtros seleccionados
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Registros incluidos en los filtros seleccionados"
     )
 
 
@@ -3165,38 +2397,25 @@ elif pagina == "📋Detalle":
     # TABLA
     # ========================================================
 
-    st.markdown(
-        """
-        <div class="section-heading">
-            Detalle
-        </div>
+    st.subheader(
+        "Detalle"
+    )
 
-        <div class="section-description">
-            Información detallada de los registros seleccionados.
-        </div>
-        """,
-        unsafe_allow_html=True
+    st.caption(
+        "Información detallada de los registros seleccionados."
     )
 
 
     columnas_detalle = [
 
         "AREA",
-
         "Bodega",
-
         "Codigo Articulo",
-
         "Articulo",
-
         COL_STOCK,
-
         COL_COSTE,
-
         COL_ROTACION,
-
         COL_DIAS,
-
         COL_ANTIGUEDAD
     ]
 
@@ -3252,37 +2471,10 @@ elif pagina == "📋Detalle":
 # PIE DE PÁGINA
 # ============================================================
 
-st.markdown(
-    f"""
-    <div style="
-        margin-top:35px;
+st.divider()
 
-        padding:16px 5px;
-
-        border-top:1px solid {GRIS_BORDE};
-
-        text-align:center;
-
-        color:{GRIS_TEXTO};
-
-        font-size:10px;
-    ">
-
-        <strong style="color:{AZUL};">
-            Inventarios ALDC
-        </strong>
-
-        &nbsp; | &nbsp;
-
-        Herramienta de análisis y seguimiento de inventarios
-
-        &nbsp; | &nbsp;
-
-        <span style="color:{NARANJA};">
-            Área Limpia D.C.
-        </span>
-
-    </div>
-    """,
-    unsafe_allow_html=True
+st.caption(
+    "Inventarios ALDC  |  "
+    "Herramienta de análisis y seguimiento de inventarios  |  "
+    "Área Limpia D.C."
 )
