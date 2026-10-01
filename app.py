@@ -1156,7 +1156,34 @@ df_mensual = construir_serie_mensual(
     df_filtrado
 )
 
+valor_total = suma_columna(
+    df_filtrado,
+    COL_COSTE
+)
 
+# ============================================================
+# INDICADORES GENERALES DEL FILTRO
+# ============================================================
+
+stock_total = suma_columna(
+    df_filtrado,
+    COL_STOCK
+)
+
+valor_total = suma_columna(
+    df_filtrado,
+    COL_COSTE
+)
+
+rotacion = promedio_columna(
+    df_filtrado,
+    COL_ROTACION
+)
+
+dias_promedio = promedio_columna(
+    df_filtrado,
+    COL_DIAS
+)
 # ============================================================
 # PÁGINA 1
 # RESUMEN EJECUTIVO
@@ -1181,10 +1208,7 @@ if pagina == "🎯 Resumen ejecutivo":
         COL_STOCK
     )
 
-    valor_total = suma_columna(
-        df_filtrado,
-        COL_COSTE
-    )
+
 
     rotacion = promedio_columna(
         df_filtrado,
