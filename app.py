@@ -74,6 +74,10 @@ LOGO_URL = (
 # AUTENTICACIÓN
 # ============================================================
 
+# ============================================================
+# AUTENTICACIÓN
+# ============================================================
+
 try:
     USUARIOS = dict(st.secrets["usuarios"])
     ERROR_SECRETS = None
@@ -82,11 +86,17 @@ except Exception as e:
     USUARIOS = {}
     ERROR_SECRETS = str(e)
 
+TIEMPO_SESION_MINUTOS = 30
+
+
 if ERROR_SECRETS:
+
     st.error(
         f"Error leyendo usuarios: {ERROR_SECRETS}"
     )
+
 else:
+
     st.info(
         "Usuarios configurados en este entorno: "
         + ", ".join(USUARIOS.keys())
