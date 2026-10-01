@@ -70,37 +70,16 @@ LOGO_URL = (
 # AUTENTICACIÓN
 # ============================================================
 
-# ============================================================
-# AUTENTICACIÓN
-# ============================================================
-
-# ============================================================
-# AUTENTICACIÓN
-# ============================================================
-
 try:
-    USUARIOS = dict(st.secrets["usuarios"])
-    ERROR_SECRETS = None
+    USUARIOS = {
+        str(k).strip(): str(v).strip()
+        for k, v in dict(st.secrets["usuarios"]).items()
+    }
 
-except Exception as e:
+except Exception:
     USUARIOS = {}
-    ERROR_SECRETS = str(e)
 
 TIEMPO_SESION_MINUTOS = 30
-
-
-if ERROR_SECRETS:
-
-    st.error(
-        f"Error leyendo usuarios: {ERROR_SECRETS}"
-    )
-
-else:
-
-    st.info(
-        "Usuarios configurados en este entorno: "
-        + ", ".join(USUARIOS.keys())
-    )
 # ============================================================
 # CSS
 # ============================================================
@@ -498,7 +477,6 @@ if st.session_state["autenticado"]:
 
             st.stop()
 
-
 # ============================================================
 # MOSTRAR LOGIN
 # ============================================================
@@ -507,7 +485,6 @@ if not st.session_state["autenticado"]:
 
     login()
     st.stop()
-
 
 # ============================================================
 # CARGA DEL EXCEL
@@ -638,7 +615,7 @@ for columna in df.columns:
 # ============================================================
 
 COL_STOCK = "STOCK TOTAL"
-COL_COSTE = "PROMEDIO INVENTARIO 2022"
+COL_COSTE = "COSTE67"
 COL_ROTACION = "ROTACION DE INVENTARIOS 2022"
 COL_DIAS = "DIAS 2025"
 COL_ANTIGUEDAD = "MESES"
