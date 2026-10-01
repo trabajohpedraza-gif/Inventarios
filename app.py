@@ -13,46 +13,46 @@ import plotly.express as px
 
 st.set_page_config(
     page_title="Inventarios ALDC",
-    page_icon="📦",
+    page_icon="AL",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 
 # ============================================================
-# PALETA INSTITUCIONAL
+# PALETA INSTITUCIONAL — REFERENCIA ÁREA LIMPIA
 # ============================================================
 
-AZUL = "#064B9B"
-AZUL_OSCURO = "#003B7A"
-AZUL_CLARO = "#3B82F6"
-AZUL_SUAVE = "#EAF2FB"
+AZUL = "#2D6CDF"
+AZUL_OSCURO = "#102D50"
+AZUL_MEDIO = "#1F4C7A"
+AZUL_CLARO = "#6E9FE8"
+AZUL_SUAVE = "#EAF2FF"
 
-NARANJA = "#F58220"
-NARANJA_CLARO = "#FB923C"
-NARANJA_SUAVE = "#FFF1E6"
+VERDE = "#87D33F"
+VERDE_CLARO = "#B6E879"
+VERDE_SUAVE = "#EDF9E4"
 
-VERDE = "#16A34A"
-VERDE_CLARO = "#4ADE80"
-VERDE_SUAVE = "#ECFDF3"
+NARANJA = "#F29B86"
+NARANJA_CLARO = "#F7B6A7"
+NARANJA_SUAVE = "#FFF0EC"
 
-ROJO = "#DC2626"
-ROJO_CLARO = "#F87171"
-ROJO_SUAVE = "#FEF2F2"
+ROJO = "#E66B6B"
+ROJO_CLARO = "#F39A9A"
+ROJO_SUAVE = "#FDEEEE"
 
-MORADO = "#7C3AED"
-MORADO_SUAVE = "#F5F3FF"
+MORADO = "#7A70D8"
+MORADO_SUAVE = "#F1EFFF"
 
-AMARILLO = "#F59E0B"
-AMARILLO_SUAVE = "#FFFBEB"
+AMARILLO = "#F2B84B"
+AMARILLO_SUAVE = "#FFF7E4"
 
-GRIS_FONDO = "#F4F7FA"
+GRIS_FONDO = "#F4F6FA"
 GRIS_PANEL = "#FFFFFF"
-GRIS_BORDE = "#DCE3EA"
-GRIS_GRID = "#E8EDF2"
-GRIS_TEXTO = "#64748B"
-GRIS_OSCURO = "#334155"
-
+GRIS_BORDE = "#DFE6EF"
+GRIS_GRID = "#E9EEF5"
+GRIS_TEXTO = "#667892"
+GRIS_OSCURO = "#172D49"
 BLANCO = "#FFFFFF"
 
 
@@ -80,133 +80,473 @@ except Exception:
     USUARIOS = {}
 
 TIEMPO_SESION_MINUTOS = 30
+
+
 # ============================================================
-# CSS
+# CSS — INTERFAZ BASADA EN EL DASHBOARD DE REFERENCIA
 # ============================================================
 
 st.markdown(
     f"""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-    .stApp {{
-        background:
-            linear-gradient(
-                135deg,
-                #F4F7FA 0%,
-                #FFFFFF 58%,
-                #FFF8F2 100%
-            );
+    :root {{
+        --azul: {AZUL};
+        --azul-oscuro: {AZUL_OSCURO};
+        --azul-medio: {AZUL_MEDIO};
+        --verde: {VERDE};
+        --fondo: {GRIS_FONDO};
+        --borde: {GRIS_BORDE};
+        --texto: {GRIS_OSCURO};
+        --texto-suave: {GRIS_TEXTO};
     }}
 
-    section[data-testid="stSidebar"] {{
-        background: #FFFFFF;
-        border-right: 1px solid {GRIS_BORDE};
+    html, body, [class*="css"] {{
+        font-family: "Inter", "Segoe UI", Arial, sans-serif !important;
     }}
 
-    section[data-testid="stSidebar"] > div {{
-        padding-top: 1rem;
+    .stApp,
+    [data-testid="stAppViewContainer"] {{
+        background: {GRIS_FONDO} !important;
     }}
 
-    h1, h2, h3 {{
-        color: {AZUL_OSCURO} !important;
-    }}
-
-    p {{
-        color: {GRIS_TEXTO};
+    [data-testid="stHeader"] {{
+        background: transparent !important;
     }}
 
     .block-container {{
-        padding-top: 1.7rem;
-        padding-bottom: 2rem;
-        max-width: 1500px;
+        padding-top: 1.75rem !important;
+        padding-bottom: 2rem !important;
+        max-width: 1510px !important;
+    }}
+
+    h1 {{
+        color: {AZUL_OSCURO} !important;
+        font-size: 2rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.8px !important;
+        line-height: 1.15 !important;
+        margin-bottom: 0.15rem !important;
+    }}
+
+    h2 {{
+        color: {AZUL_OSCURO} !important;
+        font-size: 1.3rem !important;
+        font-weight: 700 !important;
+    }}
+
+    h3 {{
+        color: {AZUL_OSCURO} !important;
+        font-weight: 700 !important;
+    }}
+
+    p, label, .stCaption {{
+        color: {GRIS_TEXTO};
+    }}
+
+    /* =========================================================
+       SIDEBAR
+       ========================================================= */
+    section[data-testid="stSidebar"] {{
+        background: {AZUL_OSCURO} !important;
+        border-right: 0 !important;
+        min-width: 255px !important;
+        max-width: 255px !important;
+    }}
+
+    section[data-testid="stSidebar"] > div {{
+        background: {AZUL_OSCURO} !important;
+        padding: 1.35rem 1rem 1rem 1rem !important;
+    }}
+
+    section[data-testid="stSidebar"] * {{
+        color: #FFFFFF;
+    }}
+
+    .sidebar-brand {{
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 0.15rem 0.15rem 1.25rem 0.15rem;
+        border-bottom: 1px solid rgba(255,255,255,0.14);
+        margin-bottom: 1.05rem;
+    }}
+
+    .brand-mark {{
+        width: 45px;
+        height: 45px;
+        min-width: 45px;
+        border-radius: 12px;
+        background: {AZUL};
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF !important;
+        font-size: 18px;
+        font-weight: 800;
+    }}
+
+    .brand-title {{
+        font-size: 1.02rem;
+        line-height: 1.15;
+        font-weight: 800;
+        color: #FFFFFF !important;
+    }}
+
+    .brand-subtitle {{
+        font-size: 0.72rem;
+        margin-top: 4px;
+        color: #B9C8DA !important;
+    }}
+
+    .sidebar-section-title {{
+        color: #AFC1D7 !important;
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.55px;
+        margin: 1rem 0 0.45rem 0.15rem;
+    }}
+
+    .sidebar-menu-item {{
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.72rem 0.8rem;
+        border-radius: 12px;
+        margin-bottom: 0.35rem;
+        color: #FFFFFF !important;
+        font-weight: 650;
+        font-size: 0.92rem;
+    }}
+
+    .sidebar-menu-item.active {{
+        background: {AZUL_MEDIO};
+        border-left: 3px solid {VERDE};
+        padding-left: calc(0.8rem - 3px);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.025);
+    }}
+
+    .sidebar-menu-icon {{
+        width: 27px;
+        height: 27px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 7px;
+        background: rgba(255,255,255,0.10);
+        font-size: 14px;
+    }}
+
+    .sidebar-user {{
+        background: rgba(255,255,255,0.055);
+        border: 1px solid rgba(255,255,255,0.09);
+        border-radius: 12px;
+        padding: 0.72rem 0.75rem;
+        margin-top: 0.75rem;
+        margin-bottom: 0.9rem;
+    }}
+
+    .sidebar-user-name {{
+        color: #FFFFFF !important;
+        font-weight: 700;
+        font-size: 0.86rem;
+    }}
+
+    .sidebar-user-status {{
+        color: #A9D977 !important;
+        font-size: 0.72rem;
+        margin-top: 3px;
+    }}
+
+    section[data-testid="stSidebar"] .stButton > button {{
+        background: transparent !important;
+        color: #DCE7F2 !important;
+        border: 1px solid rgba(255,255,255,0.14) !important;
+        border-radius: 10px !important;
+        font-weight: 600 !important;
+        box-shadow: none !important;
+        min-height: 40px !important;
+    }}
+
+    section[data-testid="stSidebar"] .stButton > button:hover {{
+        background: rgba(255,255,255,0.06) !important;
+        border-color: rgba(255,255,255,0.25) !important;
+        transform: none !important;
+    }}
+
+    /* =========================================================
+       ENCABEZADO — TÍTULO + PILLS
+       ========================================================= */
+    .dashboard-header {{
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 18px;
+        margin-bottom: 0.85rem;
+    }}
+
+    .dashboard-subtitle {{
+        color: #657893;
+        font-size: 0.98rem;
+        margin-top: 0.35rem;
+        line-height: 1.45;
+    }}
+
+    .header-pills {{
+        display: flex;
+        gap: 9px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        padding-top: 0.25rem;
+    }}
+
+    .header-pill {{
+        padding: 0.55rem 0.9rem;
+        border-radius: 999px;
+        background: #FFFFFF;
+        border: 1px solid {GRIS_BORDE};
+        color: {AZUL_OSCURO} !important;
+        font-size: 0.78rem;
+        font-weight: 650;
+        white-space: nowrap;
+    }}
+
+    .header-pill.primary {{
+        background: #EEF4FF;
+        border-color: #B9D1F8;
+        color: {AZUL} !important;
+    }}
+
+    .header-pill.success {{
+        background: #F2FAEC;
+        border-color: #C8E6A8;
+        color: #31A85A !important;
+    }}
+
+    /* =========================================================
+       TARJETA DE FILTROS
+       ========================================================= */
+    .filter-card {{
+        background: #FFFFFF;
+        border: 1px solid {GRIS_BORDE};
+        border-radius: 22px;
+        padding: 1.35rem 1.45rem 1.05rem 1.45rem;
+        box-shadow: 0 4px 15px rgba(16,45,80,0.045);
+        margin: 0.9rem 0 0.95rem 0;
+    }}
+
+    .filter-title {{
+        color: {AZUL_OSCURO};
+        font-size: 0.9rem;
+        font-weight: 800;
+        letter-spacing: 0.35px;
+        text-transform: uppercase;
+        margin-bottom: 0.12rem;
+    }}
+
+    .filter-subtitle {{
+        color: #7A8AA0;
+        font-size: 0.78rem;
+        margin-bottom: 0.95rem;
+    }}
+
+    .filter-records {{
+        display: inline-flex;
+        align-items: center;
+        padding: 0.38rem 0.72rem;
+        border-radius: 999px;
+        background: #F1F5FA;
+        color: #61738C !important;
+        font-size: 0.72rem;
+        font-weight: 650;
+        margin-top: 0.75rem;
     }}
 
     div[data-baseweb="select"] > div {{
-        border-radius: 10px;
-        border: 1px solid {GRIS_BORDE};
-        background: white;
-        min-height: 42px;
-    }}
-
-    div[data-baseweb="select"] > div:hover {{
-        border-color: {AZUL};
-    }}
-
-    div[data-testid="stTextInput"] input {{
-        border: 1px solid {GRIS_BORDE} !important;
         border-radius: 10px !important;
+        border: 1px solid #DDE5EF !important;
+        background: #EDF2F8 !important;
+        min-height: 43px !important;
+        box-shadow: none !important;
+    }}
+
+    div[data-baseweb="select"] > div:hover,
+    div[data-baseweb="select"] > div:focus-within {{
+        border-color: {AZUL} !important;
+        box-shadow: 0 0 0 2px rgba(45,108,223,0.08) !important;
+    }}
+
+    div[data-baseweb="select"] span {{
+        color: #243B59 !important;
+    }}
+
+    div[data-baseweb="select"] svg {{
+        fill: {AZUL_OSCURO} !important;
+    }}
+
+    div[data-testid="stSelectbox"] label {{
+        color: #62758F !important;
+        font-size: 0.75rem !important;
+        font-weight: 600 !important;
+        margin-bottom: 0.28rem !important;
+    }}
+
+    /* =========================================================
+       NAVEGACIÓN LATERAL — RECTÁNGULOS SIN PUNTOS
+       ========================================================= */
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] {{
+        margin: 0 !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] > label:first-child {{
+        display: none !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] {{
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 7px !important;
+        width: 100% !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label {{
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        width: 100% !important;
         min-height: 44px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 0.62rem 0.8rem !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255,255,255,0.12) !important;
+        background: rgba(255,255,255,0.055) !important;
+        cursor: pointer !important;
+        transition: 0.16s ease !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label:hover {{
+        background: rgba(255,255,255,0.10) !important;
+        border-color: rgba(255,255,255,0.22) !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked) {{
+        background: {AZUL_MEDIO} !important;
+        border-color: rgba(135,211,63,0.55) !important;
+        box-shadow: inset 3px 0 0 {VERDE}, 0 2px 7px rgba(0,0,0,0.10) !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label p {{
+        color: #DCE7F2 !important;
+        font-size: 0.84rem !important;
+        font-weight: 600 !important;
+        margin: 0 !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] div[role="radiogroup"] > label:has(input:checked) p {{
+        color: #FFFFFF !important;
+        font-weight: 750 !important;
+    }}
+
+    section[data-testid="stSidebar"] div[data-testid="stRadio"] input {{
+        display: none !important;
+    }}
+
+    .sidebar-session-title {{
+        margin-top: 1.15rem !important;
+    }}
+
+    /* =========================================================
+       FILTROS — CONTENEDOR BLANCO REAL DE STREAMLIT
+       ========================================================= */
+    div[data-testid="stVerticalBlockBorderWrapper"] {{
         background: #FFFFFF !important;
+        border: 1px solid {GRIS_BORDE} !important;
+        border-radius: 18px !important;
+        box-shadow: 0 4px 15px rgba(16,45,80,0.045) !important;
+        padding: 0.15rem !important;
     }}
 
-    .stButton > button {{
-        border-radius: 10px;
-        border: 1px solid {AZUL};
-        background: {AZUL};
-        color: white;
-        font-weight: 700;
-        transition: 0.2s;
-    }}
+    /* =========================================================
+       NAVEGACIÓN HORIZONTAL — DESACTIVADA
+       ========================================================= */
 
-    .stButton > button:hover {{
-        background: {AZUL_OSCURO};
-        border-color: {AZUL_OSCURO};
-        color: white;
-        transform: translateY(-1px);
-        box-shadow: 0 5px 14px rgba(6, 75, 155, 0.20);
-    }}
-
-    .stDownloadButton > button {{
-        border-radius: 10px;
-        border: 1px solid {AZUL};
-        background: white;
-        color: {AZUL};
-        font-weight: 700;
-    }}
-
-    .stDownloadButton > button:hover {{
-        background: {AZUL_SUAVE};
-        color: {AZUL};
-    }}
-
+    /* =========================================================
+       KPI / CARDS
+       ========================================================= */
     div[data-testid="metric-container"] {{
-        background: white;
+        background: #FFFFFF;
         border: 1px solid {GRIS_BORDE};
-        border-radius: 15px;
-        padding: 17px;
-        box-shadow: 0 7px 20px rgba(15, 23, 42, 0.05);
+        border-radius: 17px;
+        padding: 17px 18px 16px 18px;
+        box-shadow: 0 4px 14px rgba(16,45,80,0.045);
         min-height: 112px;
     }}
 
     div[data-testid="stMetricLabel"] {{
-        color: {GRIS_TEXTO};
+        color: #60748E !important;
+        font-size: 0.82rem !important;
+        font-weight: 650 !important;
     }}
 
     div[data-testid="stMetricValue"] {{
-        color: {AZUL_OSCURO};
-        font-weight: 800;
+        color: {AZUL_OSCURO} !important;
+        font-size: 1.75rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.55px;
+    }}
+
+    div[data-testid="stMetricDelta"] {{
+        color: #39A85A !important;
+        font-weight: 650 !important;
     }}
 
     div[data-testid="stVerticalBlockBorderWrapper"] {{
-        border-radius: 15px !important;
+        border-radius: 17px !important;
         border-color: {GRIS_BORDE} !important;
-        background: white !important;
+        background: #FFFFFF !important;
+        box-shadow: 0 4px 14px rgba(16,45,80,0.04);
     }}
 
     div[data-testid="stDataFrame"] {{
-        border-radius: 12px;
+        border-radius: 13px;
         overflow: hidden;
         border: 1px solid {GRIS_BORDE};
+        background: #FFFFFF;
+    }}
+
+    .stButton > button {{
+        border-radius: 10px !important;
+        border: 1px solid {AZUL} !important;
+        background: {AZUL} !important;
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+        min-height: 41px !important;
+        box-shadow: 0 4px 10px rgba(45,108,223,0.12);
+    }}
+
+    .stButton > button:hover {{
+        background: {AZUL_OSCURO} !important;
+        border-color: {AZUL_OSCURO} !important;
+        transform: translateY(-1px);
+    }}
+
+    .stDownloadButton > button {{
+        border-radius: 10px !important;
+        border: 1px solid {AZUL} !important;
+        background: #FFFFFF !important;
+        color: {AZUL} !important;
+        font-weight: 700 !important;
     }}
 
     div[data-testid="stAlert"] {{
-        border-radius: 12px;
+        border-radius: 12px !important;
     }}
 
     hr {{
-        border-color: {GRIS_BORDE};
+        border-color: {GRIS_BORDE} !important;
     }}
-
     </style>
     """,
     unsafe_allow_html=True
@@ -274,7 +614,7 @@ def configurar_figura(fig, altura=430):
         plot_bgcolor=BLANCO,
         paper_bgcolor=BLANCO,
         font=dict(
-            family="Segoe UI, Arial",
+            family="Inter, Segoe UI, Arial",
             color=GRIS_OSCURO
         ),
         margin=dict(
@@ -301,7 +641,7 @@ def configurar_figura(fig, altura=430):
         hoverlabel=dict(
             bgcolor="white",
             font_size=13,
-            font_family="Segoe UI, Arial"
+            font_family="Inter, Segoe UI, Arial"
         )
     )
 
@@ -561,11 +901,10 @@ MAPA_BODEGAS = {
 # ============================================================
 
 COLORES_AREA = {
-
     "Mantenimiento": AZUL,
-    "Operaciones": NARANJA,
+    "Operaciones": "#4D6F91",
     "RRHH": VERDE,
-    "Sin asignar": GRIS_TEXTO
+    "Sin asignar": "#9AA9BA"
 }
 
 
@@ -645,8 +984,8 @@ ORDEN_AREAS = [
 # ============================================================
 
 COLORES_EDAD = {
-    "Entre 0 y 3 meses": "#BFDBFE",
-    "Entre 4 y 6 meses": "#60A5FA",
+    "Entre 0 y 3 meses": "#D9E9FB",
+    "Entre 4 y 6 meses": "#A9C8EC",
     "Entre 7 y 12 meses": AZUL_CLARO,
     "Mayor a 12 meses": AZUL
 }
@@ -886,49 +1225,82 @@ def construir_serie_mensual(dataframe):
 
 
 # ============================================================
-# SIDEBAR
+# SIDEBAR — NAVEGACIÓN LATERAL ESTILO ÁREA LIMPIA
 # ============================================================
 
 with st.sidebar:
 
-    st.image(
-        LOGO_URL,
-        width=175
+    st.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="brand-mark">AL</div>
+            <div>
+                <div class="brand-title">Área Limpia</div>
+                <div class="brand-subtitle">D.C. S.A.S. E.S.P.</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
 
-    st.caption(
-        "Gestión y Analítica de Inventarios"
+    st.markdown(
+        '<div class="sidebar-section-title">OPERACIÓN</div>',
+        unsafe_allow_html=True
     )
 
-    st.divider()
+    # Botón/identificador principal, como en la referencia
+    st.markdown(
+        """
+        <div class="sidebar-menu-item active">
+            <span class="sidebar-menu-icon">▣</span>
+            <span>Inventarios</span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '<div class="sidebar-section-title">NAVEGACIÓN</div>',
+        unsafe_allow_html=True
+    )
+
+    # La navegación se mantiene como radio para conservar el estado
+    # entre páginas, pero el CSS transforma cada opción en un
+    # rectángulo/botón visual y oculta completamente el puntico.
+    pagina = st.radio(
+        "Navegación",
+        [
+            "Resumen",
+            "Inventario",
+            "Evolución",
+            "Riesgos y detalle"
+        ],
+        label_visibility="collapsed",
+        key="pagina_navegacion"
+    )
+
+    st.markdown(
+        '<div class="sidebar-section-title sidebar-session-title">SESIÓN</div>',
+        unsafe_allow_html=True
+    )
 
     usuario_actual = st.session_state.get(
         "usuario",
         ""
     )
 
-    st.info(
-        f"👤 **{usuario_actual}**\n\n"
-        "🟢 Sesión activa"
+    st.markdown(
+        f"""
+        <div class="sidebar-user">
+            <div class="sidebar-user-name">◉ &nbsp;{usuario_actual}</div>
+            <div class="sidebar-user-status">● &nbsp;Sesión activa</div>
+        </div>
+        """,
+        unsafe_allow_html=True
     )
-
-    st.caption("NAVEGACIÓN")
-
-    pagina = st.radio(
-        "Navegación",
-        [
-            "🎯 Resumen ejecutivo",
-            "📦 Inventario",
-            "📈 Evolución",
-            "⚠️ Riesgos y detalle"
-        ],
-        label_visibility="collapsed"
-    )
-
-    st.write("")
 
     if st.button(
-        "🚪 Cerrar sesión",
+        "↪  Cerrar sesión",
         use_container_width=True
     ):
 
@@ -946,10 +1318,41 @@ with st.sidebar:
 
         st.rerun()
 
-    st.divider()
+    st.markdown(
+        """
+        <div style="margin-top:2.2rem; padding-top:0.9rem; border-top:1px solid rgba(255,255,255,0.13);">
+            <div style="color:#AFC1D7;font-size:0.73rem;line-height:1.55;">
+                Área Limpia D.C.<br>
+                Sistema de análisis de inventarios
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    st.caption("Área Limpia D.C.")
-    st.caption("Sistema de análisis de inventarios")
+
+# ============================================================
+# ENCABEZADO PRINCIPAL
+# ============================================================
+
+st.markdown(
+    """
+    <div class="dashboard-header">
+        <div>
+            <h1 style="margin:0 !important;">Inventarios 2026</h1>
+            <div class="dashboard-subtitle">
+                Análisis de inventario, rotación y movimientos acumulados — cifras del sistema de inventarios
+            </div>
+        </div>
+        <div class="header-pills">
+            <div class="header-pill primary">Inventario actual</div>
+            <div class="header-pill">Corte: Mayo 2026</div>
+            <div class="header-pill success">Datos actualizados</div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # ============================================================
@@ -958,10 +1361,12 @@ with st.sidebar:
 
 with st.container(border=True):
 
-    st.subheader("🔎 Filtros de análisis")
-
-    st.caption(
-        "Los indicadores y análisis se actualizan según la selección."
+    st.markdown(
+        """
+        <div class="filter-title">Filtros del informe</div>
+        <div class="filter-subtitle">Los indicadores y análisis se actualizan según la selección.</div>
+        """,
+        unsafe_allow_html=True
     )
 
     col1, col2, col3, col4 = st.columns(4)
@@ -1119,10 +1524,10 @@ with st.container(border=True):
             == antiguedad_seleccionada
         ]
 
-    st.caption(
-        f"Registros analizados: "
-        f"{len(df_filtrado):,}".replace(",", ".")
-    )
+    st.markdown(
+            f'<div class="filter-records">Registros analizados: {len(df_filtrado):,}'.replace(",", ".") + '</div>',
+            unsafe_allow_html=True
+        )
 
 
 # ============================================================
@@ -1166,10 +1571,10 @@ dias_promedio = promedio_columna(
 # RESUMEN EJECUTIVO
 # ============================================================
 
-if pagina == "🎯 Resumen ejecutivo":
+if pagina == "Resumen":
 
     st.title(
-        "🎯 Resumen ejecutivo"
+        "Resumen ejecutivo"
     )
 
     st.caption(
@@ -1471,10 +1876,10 @@ if pagina == "🎯 Resumen ejecutivo":
 # INVENTARIO
 # ============================================================
 
-elif pagina == "📦 Inventario":
+elif pagina == "Inventario":
 
     st.title(
-        "📦 Inventario"
+        "Inventario"
     )
 
     st.caption(
@@ -1705,10 +2110,10 @@ elif pagina == "📦 Inventario":
 # EVOLUCIÓN
 # ============================================================
 
-elif pagina == "📈 Evolución":
+elif pagina == "Evolución":
 
     st.title(
-        "📈 Evolución del inventario"
+        "Evolución del inventario"
     )
 
     st.caption(
@@ -1916,7 +2321,7 @@ elif pagina == "📈 Evolución":
         plot_bgcolor=BLANCO,
         paper_bgcolor=BLANCO,
         font=dict(
-            family="Segoe UI, Arial",
+            family="Inter, Segoe UI, Arial",
             color=GRIS_OSCURO
         ),
         margin=dict(
@@ -2116,10 +2521,10 @@ elif pagina == "📈 Evolución":
 # RIESGOS Y DETALLE
 # ============================================================
 
-elif pagina == "⚠️ Riesgos y detalle":
+elif pagina == "Riesgos y detalle":
 
     st.title(
-        "⚠️ Riesgos y detalle"
+        "Riesgos y detalle"
     )
 
     st.caption(
