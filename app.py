@@ -1,10 +1,20 @@
 import os
+import re
 from datetime import datetime, timedelta
 
 import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 import plotly.express as px
+
+from motor_lifo import (
+    construir_esquema,
+    cargar_base,
+    firma_archivos,
+    tipos_columnas_app,
+    kpis_corte,
+    pagina_actualizar_kardex,
+)
 
 
 # ============================================================
@@ -469,10 +479,6 @@ st.markdown(
     }}
 
     /* =========================================================
-       NAVEGACIÓN HORIZONTAL — DESACTIVADA
-       ========================================================= */
-
-    /* =========================================================
        KPI / CARDS
        ========================================================= */
     div[data-testid="metric-container"] {{
@@ -590,14 +596,14 @@ def formato_entero(valor):
 
 
 def suma_columna(dataframe, columna):
-    if columna not in dataframe.columns:
+    if columna is None or columna not in dataframe.columns:
         return 0
 
     return dataframe[columna].fillna(0).sum()
 
 
 def promedio_columna(dataframe, columna):
-    if columna not in dataframe.columns:
+    if columna is None or columna not in dataframe.columns:
         return 0
 
     serie = dataframe[columna].dropna()
@@ -826,48 +832,98 @@ if not st.session_state["autenticado"]:
     login()
     st.stop()
 
+
 # ============================================================
-# CARGA DEL EXCEL
+# CARGA DE DATOS
+#
+#   HISTORICO_INVENTARIOS.xlsx            -> base (mayo 2026)
+#   INVENTARIO_ACTUALIZADO_LIFO.xlsx      -> resultado de cargar el Kardex
+#
+# Si existe el archivo actualizado se usa ese; si no, el histórico base.
 # ============================================================
 
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
 )
 
-ARCHIVO_EXCEL = os.path.join(
+ARCHIVO_HISTORICO = os.path.join(
     BASE_DIR,
-    "RESULTADO_PYTHON_ROTACION_MAYO_2026.xlsx"
+    "HISTORICO_INVENTARIOS.xlsx"
+)
+
+ARCHIVO_ACTUALIZADO = os.path.join(
+    BASE_DIR,
+    "INVENTARIO_ACTUALIZADO_LIFO.xlsx"
 )
 
 
 @st.cache_data
-def cargar_datos():
+def cargar_datos(firma):
 
-    df = pd.read_excel(
-        ARCHIVO_EXCEL,
-        sheet_name="Tabla calculo",
-        header=1,
-        engine="openpyxl"
+    datos, _ = cargar_base(
+        ARCHIVO_ACTUALIZADO,
+        ARCHIVO_HISTORICO
     )
 
-    df.columns = [
-        str(col).strip()
-        for col in df.columns
-    ]
+    return datos
 
-    return df
 
+if "df_actualizado" in st.session_state:
+
+    df = st.session_state["df_actualizado"].copy()
+
+else:
+
+    try:
+
+        df = cargar_datos(
+            firma_archivos(
+                ARCHIVO_ACTUALIZADO,
+                ARCHIVO_HISTORICO
+            )
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"No fue posible cargar el archivo Excel.\n\n"
+            f"Archivo esperado:\n{ARCHIVO_HISTORICO}\n\n"
+            f"Error: {e}"
+        )
+
+        st.stop()
+
+    if df is None:
+
+        st.warning(
+            "No hay un histórico base en el servidor. "
+            "Cárgalo junto con el Kardex para comenzar."
+        )
+
+        pagina_actualizar_kardex(
+            st,
+            st.session_state.get("usuario", ""),
+            ARCHIVO_ACTUALIZADO,
+            ARCHIVO_HISTORICO
+        )
+
+        st.stop()
+
+    df = df.copy()
+
+
+# ============================================================
+# ESQUEMA DE COLUMNAS (meses y columnas del último corte)
+# ============================================================
 
 try:
 
-    df = cargar_datos()
+    ESQ = construir_esquema(df)
 
 except Exception as e:
 
     st.error(
-        f"No fue posible cargar el archivo Excel.\n\n"
-        f"Archivo esperado:\n{ARCHIVO_EXCEL}\n\n"
-        f"Error: {e}"
+        f"El archivo de datos no tiene la estructura esperada.\n\n{e}"
     )
 
     st.stop()
@@ -909,16 +965,30 @@ COLORES_AREA = {
 
 
 # ============================================================
-# CREAR ÁREA
+# CREAR ÁREA (por número de bodega, sin depender del nombre)
 # ============================================================
+
+def numero_de_bodega(texto):
+
+    coincidencia = re.search(
+        r"\[\s*(\d+)\s*\]",
+        str(texto)
+    )
+
+    return coincidencia.group(1) if coincidencia else None
+
+
+MAPA_AREA_NUMERO = {
+    numero_de_bodega(nombre): area
+    for nombre, area in MAPA_BODEGAS.items()
+}
 
 if "Bodega" in df.columns:
 
     df["AREA"] = (
         df["Bodega"]
-        .astype(str)
-        .str.strip()
-        .map(MAPA_BODEGAS)
+        .apply(numero_de_bodega)
+        .map(MAPA_AREA_NUMERO)
         .fillna("Sin asignar")
     )
 
@@ -931,13 +1001,9 @@ else:
 # CONVERSIÓN NUMÉRICA
 # ============================================================
 
-COLUMNAS_TEXTO = [
-    "Bodega",
-    "Codigo Articulo",
-    "Articulo",
-    "MESES",
-    "AREA"
-]
+COLUMNAS_TEXTO = set(
+    tipos_columnas_app(df)
+) | {"AREA"}
 
 for columna in df.columns:
 
@@ -950,14 +1016,14 @@ for columna in df.columns:
 
 
 # ============================================================
-# COLUMNAS PRINCIPALES
+# COLUMNAS PRINCIPALES (último corte disponible en los datos)
 # ============================================================
 
-COL_STOCK = "STOCK TOTAL"
-COL_COSTE = "COSTE67"
-COL_ROTACION = "ROTACION DE INVENTARIOS 2022"
-COL_DIAS = "DIAS 2025"
-COL_ANTIGUEDAD = "MESES"
+COL_STOCK = ESQ["col_stock"]
+COL_COSTE = ESQ["col_coste"]
+COL_ROTACION = ESQ["col_rotacion"]
+COL_DIAS = None
+COL_ANTIGUEDAD = ESQ["col_antiguedad"]
 
 
 # ============================================================
@@ -968,7 +1034,9 @@ ORDEN_ANTIGUEDAD = [
     "Entre 0 y 3 meses",
     "Entre 4 y 6 meses",
     "Entre 7 y 12 meses",
-    "Mayor a 12 meses"
+    "Mayor a 12 meses",
+    "Sin trazabilidad",
+    "Sin stock"
 ]
 
 ORDEN_AREAS = [
@@ -987,234 +1055,55 @@ COLORES_EDAD = {
     "Entre 0 y 3 meses": "#D9E9FB",
     "Entre 4 y 6 meses": "#A9C8EC",
     "Entre 7 y 12 meses": AZUL_CLARO,
-    "Mayor a 12 meses": AZUL
-}
-
-
-# ============================================================
-# MAPA DE MOVIMIENTO MENSUAL
-# ============================================================
-
-MESES_NOMBRES = [
-    "JUNIO",
-    "JULIO",
-    "AGOSTO",
-    "SEPTIEMBRE",
-    "OCTUBRE",
-    "NOVIEMBRE",
-    "DICIEMBRE",
-    "ENERO",
-    "FEBRERO",
-    "MARZO",
-    "ABRIL",
-    "MAYO"
-]
-
-
-MOVIMIENTO_MENSUAL = {
-
-    "JUNIO": {
-        "entrada": "ENTRADA",
-        "salida": "SALIDA",
-        "costo_entrada": "COSTO ENTRADA",
-        "costo_salida": "COSTO SALIDA",
-        "neto": "NETO",
-        "rotacion": "ROTACION"
-    },
-
-    "JULIO": {
-        "entrada": "ENTRADA2",
-        "salida": "SALIDA3",
-        "costo_entrada": "COSTO ENTRADA4",
-        "costo_salida": "COSTO SALIDA5",
-        "neto": "NETO6",
-        "rotacion": "ROTACION 68"
-    },
-
-    "AGOSTO": {
-        "entrada": "ENTRADA8",
-        "salida": "SALIDA9",
-        "costo_entrada": "COSTO ENTRADA10",
-        "costo_salida": "COSTO SALIDA11",
-        "neto": "NETO12",
-        "rotacion": "ROTACION 69"
-    },
-
-    "SEPTIEMBRE": {
-        "entrada": "ENTRADA14",
-        "salida": "SALIDA15",
-        "costo_entrada": "COSTO ENTRADA16",
-        "costo_salida": "COSTO SALIDA17",
-        "neto": "NETO18",
-        "rotacion": "ROTACION 70"
-    },
-
-    "OCTUBRE": {
-        "entrada": "ENTRADA20",
-        "salida": "SALIDA21",
-        "costo_entrada": "COSTO ENTRADA22",
-        "costo_salida": "COSTO SALIDA23",
-        "neto": "NETO24",
-        "rotacion": "ROTACION 71"
-    },
-
-    "NOVIEMBRE": {
-        "entrada": "ENTRADA26",
-        "salida": "SALIDA27",
-        "costo_entrada": "COSTO ENTRADA28",
-        "costo_salida": "COSTO SALIDA29",
-        "neto": "NETO30",
-        "rotacion": "ROTACION 72"
-    },
-
-    "DICIEMBRE": {
-        "entrada": "ENTRADA32",
-        "salida": "SALIDA33",
-        "costo_entrada": "COSTO ENTRADA34",
-        "costo_salida": "COSTO SALIDA35",
-        "neto": "NETO36",
-        "rotacion": "ROTACION 73"
-    },
-
-    "ENERO": {
-        "entrada": "ENTRADA38",
-        "salida": "SALIDA39",
-        "costo_entrada": "COSTO ENTRADA40",
-        "costo_salida": "COSTO SALIDA41",
-        "neto": "NETO42",
-        "rotacion": "ROTACION 74"
-    },
-
-    "FEBRERO": {
-        "entrada": "ENTRADA44",
-        "salida": "SALIDA45",
-        "costo_entrada": "COSTO ENTRADA46",
-        "costo_salida": "COSTO SALIDA47",
-        "neto": "NETO48",
-        "rotacion": "ROTACION 75"
-    },
-
-    "MARZO": {
-        "entrada": "ENTRADA50",
-        "salida": "SALIDA51",
-        "costo_entrada": "COSTO ENTRADA52",
-        "costo_salida": "COSTO SALIDA53",
-        "neto": "NETO54",
-        "rotacion": "ROTACION 76"
-    },
-
-    "ABRIL": {
-        "entrada": "ENTRADA56",
-        "salida": "SALIDA57",
-        "costo_entrada": "COSTO ENTRADA58",
-        "costo_salida": "COSTO SALIDA59",
-        "neto": "NETO60",
-        "rotacion": "ROTACION 77"
-    },
-
-    "MAYO": {
-        "entrada": "ENTRADA62",
-        "salida": "SALIDA63",
-        "costo_entrada": "COSTO ENTRADA64",
-        "costo_salida": "COSTO SALIDA65",
-        "neto": "NETO66",
-        "rotacion": "ROTACION 78"
-    }
+    "Mayor a 12 meses": AZUL,
+    "Sin trazabilidad": "#9AA9BA",
+    "Sin stock": "#DFE6EF"
 }
 
 
 # ============================================================
 # CONSTRUIR SERIE MENSUAL
+#
+# Usa las columnas reales de cada mes (ENTRADA / SALIDA / STOCK ...)
+# que trae el histórico y las que calcula el Kardex.
+# Las salidas se toman en valor absoluto.
 # ============================================================
 
 def construir_serie_mensual(dataframe):
 
+    def suma(columna):
+
+        if columna and columna in dataframe.columns:
+            return dataframe[columna].fillna(0).sum()
+
+        return 0
+
     datos = []
 
-    for mes in MESES_NOMBRES:
+    for mes in ESQ["meses"]:
 
-        columnas = MOVIMIENTO_MENSUAL[mes]
+        entradas = suma(mes["entrada"])
+        salidas = abs(suma(mes["salida"]))
 
-        entradas = (
-            dataframe[columnas["entrada"]].fillna(0).sum()
-            if columnas["entrada"] in dataframe.columns
-            else 0
-        )
-
-        salidas = (
-            dataframe[columnas["salida"]].fillna(0).sum()
-            if columnas["salida"] in dataframe.columns
-            else 0
-        )
-
-        costo_entradas = (
-            dataframe[columnas["costo_entrada"]].fillna(0).sum()
-            if columnas["costo_entrada"] in dataframe.columns
-            else 0
-        )
-
-        costo_salidas = (
-            dataframe[columnas["costo_salida"]].fillna(0).sum()
-            if columnas["costo_salida"] in dataframe.columns
-            else 0
-        )
-
-        neto = (
-            dataframe[columnas["neto"]].fillna(0).sum()
-            if columnas["neto"] in dataframe.columns
-            else entradas - salidas
-        )
-
-        rotacion = (
-            dataframe[columnas["rotacion"]].mean()
-            if columnas["rotacion"] in dataframe.columns
+        rotacion_mes = (
+            dataframe[mes["rotacion"]].mean()
+            if mes["rotacion"]
+            and mes["rotacion"] in dataframe.columns
             else 0
         )
 
         datos.append({
-            "Mes": mes,
+            "Mes": mes["label"],
             "Entradas": entradas,
             "Salidas": salidas,
-            "Costo entradas": costo_entradas,
-            "Costo salidas": costo_salidas,
-            "Neto": neto,
-            "Rotacion": rotacion
+            "Costo entradas": suma(mes["costo_entrada"]),
+            "Costo salidas": abs(suma(mes["costo_salida"])),
+            "Neto": entradas - salidas,
+            "Rotacion": rotacion_mes,
+            "Stock reconstruido": suma(mes["stock"])
         })
 
     resultado = pd.DataFrame(datos)
-
-    # --------------------------------------------------------
-    # RECONSTRUCCIÓN DE STOCK
-    #
-    # Se parte del stock actual y se retrocede utilizando NETO.
-    #
-    # Se presenta como "Stock reconstruido", no como stock
-    # histórico original.
-    # --------------------------------------------------------
-
-    stock_actual = suma_columna(
-        dataframe,
-        COL_STOCK
-    )
-
-    stocks = [0] * len(resultado)
-
-    stock_mayo = stock_actual
-
-    for i in range(len(resultado) - 1, -1, -1):
-
-        if i == len(resultado) - 1:
-
-            stocks[i] = stock_mayo
-
-        else:
-
-            stocks[i] = (
-                stocks[i + 1]
-                - resultado.loc[i + 1, "Neto"]
-            )
-
-    resultado["Stock reconstruido"] = stocks
 
     resultado["Mes_num"] = range(
         1,
@@ -1248,7 +1137,6 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-    # Botón/identificador principal, como en la referencia
     st.markdown(
         """
         <div class="sidebar-menu-item active">
@@ -1264,16 +1152,14 @@ with st.sidebar:
         unsafe_allow_html=True
     )
 
-    # La navegación se mantiene como radio para conservar el estado
-    # entre páginas, pero el CSS transforma cada opción en un
-    # rectángulo/botón visual y oculta completamente el puntico.
     pagina = st.radio(
         "Navegación",
         [
             "Resumen",
             "Inventario",
             "Evolución",
-            "Riesgos y detalle"
+            "Riesgos y detalle",
+            "Actualizar Kardex"
         ],
         label_visibility="collapsed",
         key="pagina_navegacion"
@@ -1332,11 +1218,28 @@ with st.sidebar:
 
 
 # ============================================================
+# PÁGINA: ACTUALIZAR KARDEX
+# (se muestra sola, sin encabezado ni filtros del tablero)
+# ============================================================
+
+if pagina == "Actualizar Kardex":
+
+    pagina_actualizar_kardex(
+        st,
+        st.session_state.get("usuario", ""),
+        ARCHIVO_ACTUALIZADO,
+        ARCHIVO_HISTORICO
+    )
+
+    st.stop()
+
+
+# ============================================================
 # ENCABEZADO PRINCIPAL
 # ============================================================
 
 st.markdown(
-    """
+    f"""
     <div class="dashboard-header">
         <div>
             <h1 style="margin:0 !important;">Inventarios 2026</h1>
@@ -1346,7 +1249,7 @@ st.markdown(
         </div>
         <div class="header-pills">
             <div class="header-pill primary">Inventario actual</div>
-            <div class="header-pill">Corte: Mayo 2026</div>
+            <div class="header-pill">Corte: {ESQ["corte"]}</div>
             <div class="header-pill success">Datos actualizados</div>
         </div>
     </div>
@@ -1497,7 +1400,7 @@ with st.container(border=True):
         .astype(str)
         .unique()
         .tolist()
-        if COL_ANTIGUEDAD in df_articulo.columns
+        if COL_ANTIGUEDAD and COL_ANTIGUEDAD in df_articulo.columns
         else []
     )
 
@@ -1525,9 +1428,9 @@ with st.container(border=True):
         ]
 
     st.markdown(
-            f'<div class="filter-records">Registros analizados: {len(df_filtrado):,}'.replace(",", ".") + '</div>',
-            unsafe_allow_html=True
-        )
+        f'<div class="filter-records">Registros analizados: {len(df_filtrado):,}'.replace(",", ".") + '</div>',
+        unsafe_allow_html=True
+    )
 
 
 # ============================================================
@@ -1538,34 +1441,17 @@ df_mensual = construir_serie_mensual(
     df_filtrado
 )
 
-valor_total = suma_columna(
-    df_filtrado,
-    COL_COSTE
-)
 
 # ============================================================
 # INDICADORES GENERALES DEL FILTRO
 # ============================================================
 
-stock_total = suma_columna(
+stock_total, valor_total, rotacion, dias_promedio = kpis_corte(
     df_filtrado,
-    COL_STOCK
+    ESQ
 )
 
-valor_total = suma_columna(
-    df_filtrado,
-    COL_COSTE
-)
 
-rotacion = promedio_columna(
-    df_filtrado,
-    COL_ROTACION
-)
-
-dias_promedio = promedio_columna(
-    df_filtrado,
-    COL_DIAS
-)
 # ============================================================
 # PÁGINA 1
 # RESUMEN EJECUTIVO
@@ -1585,26 +1471,9 @@ if pagina == "Resumen":
     # KPIs
     # --------------------------------------------------------
 
-    stock_total = suma_columna(
-        df_filtrado,
-        COL_STOCK
-    )
-
-
-
-    rotacion = promedio_columna(
-        df_filtrado,
-        COL_ROTACION
-    )
-
-    dias_promedio = promedio_columna(
-        df_filtrado,
-        COL_DIAS
-    )
-
     valor_mayor_12 = 0
 
-    if COL_ANTIGUEDAD in df_filtrado.columns:
+    if COL_ANTIGUEDAD and COL_ANTIGUEDAD in df_filtrado.columns:
 
         valor_mayor_12 = suma_columna(
             df_filtrado[
@@ -1646,7 +1515,7 @@ if pagina == "Resumen":
 
     with k4:
         st.metric(
-            "⏱️ Días promedio",
+            "⏱️ Días de inventario",
             formato_numero(dias_promedio)
         )
 
@@ -1662,9 +1531,6 @@ if pagina == "Resumen":
     # --------------------------------------------------------
     # LECTURA AUTOMÁTICA
     # --------------------------------------------------------
-
-    total_entradas = df_mensual["Entradas"].sum()
-    total_salidas = df_mensual["Salidas"].sum()
 
     mes_mayor_entrada = (
         df_mensual.loc[
@@ -2117,7 +1983,7 @@ elif pagina == "Evolución":
     )
 
     st.caption(
-        "Análisis de 12 meses para relacionar entradas, salidas, "
+        "Análisis mensual para relacionar entradas, salidas, "
         "acumulación y trayectoria del inventario."
     )
 
@@ -2154,27 +2020,6 @@ elif pagina == "Evolución":
         else 0
     )
 
-    indice_mayor_entrada = (
-        df_mensual["Entradas"].idxmax()
-        if len(df_mensual) > 0
-        else 0
-    )
-
-    mes_mayor_entrada = (
-        df_mensual.loc[
-            indice_mayor_entrada,
-            "Mes"
-        ]
-        if len(df_mensual) > 0
-        else "-"
-    )
-
-    entrada_mayor = (
-        df_mensual["Entradas"].max()
-        if len(df_mensual) > 0
-        else 0
-    )
-
     k1, k2, k3, k4 = st.columns(4)
 
     with k1:
@@ -2197,7 +2042,7 @@ elif pagina == "Evolución":
 
     with k4:
         st.metric(
-            "📈 Mayor stock reconstruido",
+            "📈 Mayor stock del periodo",
             formato_numero(stock_mayor),
             mes_mayor_stock
         )
@@ -2213,10 +2058,9 @@ elif pagina == "Evolución":
     )
 
     st.caption(
-        "La línea representa el stock reconstruido a partir del stock "
-        "actual y los movimientos netos mensuales. Permite identificar "
-        "meses donde ingresó producto mientras el inventario ya se "
-        "encontraba en niveles elevados."
+        "La línea representa el stock de cierre de cada mes. "
+        "Permite identificar meses donde ingresó producto mientras "
+        "el inventario ya se encontraba en niveles elevados."
     )
 
     fig_evolucion = go.Figure()
@@ -2259,7 +2103,7 @@ elif pagina == "Evolución":
         go.Scatter(
             x=df_mensual["Mes"],
             y=df_mensual["Stock reconstruido"],
-            name="Stock reconstruido",
+            name="Stock",
             mode="lines+markers",
             line=dict(
                 color=AZUL,
@@ -2279,7 +2123,7 @@ elif pagina == "Evolución":
             ],
             hovertemplate=(
                 "<b>%{x}</b><br>"
-                "Stock reconstruido: %{y:,.2f}<br>"
+                "Stock: %{y:,.2f}<br>"
                 "Entradas: %{customdata[0]:,.2f}<br>"
                 "Salidas: %{customdata[1]:,.2f}<br>"
                 "Neto: %{customdata[2]:,.2f}"
@@ -2295,7 +2139,7 @@ elif pagina == "Evolución":
         xaxis=dict(
             title="Periodo",
             categoryorder="array",
-            categoryarray=MESES_NOMBRES,
+            categoryarray=ESQ["etiquetas"],
             showgrid=False
         ),
         yaxis=dict(
@@ -2383,7 +2227,7 @@ elif pagina == "Evolución":
             st.warning(
                 "⚠️ Se identificaron meses en los que "
                 "las entradas estuvieron entre las más altas "
-                "del periodo mientras el stock reconstruido "
+                "del periodo mientras el stock "
                 "también estaba en niveles altos."
             )
 
@@ -2537,7 +2381,7 @@ elif pagina == "Riesgos y detalle":
 
     df_alertas = df_filtrado.copy()
 
-    if COL_ANTIGUEDAD in df_alertas.columns:
+    if COL_ANTIGUEDAD and COL_ANTIGUEDAD in df_alertas.columns:
 
         df_alertas = df_alertas[
             df_alertas[
@@ -2698,7 +2542,8 @@ elif pagina == "Riesgos y detalle":
     columnas_disponibles = [
         columna
         for columna in columnas_detalle
-        if columna in df_filtrado.columns
+        if columna is not None
+        and columna in df_filtrado.columns
     ]
 
     df_detalle = df_filtrado[
