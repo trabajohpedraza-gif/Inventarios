@@ -1508,11 +1508,7 @@ if pagina == "Resumen":
             formato_moneda(valor_total)
         )
 
-    with k3:
-        st.metric(
-            "🔄 Rotación promedio",
-            formato_numero(rotacion)
-        )
+
 
     with k4:
         st.metric(
