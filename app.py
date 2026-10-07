@@ -2454,10 +2454,7 @@ elif pagina == "Evolución":
                         "Valor entradas mes",
                         "sum"
                     ),
-                    Stock_promedio=(
-                        "Stock mes",
-                        "mean"
-                    ),
+
                     Stock_maximo=(
                         "Stock mes",
                         "max"
@@ -2948,10 +2945,7 @@ elif pagina == "Evolución":
                         "Valor entradas mes",
                         "sum"
                     ),
-                    Stock_promedio=(
-                        "Stock mes",
-                        "mean"
-                    ),
+
                     Stock_maximo=(
                         "Stock mes",
                         "max"
