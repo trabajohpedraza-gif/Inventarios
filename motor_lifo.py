@@ -596,7 +596,9 @@ def procesar_inventario(historico, kardex, mes_final=9):
 
     # ---- resumen mensual dentro del histórico (mismos nombres de columnas del histórico)
     primera = ~hist["LLAVE"].duplicated(keep="first")
-    stock_prev, coste_prev = hist[c_stock_mayo], hist[c_coste_mayo]
+    stock_prev, coste_prev = (
+    hist[f"STOCK {sfx}"],
+    hist[f"COSTE TOTAL {sfx}"])
 
     for nombre, num in meses:
         ini = pd.Timestamp(ANIO, num, 1)
@@ -615,8 +617,10 @@ def procesar_inventario(historico, kardex, mes_final=9):
         hist[f"COSTO ENTRADA {sfx}"] = mapear("Costo entrada aplicado")
         hist[f"COSTO SALIDA {sfx}"] = mapear("Costo salida aplicado")
         hist[f"STOCK {sfx}"] = stock_prev + hist[f"NETO {sfx}"]
-        hist[f"COSTE {sfx}"] = (coste_prev + hist[f"COSTO ENTRADA {sfx}"]
-                                + hist[f"COSTO SALIDA {sfx}"])
+        hist[f"COSTE TOTAL {sfx}"] = (
+            coste_prev
+            + hist[f"COSTO ENTRADA {sfx}"]
+            + hist[f"COSTO SALIDA {sfx}"])
         hist[f"ROTACION {sfx}"] = np.where(
             stock_prev > 0, hist[f"SALIDA {sfx}"].abs() / stock_prev.replace(0, np.nan), 0.0)
         hist[f"ANTIGUEDAD {sfx}"] = hist["LLAVE"].map(snapshots[nombre]).fillna("Sin stock")
@@ -637,7 +641,7 @@ def procesar_inventario(historico, kardex, mes_final=9):
     sfx_f = f"{meses[-1][0]} {ANIO}"
     verif = []
     d_stock = hist[f"STOCK {sfx_f}"].sum() - sum(stock_actual.values())
-    d_coste = hist[f"COSTE {sfx_f}"].sum() - sum(costo_actual.values())
+    d_coste = hist[f"COSTE TOTAL {sfx_f}"].sum() - sum(costo_actual.values())
     verif.append(("Stock de la hoja cuadra con el motor", abs(d_stock) < 0.01, f"dif. {d_stock:,.4f}"))
     verif.append(("Costo de la hoja cuadra con el motor", abs(d_coste) < 0.01, f"dif. {d_coste:,.4f}"))
     neg = sum(1 for v in stock_actual.values() if v < -0.000001)
@@ -656,7 +660,7 @@ def procesar_inventario(historico, kardex, mes_final=9):
         "stock_mayo": float(hist[c_stock_mayo].sum()),
         "stock_final": float(hist[f"STOCK {sfx_f}"].sum()),
         "coste_mayo": float(hist[c_coste_mayo].sum()),
-        "coste_final": float(hist[f"COSTE {sfx_f}"].sum()),
+        "coste_final": float(hist[f"COSTE TOTAL {sfx_f}"].sum()),
         "sin_trazabilidad": int((hist[f"ANTIGUEDAD {sfx_f}"] == "Sin trazabilidad").sum()),
     })
 
@@ -727,7 +731,7 @@ def construir_esquema(df):
         stock = col_exacta(df, f"STOCK {sfx}")
         if stock is None:
             continue
-        coste = col_exacta(df, f"COSTE {sfx}") or col_exacta(df, f"COSTE TOTAL {sfx}")
+        coste = (col_exacta(df, f"COSTE TOTAL {sfx}") or col_exacta(df, f"COSTE {sfx}"))
         meses.append({
             "label": f"{nombre[:3]} {str(anio)[2:]}",
             "sfx": sfx,
