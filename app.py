@@ -2050,78 +2050,137 @@ elif pagina == "Evolución":
     # GRÁFICO PRINCIPAL
     # --------------------------------------------------------
 
-    st.subheader(
-        "🔎 Entradas vs. nivel de inventario"
-    )
+# --------------------------------------------------------
+# GRÁFICO PRINCIPAL
+# --------------------------------------------------------
 
-    st.caption(
-        "La línea representa el stock de cierre de cada mes. "
-        "Permite identificar meses donde ingresó producto mientras "
-        "el inventario ya se encontraba en niveles elevados."
-    )
+st.subheader(
+    "🔎 Entradas vs. nivel de inventario"
+)
 
+st.caption(
+    "La línea representa el stock de cierre de cada mes. "
+    "La franja azul identifica niveles altos de inventario. "
+    "Los marcadores destacados muestran meses donde coincidieron "
+    "entradas altas y stock elevado."
+)
 
-    fig_evolucion = go.Figure()
+fig_evolucion = go.Figure()
 
-    # --------------------------------------------------------
-    # ENTRADAS
-    # --------------------------------------------------------
+# --------------------------------------------------------
+# UMBRALES ANALÍTICOS
+# --------------------------------------------------------
 
-    fig_evolucion.add_trace(
-        go.Bar(
-            x=df_mensual["Mes"],
-            y=df_mensual["Entradas"],
-            name="Entradas",
-            marker_color=VERDE,
-            opacity=0.72,
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Entradas: %{y:,.2f}<br>"
-                "<extra></extra>"
-            )
+umbral_entrada = df_mensual["Entradas"].quantile(0.75)
+umbral_stock = df_mensual["Stock de cierre"].quantile(0.75)
+
+stock_max = df_mensual["Stock de cierre"].max()
+
+# --------------------------------------------------------
+# ENTRADAS
+# --------------------------------------------------------
+
+fig_evolucion.add_trace(
+    go.Bar(
+        x=df_mensual["Mes"],
+        y=df_mensual["Entradas"],
+        name="Entradas",
+        marker_color=VERDE,
+        opacity=0.72,
+        hovertemplate=(
+            "<b>%{x}</b><br>"
+            "Entradas: %{y:,.2f}<br>"
+            "<extra></extra>"
         )
     )
+)
 
-    # --------------------------------------------------------
-    # SALIDAS
-    # --------------------------------------------------------
+# --------------------------------------------------------
+# SALIDAS
+# --------------------------------------------------------
 
-    fig_evolucion.add_trace(
-        go.Bar(
-            x=df_mensual["Mes"],
-            y=-df_mensual["Salidas"],
-            name="Salidas",
-            marker_color=ROJO,
-            opacity=0.65,
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "Salidas: %{customdata:,.2f}<br>"
-                "<extra></extra>"
-            ),
-            customdata=df_mensual["Salidas"]
+fig_evolucion.add_trace(
+    go.Bar(
+        x=df_mensual["Mes"],
+        y=-df_mensual["Salidas"],
+        name="Salidas",
+        marker_color=ROJO,
+        opacity=0.65,
+        customdata=df_mensual["Salidas"],
+        hovertemplate=(
+            "<b>%{x}</b><br>"
+            "Salidas: %{customdata:,.2f}<br>"
+            "<extra></extra>"
         )
     )
+)
 
-    # --------------------------------------------------------
-    # STOCK DE CIERRE
-    # --------------------------------------------------------
+# --------------------------------------------------------
+# STOCK DE CIERRE
+# --------------------------------------------------------
+
+fig_evolucion.add_trace(
+    go.Scatter(
+        x=df_mensual["Mes"],
+        y=df_mensual["Stock de cierre"],
+        name="Stock de cierre",
+        mode="lines+markers",
+        line=dict(
+            color=AZUL,
+            width=4
+        ),
+        marker=dict(
+            size=9,
+            color=AZUL
+        ),
+        yaxis="y2",
+        customdata=df_mensual[
+            [
+                "Entradas",
+                "Salidas",
+                "Neto"
+            ]
+        ],
+        hovertemplate=(
+            "<b>%{x}</b><br>"
+            "📦 Stock de cierre: %{y:,.2f}<br>"
+            "📥 Entradas: %{customdata[0]:,.2f}<br>"
+            "📤 Salidas: %{customdata[1]:,.2f}<br>"
+            "📊 Neto: %{customdata[2]:,.2f}"
+            "<extra></extra>"
+        )
+    )
+)
+
+# --------------------------------------------------------
+# IDENTIFICAR COINCIDENCIAS
+# ENTRADA ALTA + STOCK ALTO
+# --------------------------------------------------------
+
+df_marcados = df_mensual[
+    (df_mensual["Entradas"] >= umbral_entrada) &
+    (df_mensual["Stock de cierre"] >= umbral_stock)
+].copy()
+
+if len(df_marcados) > 0:
 
     fig_evolucion.add_trace(
         go.Scatter(
-            x=df_mensual["Mes"],
-            y=df_mensual["Stock de cierre"],
-            name="Stock de cierre",
-            mode="lines+markers",
-            line=dict(
-                color=AZUL,
-                width=4
-            ),
-            marker=dict(
-                size=9,
-                color=AZUL
-            ),
+            x=df_marcados["Mes"],
+            y=df_marcados["Stock de cierre"],
+            name="Entrada alta + stock alto",
+            mode="markers",
             yaxis="y2",
-            customdata=df_mensual[
+            marker=dict(
+                size=17,
+                symbol="diamond",
+                color=AZUL,
+                line=dict(
+                    width=2,
+                    color="white"
+                )
+            ),
+            customdata=df_marcados[
                 [
                     "Entradas",
                     "Salidas",
@@ -2130,80 +2189,125 @@ elif pagina == "Evolución":
             ],
             hovertemplate=(
                 "<b>%{x}</b><br>"
-                "Stock de cierre: %{y:,.2f}<br>"
-                "Entradas: %{customdata[0]:,.2f}<br>"
-                "Salidas: %{customdata[1]:,.2f}<br>"
-                "Neto: %{customdata[2]:,.2f}"
+                "⚠️ <b>Entrada alta + stock alto</b><br>"
+                "📦 Stock: %{y:,.2f}<br>"
+                "📥 Entradas: %{customdata[0]:,.2f}<br>"
+                "📤 Salidas: %{customdata[1]:,.2f}<br>"
+                "📊 Neto: %{customdata[2]:,.2f}"
                 "<extra></extra>"
             )
         )
     )
 
-    # --------------------------------------------------------
-    # CONFIGURACIÓN DEL GRÁFICO
-    # --------------------------------------------------------
+# --------------------------------------------------------
+# ZONA DE STOCK ALTO
+# --------------------------------------------------------
 
-    fig_evolucion.update_layout(
-        height=610,
-        barmode="relative",
-        title="Entradas y salidas mensuales vs. stock de cierre",
+fig_evolucion.add_hrect(
+    y0=umbral_stock,
+    y1=stock_max * 1.05,
+    yref="y2",
+    fillcolor=AZUL,
+    opacity=0.08,
+    line_width=0,
+    layer="below"
+)
 
-        xaxis=dict(
-            title="Periodo",
-            categoryorder="array",
-            categoryarray=ESQ["etiquetas"],
-            showgrid=False
-        ),
+# --------------------------------------------------------
+# LÍNEA DE UMBRAL DE STOCK ALTO
+# --------------------------------------------------------
 
-        # EJE IZQUIERDO:
-        # Entradas positivas / salidas negativas
-        yaxis=dict(
-            title="Entradas / Salidas (unidades)",
-            showgrid=True,
-            gridcolor=GRIS_GRID,
-            zeroline=True,
-            zerolinecolor=GRIS_BORDE
-        ),
-
-        # EJE DERECHO:
-        # Stock siempre parte desde cero
-        yaxis2=dict(
-            title="Stock de cierre (unidades)",
-            overlaying="y",
-            side="right",
-            showgrid=False,
-            rangemode="tozero",
-            zeroline=False
-        ),
-
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="left",
-            x=0
-        ),
-
-        plot_bgcolor=BLANCO,
-        paper_bgcolor=BLANCO,
-
-        font=dict(
-            family="Inter, Segoe UI, Arial",
-            color=GRIS_OSCURO
-        ),
-
-        margin=dict(
-            l=60,
-            r=85,
-            t=85,
-            b=55
-        )
+fig_evolucion.add_shape(
+    type="line",
+    x0=0,
+    x1=1,
+    xref="paper",
+    y0=umbral_stock,
+    y1=umbral_stock,
+    yref="y2",
+    line=dict(
+        color=AZUL,
+        width=1.5,
+        dash="dash"
     )
+)
 
-    st.plotly_chart(
-        fig_evolucion,
-        use_container_width=True
+# --------------------------------------------------------
+# CONFIGURACIÓN
+# --------------------------------------------------------
+
+fig_evolucion.update_layout(
+    height=610,
+    barmode="relative",
+
+    title=(
+        "Entradas y salidas mensuales vs. stock de cierre"
+    ),
+
+    xaxis=dict(
+        title="Periodo",
+        categoryorder="array",
+        categoryarray=ESQ["etiquetas"],
+        showgrid=False
+    ),
+
+    # ----------------------------------------------------
+    # EJE IZQUIERDO
+    # ----------------------------------------------------
+
+    yaxis=dict(
+        title="Entradas / Salidas (unidades)",
+        showgrid=True,
+        gridcolor=GRIS_GRID,
+        zeroline=True,
+        zerolinecolor=GRIS_BORDE
+    ),
+
+    # ----------------------------------------------------
+    # EJE DERECHO
+    # ----------------------------------------------------
+
+    yaxis2=dict(
+        title="Stock de cierre (unidades)",
+        overlaying="y",
+        side="right",
+        showgrid=False,
+        rangemode="tozero",
+        zeroline=False
+    ),
+
+    # ----------------------------------------------------
+    # LEYENDA
+    # ----------------------------------------------------
+
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="left",
+        x=0
+    ),
+
+    plot_bgcolor=BLANCO,
+    paper_bgcolor=BLANCO,
+
+    font=dict(
+        family="Inter, Segoe UI, Arial",
+        color=GRIS_OSCURO
+    ),
+
+    margin=dict(
+        l=60,
+        r=85,
+        t=85,
+        b=55
     )
+)
+
+st.plotly_chart(
+    fig_evolucion,
+    use_container_width=True
+)
     # --------------------------------------------------------
     # DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
     # --------------------------------------------------------
