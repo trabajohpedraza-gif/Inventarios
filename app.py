@@ -1022,7 +1022,7 @@ for columna in df.columns:
 
 COL_STOCK = ESQ["col_stock"]
 COL_COSTE = ESQ["col_coste"]
-COL_ROTACION = ESQ["col_rotacion"]
+COL_ROTACION = ESQ["columnas_rotacion"]
 COL_DIAS = None
 COL_ANTIGUEDAD = ESQ["col_antiguedad"]
 
