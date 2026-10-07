@@ -2060,7 +2060,8 @@ elif pagina == "Evolución":
         "el inventario ya se encontraba en niveles elevados."
     )
 
-        fig_evolucion = go.Figure()
+
+    fig_evolucion = go.Figure()
 
     # --------------------------------------------------------
     # ENTRADAS
