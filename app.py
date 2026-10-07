@@ -1494,7 +1494,7 @@ if pagina == "Resumen":
         valor_total
     )
 
-    k1, k2, k3, k4, k5 = st.columns(5)
+    k1, k2, k4, k5 = st.columns(4)
 
     with k1:
         st.metric(
