@@ -2311,333 +2311,333 @@ elif pagina == "Evolución":
 
     # --------------------------------------------------------
 # --------------------------------------------------------
-# REFERENCIAS CON MAYOR IMPACTO ECONÓMICO
-# ENTRADA ALTA + STOCK ALTO
-# --------------------------------------------------------
-
-st.subheader(
-    "💰 Referencias con mayor impacto económico"
-)
-
-st.caption(
-    "Muestra las referencias que concentran el mayor valor "
-    "económico de las entradas durante los meses identificados "
-    "como entrada alta + stock alto."
-)
-
-if len(df_marcados) > 0:
-
-    filas_referencias = []
-
-    for mes_critico in df_marcados["Mes"]:
-
-        mes_info = next(
-            (
-                m
-                for m in ESQ["meses"]
-                if m["label"] == mes_critico
-            ),
-            None
-        )
-
-        if mes_info is None:
-            continue
-
-        col_entrada = mes_info["entrada"]
-        col_stock = mes_info["stock"]
-        col_costo_entrada = mes_info["costo_entrada"]
-
-        if (
-            col_entrada is None
-            or col_entrada not in df_filtrado.columns
-            or col_stock is None
-            or col_stock not in df_filtrado.columns
-            or col_costo_entrada is None
-            or col_costo_entrada not in df_filtrado.columns
-        ):
-            continue
-
-        columnas_base = [
-            "Codigo Articulo",
-            "Articulo",
-            "Bodega",
-            "AREA"
-        ]
-
-        columnas_disponibles = [
-            c
-            for c in columnas_base
-            if c in df_filtrado.columns
-        ]
-
-        datos_mes = df_filtrado[
-            columnas_disponibles
-            + [
-                col_entrada,
-                col_stock,
-                col_costo_entrada
-            ]
-        ].copy()
-
-        datos_mes = datos_mes.rename(
-            columns={
-                col_entrada: "Entradas mes",
-                col_stock: "Stock mes",
-                col_costo_entrada: "Valor entradas mes"
-            }
-        )
-
-        datos_mes["Mes crítico"] = mes_critico
-
-        datos_mes["Entradas mes"] = pd.to_numeric(
-            datos_mes["Entradas mes"],
-            errors="coerce"
-        ).fillna(0)
-
-        datos_mes["Stock mes"] = pd.to_numeric(
-            datos_mes["Stock mes"],
-            errors="coerce"
-        ).fillna(0)
-
-        datos_mes["Valor entradas mes"] = pd.to_numeric(
-            datos_mes["Valor entradas mes"],
-            errors="coerce"
-        ).fillna(0)
-
-        # Solo referencias que realmente tuvieron
-        # entradas en el mes crítico
-        datos_mes = datos_mes[
-            datos_mes["Entradas mes"] > 0
-        ].copy()
-
-        filas_referencias.append(
-            datos_mes
-        )
-
-    if len(filas_referencias) > 0:
-
-        detalle_criticos = pd.concat(
-            filas_referencias,
-            ignore_index=True
-        )
-
-        columnas_grupo = [
-            c
-            for c in [
+    # REFERENCIAS CON MAYOR IMPACTO ECONÓMICO
+    # ENTRADA ALTA + STOCK ALTO
+    # --------------------------------------------------------
+    
+    st.subheader(
+        "💰 Referencias con mayor impacto económico"
+    )
+    
+    st.caption(
+        "Muestra las referencias que concentran el mayor valor "
+        "económico de las entradas durante los meses identificados "
+        "como entrada alta + stock alto."
+    )
+    
+    if len(df_marcados) > 0:
+    
+        filas_referencias = []
+    
+        for mes_critico in df_marcados["Mes"]:
+    
+            mes_info = next(
+                (
+                    m
+                    for m in ESQ["meses"]
+                    if m["label"] == mes_critico
+                ),
+                None
+            )
+    
+            if mes_info is None:
+                continue
+    
+            col_entrada = mes_info["entrada"]
+            col_stock = mes_info["stock"]
+            col_costo_entrada = mes_info["costo_entrada"]
+    
+            if (
+                col_entrada is None
+                or col_entrada not in df_filtrado.columns
+                or col_stock is None
+                or col_stock not in df_filtrado.columns
+                or col_costo_entrada is None
+                or col_costo_entrada not in df_filtrado.columns
+            ):
+                continue
+    
+            columnas_base = [
                 "Codigo Articulo",
                 "Articulo",
                 "Bodega",
                 "AREA"
             ]
-            if c in detalle_criticos.columns
-        ]
-
-        tabla_referencias = (
-            detalle_criticos
-            .groupby(
-                columnas_grupo,
-                as_index=False
+    
+            columnas_disponibles = [
+                c
+                for c in columnas_base
+                if c in df_filtrado.columns
+            ]
+    
+            datos_mes = df_filtrado[
+                columnas_disponibles
+                + [
+                    col_entrada,
+                    col_stock,
+                    col_costo_entrada
+                ]
+            ].copy()
+    
+            datos_mes = datos_mes.rename(
+                columns={
+                    col_entrada: "Entradas mes",
+                    col_stock: "Stock mes",
+                    col_costo_entrada: "Valor entradas mes"
+                }
             )
-            .agg(
-                Valor_entradas_criticas=(
-                    "Valor entradas mes",
-                    "sum"
-                ),
-                Stock_promedio=(
-                    "Stock mes",
-                    "mean"
-                ),
-                Stock_maximo=(
-                    "Stock mes",
-                    "max"
-                ),
-                Meses_criticos=(
-                    "Mes crítico",
-                    "nunique"
-                )
+    
+            datos_mes["Mes crítico"] = mes_critico
+    
+            datos_mes["Entradas mes"] = pd.to_numeric(
+                datos_mes["Entradas mes"],
+                errors="coerce"
+            ).fillna(0)
+    
+            datos_mes["Stock mes"] = pd.to_numeric(
+                datos_mes["Stock mes"],
+                errors="coerce"
+            ).fillna(0)
+    
+            datos_mes["Valor entradas mes"] = pd.to_numeric(
+                datos_mes["Valor entradas mes"],
+                errors="coerce"
+            ).fillna(0)
+    
+            # Solo referencias que realmente tuvieron
+            # entradas en el mes crítico
+            datos_mes = datos_mes[
+                datos_mes["Entradas mes"] > 0
+            ].copy()
+    
+            filas_referencias.append(
+                datos_mes
             )
-            .sort_values(
-                "Valor_entradas_criticas",
-                ascending=False
+    
+        if len(filas_referencias) > 0:
+    
+            detalle_criticos = pd.concat(
+                filas_referencias,
+                ignore_index=True
             )
-        )
-
-        # ----------------------------------------------------
-        # VALOR ACTUAL DEL INVENTARIO
-        # ----------------------------------------------------
-
-        if (
-            COL_COSTE is not None
-            and COL_COSTE in df_filtrado.columns
-        ):
-
-            valor_actual = (
-                df_filtrado
+    
+            columnas_grupo = [
+                c
+                for c in [
+                    "Codigo Articulo",
+                    "Articulo",
+                    "Bodega",
+                    "AREA"
+                ]
+                if c in detalle_criticos.columns
+            ]
+    
+            tabla_referencias = (
+                detalle_criticos
                 .groupby(
                     columnas_grupo,
                     as_index=False
                 )
                 .agg(
-                    Valor_inventario_actual=(
-                        COL_COSTE,
+                    Valor_entradas_criticas=(
+                        "Valor entradas mes",
                         "sum"
+                    ),
+                    Stock_promedio=(
+                        "Stock mes",
+                        "mean"
+                    ),
+                    Stock_maximo=(
+                        "Stock mes",
+                        "max"
+                    ),
+                    Meses_criticos=(
+                        "Mes crítico",
+                        "nunique"
                     )
                 )
+                .sort_values(
+                    "Valor_entradas_criticas",
+                    ascending=False
+                )
             )
-
-            tabla_referencias = tabla_referencias.merge(
-                valor_actual,
-                on=columnas_grupo,
-                how="left"
-            )
-
-        else:
-
-            tabla_referencias[
-                "Valor_inventario_actual"
-            ] = 0
-
-        # ----------------------------------------------------
-        # PARTICIPACIÓN ECONÓMICA
-        # ----------------------------------------------------
-
-        total_valor_critico = (
-            tabla_referencias[
-                "Valor_entradas_criticas"
-            ].sum()
-        )
-
-        tabla_referencias[
-            "Participacion"
-        ] = (
-            tabla_referencias[
-                "Valor_entradas_criticas"
-            ]
-            / total_valor_critico
-            * 100
-            if total_valor_critico > 0
-            else 0
-        )
-
-        # ----------------------------------------------------
-        # RENOMBRAR
-        # ----------------------------------------------------
-
-        tabla_referencias = tabla_referencias.rename(
-            columns={
-                "Codigo Articulo": "Referencia",
-                "Valor_entradas_criticas":
-                    "Valor entradas críticas",
-                "Valor_inventario_actual":
-                    "Valor inventario actual",
-                "Stock_promedio":
-                    "Stock promedio",
-                "Stock_maximo":
-                    "Stock máximo",
-                "Meses_criticos":
-                    "Meses críticos",
-                "Participacion":
-                    "Participación"
-            }
-        )
-
-        # ----------------------------------------------------
-        # REDONDEAR
-        # ----------------------------------------------------
-
-        tabla_referencias[
-            "Valor entradas críticas"
-        ] = tabla_referencias[
-            "Valor entradas críticas"
-        ].round(0)
-
-        tabla_referencias[
-            "Valor inventario actual"
-        ] = tabla_referencias[
-            "Valor inventario actual"
-        ].round(0)
-
-        tabla_referencias[
-            "Stock promedio"
-        ] = tabla_referencias[
-            "Stock promedio"
-        ].round(0)
-
-        tabla_referencias[
-            "Stock máximo"
-        ] = tabla_referencias[
-            "Stock máximo"
-        ].round(0)
-
-        tabla_referencias[
-            "Participación"
-        ] = tabla_referencias[
-            "Participación"
-        ].round(1)
-
-        # ----------------------------------------------------
-        # TOP 20
-        # ----------------------------------------------------
-
-        tabla_referencias = (
-            tabla_referencias
-            .head(20)
-        )
-
-        # ----------------------------------------------------
-        # TABLA
-        # ----------------------------------------------------
-
-        st.dataframe(
-            tabla_referencias,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Valor entradas críticas":
-                    st.column_config.NumberColumn(
-                        "💰 Valor entradas críticas",
-                        format="$%,.0f"
-                    ),
-
-                "Valor inventario actual":
-                    st.column_config.NumberColumn(
-                        "📦 Valor inventario actual",
-                        format="$%,.0f"
-                    ),
-
-                "Participación":
-                    st.column_config.NumberColumn(
-                        "📊 Participación",
-                        format="%.1f%%"
-                    ),
-
-                "Stock promedio":
-                    st.column_config.NumberColumn(
-                        "Stock promedio",
-                        format="%,.0f"
-                    ),
-
-                "Stock máximo":
-                    st.column_config.NumberColumn(
-                        "Stock máximo",
-                        format="%,.0f"
+    
+            # ----------------------------------------------------
+            # VALOR ACTUAL DEL INVENTARIO
+            # ----------------------------------------------------
+    
+            if (
+                COL_COSTE is not None
+                and COL_COSTE in df_filtrado.columns
+            ):
+    
+                valor_actual = (
+                    df_filtrado
+                    .groupby(
+                        columnas_grupo,
+                        as_index=False
                     )
-            }
-        )
-
+                    .agg(
+                        Valor_inventario_actual=(
+                            COL_COSTE,
+                            "sum"
+                        )
+                    )
+                )
+    
+                tabla_referencias = tabla_referencias.merge(
+                    valor_actual,
+                    on=columnas_grupo,
+                    how="left"
+                )
+    
+            else:
+    
+                tabla_referencias[
+                    "Valor_inventario_actual"
+                ] = 0
+    
+            # ----------------------------------------------------
+            # PARTICIPACIÓN ECONÓMICA
+            # ----------------------------------------------------
+    
+            total_valor_critico = (
+                tabla_referencias[
+                    "Valor_entradas_criticas"
+                ].sum()
+            )
+    
+            tabla_referencias[
+                "Participacion"
+            ] = (
+                tabla_referencias[
+                    "Valor_entradas_criticas"
+                ]
+                / total_valor_critico
+                * 100
+                if total_valor_critico > 0
+                else 0
+            )
+    
+            # ----------------------------------------------------
+            # RENOMBRAR
+            # ----------------------------------------------------
+    
+            tabla_referencias = tabla_referencias.rename(
+                columns={
+                    "Codigo Articulo": "Referencia",
+                    "Valor_entradas_criticas":
+                        "Valor entradas críticas",
+                    "Valor_inventario_actual":
+                        "Valor inventario actual",
+                    "Stock_promedio":
+                        "Stock promedio",
+                    "Stock_maximo":
+                        "Stock máximo",
+                    "Meses_criticos":
+                        "Meses críticos",
+                    "Participacion":
+                        "Participación"
+                }
+            )
+    
+            # ----------------------------------------------------
+            # REDONDEAR
+            # ----------------------------------------------------
+    
+            tabla_referencias[
+                "Valor entradas críticas"
+            ] = tabla_referencias[
+                "Valor entradas críticas"
+            ].round(0)
+    
+            tabla_referencias[
+                "Valor inventario actual"
+            ] = tabla_referencias[
+                "Valor inventario actual"
+            ].round(0)
+    
+            tabla_referencias[
+                "Stock promedio"
+            ] = tabla_referencias[
+                "Stock promedio"
+            ].round(0)
+    
+            tabla_referencias[
+                "Stock máximo"
+            ] = tabla_referencias[
+                "Stock máximo"
+            ].round(0)
+    
+            tabla_referencias[
+                "Participación"
+            ] = tabla_referencias[
+                "Participación"
+            ].round(1)
+    
+            # ----------------------------------------------------
+            # TOP 20
+            # ----------------------------------------------------
+    
+            tabla_referencias = (
+                tabla_referencias
+                .head(20)
+            )
+    
+            # ----------------------------------------------------
+            # TABLA
+            # ----------------------------------------------------
+    
+            st.dataframe(
+                tabla_referencias,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Valor entradas críticas":
+                        st.column_config.NumberColumn(
+                            "💰 Valor entradas críticas",
+                            format="$%,.0f"
+                        ),
+    
+                    "Valor inventario actual":
+                        st.column_config.NumberColumn(
+                            "📦 Valor inventario actual",
+                            format="$%,.0f"
+                        ),
+    
+                    "Participación":
+                        st.column_config.NumberColumn(
+                            "📊 Participación",
+                            format="%.1f%%"
+                        ),
+    
+                    "Stock promedio":
+                        st.column_config.NumberColumn(
+                            "Stock promedio",
+                            format="%,.0f"
+                        ),
+    
+                    "Stock máximo":
+                        st.column_config.NumberColumn(
+                            "Stock máximo",
+                            format="%,.0f"
+                        )
+                }
+            )
+    
+        else:
+    
+            st.info(
+                "No fue posible identificar referencias con "
+                "valor económico en los meses críticos."
+            )
+    
     else:
-
-        st.info(
-            "No fue posible identificar referencias con "
-            "valor económico en los meses críticos."
+    
+        st.success(
+            "No se identificaron meses críticos de "
+            "entrada alta + stock alto."
         )
-
-else:
-
-    st.success(
-        "No se identificaron meses críticos de "
-        "entrada alta + stock alto."
-    )
         # --------------------------------------------------------
         # DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
         # --------------------------------------------------------
