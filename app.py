@@ -1101,7 +1101,7 @@ def construir_serie_mensual(dataframe):
             "Costo salidas": abs(suma(mes["costo_salida"])),
             "Neto": entradas - salidas,
             "Rotacion": rotacion_mes,
-            "Stock reconstruido": suma(mes["stock"])
+            "Stock de cierre": suma(mes["stock"])
         })
 
     resultado = pd.DataFrame(datos)
@@ -1997,7 +1997,7 @@ elif pagina == "Evolución":
     )
 
     indice_mayor_stock = (
-        df_mensual["Stock reconstruido"].idxmax()
+        df_mensual["Stock de cierre"].idxmax()
         if len(df_mensual) > 0
         else 0
     )
@@ -2012,7 +2012,7 @@ elif pagina == "Evolución":
     )
 
     stock_mayor = (
-        df_mensual["Stock reconstruido"].max()
+        df_mensual["Stock de cierre"].max()
         if len(df_mensual) > 0
         else 0
     )
@@ -2060,9 +2060,12 @@ elif pagina == "Evolución":
         "el inventario ya se encontraba en niveles elevados."
     )
 
-    fig_evolucion = go.Figure()
+        fig_evolucion = go.Figure()
 
+    # --------------------------------------------------------
     # ENTRADAS
+    # --------------------------------------------------------
+
     fig_evolucion.add_trace(
         go.Bar(
             x=df_mensual["Mes"],
@@ -2078,7 +2081,10 @@ elif pagina == "Evolución":
         )
     )
 
+    # --------------------------------------------------------
     # SALIDAS
+    # --------------------------------------------------------
+
     fig_evolucion.add_trace(
         go.Bar(
             x=df_mensual["Mes"],
@@ -2095,12 +2101,15 @@ elif pagina == "Evolución":
         )
     )
 
-    # STOCK
+    # --------------------------------------------------------
+    # STOCK DE CIERRE
+    # --------------------------------------------------------
+
     fig_evolucion.add_trace(
         go.Scatter(
             x=df_mensual["Mes"],
-            y=df_mensual["Stock reconstruido"],
-            name="Stock",
+            y=df_mensual["Stock de cierre"],
+            name="Stock de cierre",
             mode="lines+markers",
             line=dict(
                 color=AZUL,
@@ -2120,7 +2129,7 @@ elif pagina == "Evolución":
             ],
             hovertemplate=(
                 "<b>%{x}</b><br>"
-                "Stock: %{y:,.2f}<br>"
+                "Stock de cierre: %{y:,.2f}<br>"
                 "Entradas: %{customdata[0]:,.2f}<br>"
                 "Salidas: %{customdata[1]:,.2f}<br>"
                 "Neto: %{customdata[2]:,.2f}"
@@ -2129,29 +2138,43 @@ elif pagina == "Evolución":
         )
     )
 
+    # --------------------------------------------------------
+    # CONFIGURACIÓN DEL GRÁFICO
+    # --------------------------------------------------------
+
     fig_evolucion.update_layout(
         height=610,
         barmode="relative",
-        title="Movimientos y trayectoria del inventario",
+        title="Entradas y salidas mensuales vs. stock de cierre",
+
         xaxis=dict(
             title="Periodo",
             categoryorder="array",
             categoryarray=ESQ["etiquetas"],
             showgrid=False
         ),
+
+        # EJE IZQUIERDO:
+        # Entradas positivas / salidas negativas
         yaxis=dict(
-            title="Entradas / Salidas",
+            title="Entradas / Salidas (unidades)",
             showgrid=True,
             gridcolor=GRIS_GRID,
             zeroline=True,
             zerolinecolor=GRIS_BORDE
         ),
+
+        # EJE DERECHO:
+        # Stock siempre parte desde cero
         yaxis2=dict(
-            title="Stock",
+            title="Stock de cierre (unidades)",
             overlaying="y",
             side="right",
-            showgrid=False
+            showgrid=False,
+            rangemode="tozero",
+            zeroline=False
         ),
+
         legend=dict(
             orientation="h",
             yanchor="bottom",
@@ -2159,15 +2182,18 @@ elif pagina == "Evolución":
             xanchor="left",
             x=0
         ),
+
         plot_bgcolor=BLANCO,
         paper_bgcolor=BLANCO,
+
         font=dict(
             family="Inter, Segoe UI, Arial",
             color=GRIS_OSCURO
         ),
+
         margin=dict(
             l=60,
-            r=70,
+            r=85,
             t=85,
             b=55
         )
@@ -2177,7 +2203,6 @@ elif pagina == "Evolución":
         fig_evolucion,
         use_container_width=True
     )
-
     # --------------------------------------------------------
     # DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
     # --------------------------------------------------------
@@ -2195,7 +2220,7 @@ elif pagina == "Evolución":
         )
 
         umbral_stock = df_lectura[
-            "Stock reconstruido"
+            "Stock de cierre"
         ].quantile(
             0.75
         )
@@ -2206,7 +2231,7 @@ elif pagina == "Evolución":
         )
 
         df_lectura["Stock alto"] = (
-            df_lectura["Stock reconstruido"]
+            df_lectura["Stock de cierre"]
             >= umbral_stock
         )
 
@@ -2234,7 +2259,7 @@ elif pagina == "Evolución":
                     "Entradas",
                     "Salidas",
                     "Neto",
-                    "Stock reconstruido"
+                    "Stock de cierre"
                 ]
             ].copy()
 
