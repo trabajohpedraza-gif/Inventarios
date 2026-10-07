@@ -785,10 +785,19 @@ def construir_esquema(df):
             else (con_coste[-1]["coste"] if con_coste else None)
         ),
 
+        col_antig_actual = col_exacta(
+            df,
+            "ANTIGUEDAD ULTIMO MES DE ACTUALIZACIÓN"
+        )
+        
         "col_antiguedad": (
-            con_antig[-1]["antiguedad"]
-            if con_antig
-            else col_exacta(df, "MESES")
+            col_antig_actual
+            if col_antig_actual is not None
+            else (
+                con_antig[-1]["antiguedad"]
+                if con_antig
+                else col_exacta(df, "MESES")
+            )
         ),
 
         # Se conservan TODAS las rotaciones
