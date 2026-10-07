@@ -1,3 +1,4 @@
+
 import os
 import re
 from datetime import datetime, timedelta
@@ -2050,37 +2051,37 @@ elif pagina == "Evolución":
     # GRÁFICO PRINCIPAL
     # --------------------------------------------------------
 
-# --------------------------------------------------------
-# GRÁFICO PRINCIPAL
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # GRÁFICO PRINCIPAL
+    # --------------------------------------------------------
 
-st.subheader(
+    st.subheader(
     "🔎 Entradas vs. nivel de inventario"
-)
+    )
 
-st.caption(
+    st.caption(
     "La línea representa el stock de cierre de cada mes. "
     "La franja azul identifica niveles altos de inventario. "
     "Los marcadores destacados muestran meses donde coincidieron "
     "entradas altas y stock elevado."
-)
+    )
 
-fig_evolucion = go.Figure()
+    fig_evolucion = go.Figure()
 
-# --------------------------------------------------------
-# UMBRALES ANALÍTICOS
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # UMBRALES ANALÍTICOS
+    # --------------------------------------------------------
 
-umbral_entrada = df_mensual["Entradas"].quantile(0.75)
-umbral_stock = df_mensual["Stock de cierre"].quantile(0.75)
+    umbral_entrada = df_mensual["Entradas"].quantile(0.75)
+    umbral_stock = df_mensual["Stock de cierre"].quantile(0.75)
 
-stock_max = df_mensual["Stock de cierre"].max()
+    stock_max = df_mensual["Stock de cierre"].max()
 
-# --------------------------------------------------------
-# ENTRADAS
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # ENTRADAS
+    # --------------------------------------------------------
 
-fig_evolucion.add_trace(
+    fig_evolucion.add_trace(
     go.Bar(
         x=df_mensual["Mes"],
         y=df_mensual["Entradas"],
@@ -2093,13 +2094,13 @@ fig_evolucion.add_trace(
             "<extra></extra>"
         )
     )
-)
+    )
 
-# --------------------------------------------------------
-# SALIDAS
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # SALIDAS
+    # --------------------------------------------------------
 
-fig_evolucion.add_trace(
+    fig_evolucion.add_trace(
     go.Bar(
         x=df_mensual["Mes"],
         y=-df_mensual["Salidas"],
@@ -2113,13 +2114,27 @@ fig_evolucion.add_trace(
             "<extra></extra>"
         )
     )
-)
-
+    )
 # --------------------------------------------------------
-# STOCK DE CIERRE
+# INVENTARIO INICIAL DE CADA MES
 # --------------------------------------------------------
 
-fig_evolucion.add_trace(
+        df_mensual["Inventario inicial"] = (
+            df_mensual["Stock de cierre"]
+            .shift(1)
+        )
+        
+        # Para el primer mes usamos 0 si no existe
+        # un mes anterior disponible
+        df_mensual["Inventario inicial"] = (
+            df_mensual["Inventario inicial"]
+            .fillna(0)
+        )
+    # --------------------------------------------------------
+    # STOCK DE CIERRE
+    # --------------------------------------------------------
+
+    fig_evolucion.add_trace(
     go.Scatter(
         x=df_mensual["Mes"],
         y=df_mensual["Stock de cierre"],
@@ -2134,76 +2149,76 @@ fig_evolucion.add_trace(
             color=AZUL
         ),
         yaxis="y2",
+
         customdata=df_mensual[
             [
+                "Inventario inicial",
                 "Entradas",
                 "Salidas",
-                "Neto"
+                "Stock de cierre"
             ]
         ],
         hovertemplate=(
             "<b>%{x}</b><br>"
-            "📦 Stock de cierre: %{y:,.2f}<br>"
-            "📥 Entradas: %{customdata[0]:,.2f}<br>"
-            "📤 Salidas: %{customdata[1]:,.2f}<br>"
-            "📊 Neto: %{customdata[2]:,.2f}"
+            "📦 Inventario inicial: %{customdata[0]:,.2f}<br>"
+            "📥 Entradas: %{customdata[1]:,.2f}<br>"
+            "📤 Salidas: %{customdata[2]:,.2f}<br>"
+            "📦 Inventario final: %{customdata[3]:,.2f}"
             "<extra></extra>"
         )
-    )
-)
 
-# --------------------------------------------------------
-# IDENTIFICAR COINCIDENCIAS
-# ENTRADA ALTA + STOCK ALTO
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # IDENTIFICAR COINCIDENCIAS
+    # ENTRADA ALTA + STOCK ALTO
+    # --------------------------------------------------------
 
-df_marcados = df_mensual[
+    df_marcados = df_mensual[
     (df_mensual["Entradas"] >= umbral_entrada) &
     (df_mensual["Stock de cierre"] >= umbral_stock)
-].copy()
+    ].copy()
 
-if len(df_marcados) > 0:
+    if len(df_marcados) > 0:
 
-    fig_evolucion.add_trace(
-        go.Scatter(
-            x=df_marcados["Mes"],
-            y=df_marcados["Stock de cierre"],
-            name="Entrada alta + stock alto",
-            mode="markers",
-            yaxis="y2",
-            marker=dict(
-                size=17,
-                symbol="diamond",
-                color=AZUL,
-                line=dict(
-                    width=2,
-                    color="white"
+        fig_evolucion.add_trace(
+            go.Scatter(
+                x=df_marcados["Mes"],
+                y=df_marcados["Stock de cierre"],
+                name="Entrada alta + stock alto",
+                mode="markers",
+                yaxis="y2",
+                marker=dict(
+                    size=17,
+                    symbol="diamond",
+                    color=AZUL,
+                    line=dict(
+                        width=2,
+                        color="white"
+                    )
+                ),
+                customdata=df_marcados[
+                    [
+                        "Entradas",
+                        "Salidas",
+                        "Neto"
+                    ]
+                ],
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "⚠️ <b>Entrada alta + stock alto</b><br>"
+                    "📦 Stock: %{y:,.2f}<br>"
+                    "📥 Entradas: %{customdata[0]:,.2f}<br>"
+                    "📤 Salidas: %{customdata[1]:,.2f}<br>"
+                    "📊 Neto: %{customdata[2]:,.2f}"
+                    "<extra></extra>"
                 )
-            ),
-            customdata=df_marcados[
-                [
-                    "Entradas",
-                    "Salidas",
-                    "Neto"
-                ]
-            ],
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "⚠️ <b>Entrada alta + stock alto</b><br>"
-                "📦 Stock: %{y:,.2f}<br>"
-                "📥 Entradas: %{customdata[0]:,.2f}<br>"
-                "📤 Salidas: %{customdata[1]:,.2f}<br>"
-                "📊 Neto: %{customdata[2]:,.2f}"
-                "<extra></extra>"
             )
         )
-    )
 
-# --------------------------------------------------------
-# ZONA DE STOCK ALTO
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # ZONA DE STOCK ALTO
+    # --------------------------------------------------------
 
-fig_evolucion.add_hrect(
+    fig_evolucion.add_hrect(
     y0=umbral_stock,
     y1=stock_max * 1.05,
     yref="y2",
@@ -2211,13 +2226,13 @@ fig_evolucion.add_hrect(
     opacity=0.08,
     line_width=0,
     layer="below"
-)
+    )
 
-# --------------------------------------------------------
-# LÍNEA DE UMBRAL DE STOCK ALTO
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # LÍNEA DE UMBRAL DE STOCK ALTO
+    # --------------------------------------------------------
 
-fig_evolucion.add_shape(
+    fig_evolucion.add_shape(
     type="line",
     x0=0,
     x1=1,
@@ -2230,13 +2245,13 @@ fig_evolucion.add_shape(
         width=1.5,
         dash="dash"
     )
-)
+    )
 
-# --------------------------------------------------------
-# CONFIGURACIÓN
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # CONFIGURACIÓN
+    # --------------------------------------------------------
 
-fig_evolucion.update_layout(
+    fig_evolucion.update_layout(
     height=610,
     barmode="relative",
 
@@ -2302,86 +2317,416 @@ fig_evolucion.update_layout(
         t=85,
         b=55
     )
-)
+    )
 
-st.plotly_chart(
+    st.plotly_chart(
     fig_evolucion,
     use_container_width=True
-)
+    )
+
+    # --------------------------------------------------------
 # --------------------------------------------------------
-# DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
-# --------------------------------------------------------
-
-st.subheader(
-    "🧠 Lectura analítica de los movimientos"
-)
-
-df_lectura = df_mensual.copy()
-
-if len(df_lectura) > 0:
-
-    umbral_entrada = df_lectura["Entradas"].quantile(
-        0.75
+    # REFERENCIAS CON MAYOR IMPACTO ECONÓMICO
+    # ENTRADA ALTA + STOCK ALTO
+    # --------------------------------------------------------
+    
+    st.subheader(
+        "💰 Referencias con mayor impacto económico"
     )
-
-    umbral_stock = df_lectura[
-        "Stock de cierre"
-    ].quantile(
-        0.75
+    
+    st.caption(
+        "Muestra las referencias que concentran el mayor valor "
+        "económico de las entradas durante los meses identificados "
+        "como entrada alta + stock alto."
     )
-
-    df_lectura["Entrada alta"] = (
-        df_lectura["Entradas"]
-        >= umbral_entrada
-    )
-
-    df_lectura["Stock alto"] = (
-        df_lectura["Stock de cierre"]
-        >= umbral_stock
-    )
-
-    df_lectura["Coincidencia"] = (
-        df_lectura["Entrada alta"]
-        & df_lectura["Stock alto"]
-    )
-
-    coincidencias = df_lectura[
-        df_lectura["Coincidencia"]
-    ]
-
-    if len(coincidencias) > 0:
-
-        st.warning(
-            "⚠️ Se identificaron meses en los que "
-            "las entradas estuvieron entre las más altas "
-            "del periodo mientras el stock "
-            "también estaba en niveles altos."
-        )
-
-        tabla_coincidencias = coincidencias[
-            [
-                "Mes",
-                "Entradas",
-                "Salidas",
-                "Neto",
-                "Stock de cierre"
+    
+    if len(df_marcados) > 0:
+    
+        filas_referencias = []
+    
+        for mes_critico in df_marcados["Mes"]:
+    
+            mes_info = next(
+                (
+                    m
+                    for m in ESQ["meses"]
+                    if m["label"] == mes_critico
+                ),
+                None
+            )
+    
+            if mes_info is None:
+                continue
+    
+            col_entrada = mes_info["entrada"]
+            col_stock = mes_info["stock"]
+            col_costo_entrada = mes_info["costo_entrada"]
+    
+            if (
+                col_entrada is None
+                or col_entrada not in df_filtrado.columns
+                or col_stock is None
+                or col_stock not in df_filtrado.columns
+                or col_costo_entrada is None
+                or col_costo_entrada not in df_filtrado.columns
+            ):
+                continue
+    
+            columnas_base = [
+                "Codigo Articulo",
+                "Articulo",
+                "Bodega",
+                "AREA"
             ]
-        ].copy()
-
-        st.dataframe(
-            tabla_coincidencias,
-            use_container_width=True,
-            hide_index=True
-        )
-
+    
+            columnas_disponibles = [
+                c
+                for c in columnas_base
+                if c in df_filtrado.columns
+            ]
+    
+            datos_mes = df_filtrado[
+                columnas_disponibles
+                + [
+                    col_entrada,
+                    col_stock,
+                    col_costo_entrada
+                ]
+            ].copy()
+    
+            datos_mes = datos_mes.rename(
+                columns={
+                    col_entrada: "Entradas mes",
+                    col_stock: "Stock mes",
+                    col_costo_entrada: "Valor entradas mes"
+                }
+            )
+    
+            datos_mes["Mes crítico"] = mes_critico
+    
+            datos_mes["Entradas mes"] = pd.to_numeric(
+                datos_mes["Entradas mes"],
+                errors="coerce"
+            ).fillna(0)
+    
+            datos_mes["Stock mes"] = pd.to_numeric(
+                datos_mes["Stock mes"],
+                errors="coerce"
+            ).fillna(0)
+    
+            datos_mes["Valor entradas mes"] = pd.to_numeric(
+                datos_mes["Valor entradas mes"],
+                errors="coerce"
+            ).fillna(0)
+    
+            # Solo referencias que realmente tuvieron
+            # entradas en el mes crítico
+            datos_mes = datos_mes[
+                datos_mes["Entradas mes"] > 0
+            ].copy()
+    
+            filas_referencias.append(
+                datos_mes
+            )
+    
+        if len(filas_referencias) > 0:
+    
+            detalle_criticos = pd.concat(
+                filas_referencias,
+                ignore_index=True
+            )
+    
+            columnas_grupo = [
+                c
+                for c in [
+                    "Codigo Articulo",
+                    "Articulo",
+                    "Bodega",
+                    "AREA"
+                ]
+                if c in detalle_criticos.columns
+            ]
+    
+            tabla_referencias = (
+                detalle_criticos
+                .groupby(
+                    columnas_grupo,
+                    as_index=False
+                )
+                .agg(
+                    Valor_entradas_criticas=(
+                        "Valor entradas mes",
+                        "sum"
+                    ),
+                    Stock_promedio=(
+                        "Stock mes",
+                        "mean"
+                    ),
+                    Stock_maximo=(
+                        "Stock mes",
+                        "max"
+                    ),
+                    Meses_criticos=(
+                        "Mes crítico",
+                        "nunique"
+                    )
+                )
+                .sort_values(
+                    "Valor_entradas_criticas",
+                    ascending=False
+                )
+            )
+    
+            # ----------------------------------------------------
+            # VALOR ACTUAL DEL INVENTARIO
+            # ----------------------------------------------------
+    
+            if (
+                COL_COSTE is not None
+                and COL_COSTE in df_filtrado.columns
+            ):
+    
+                valor_actual = (
+                    df_filtrado
+                    .groupby(
+                        columnas_grupo,
+                        as_index=False
+                    )
+                    .agg(
+                        Valor_inventario_actual=(
+                            COL_COSTE,
+                            "sum"
+                        )
+                    )
+                )
+    
+                tabla_referencias = tabla_referencias.merge(
+                    valor_actual,
+                    on=columnas_grupo,
+                    how="left"
+                )
+    
+            else:
+    
+                tabla_referencias[
+                    "Valor_inventario_actual"
+                ] = 0
+    
+            # ----------------------------------------------------
+            # PARTICIPACIÓN ECONÓMICA
+            # ----------------------------------------------------
+    
+            total_valor_critico = (
+                tabla_referencias[
+                    "Valor_entradas_criticas"
+                ].sum()
+            )
+    
+            tabla_referencias[
+                "Participacion"
+            ] = (
+                tabla_referencias[
+                    "Valor_entradas_criticas"
+                ]
+                / total_valor_critico
+                * 100
+                if total_valor_critico > 0
+                else 0
+            )
+    
+            # ----------------------------------------------------
+            # RENOMBRAR
+            # ----------------------------------------------------
+    
+            tabla_referencias = tabla_referencias.rename(
+                columns={
+                    "Codigo Articulo": "Referencia",
+                    "Valor_entradas_criticas":
+                        "Valor entradas críticas",
+                    "Valor_inventario_actual":
+                        "Valor inventario actual",
+                    "Stock_promedio":
+                        "Stock promedio",
+                    "Stock_maximo":
+                        "Stock máximo",
+                    "Meses_criticos":
+                        "Meses críticos",
+                    "Participacion":
+                        "Participación"
+                }
+            )
+    
+            # ----------------------------------------------------
+            # REDONDEAR
+            # ----------------------------------------------------
+    
+            tabla_referencias[
+                "Valor entradas críticas"
+            ] = tabla_referencias[
+                "Valor entradas críticas"
+            ].round(0)
+    
+            tabla_referencias[
+                "Valor inventario actual"
+            ] = tabla_referencias[
+                "Valor inventario actual"
+            ].round(0)
+    
+            tabla_referencias[
+                "Stock promedio"
+            ] = tabla_referencias[
+                "Stock promedio"
+            ].round(0)
+    
+            tabla_referencias[
+                "Stock máximo"
+            ] = tabla_referencias[
+                "Stock máximo"
+            ].round(0)
+    
+            tabla_referencias[
+                "Participación"
+            ] = tabla_referencias[
+                "Participación"
+            ].round(1)
+    
+            # ----------------------------------------------------
+            # TOP 20
+            # ----------------------------------------------------
+    
+            tabla_referencias = (
+                tabla_referencias
+                .head(20)
+            )
+    
+            # ----------------------------------------------------
+            # TABLA
+            # ----------------------------------------------------
+    
+            st.dataframe(
+                tabla_referencias,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "Valor entradas críticas":
+                        st.column_config.NumberColumn(
+                            "💰 Valor entradas críticas",
+                            format="$%,.0f"
+                        ),
+    
+                    "Valor inventario actual":
+                        st.column_config.NumberColumn(
+                            "📦 Valor inventario actual",
+                            format="$%,.0f"
+                        ),
+    
+                    "Participación":
+                        st.column_config.NumberColumn(
+                            "📊 Participación",
+                            format="%.1f%%"
+                        ),
+    
+                    "Stock promedio":
+                        st.column_config.NumberColumn(
+                            "Stock promedio",
+                            format="%,.0f"
+                        ),
+    
+                    "Stock máximo":
+                        st.column_config.NumberColumn(
+                            "Stock máximo",
+                            format="%,.0f"
+                        )
+                }
+            )
+    
+        else:
+    
+            st.info(
+                "No fue posible identificar referencias con "
+                "valor económico en los meses críticos."
+            )
+    
     else:
-
+    
         st.success(
-            "No se identificaron coincidencias entre "
-            "entradas excepcionalmente altas y niveles "
-            "altos de stock bajo el criterio estadístico "
-            "utilizado."
+            "No se identificaron meses críticos de "
+            "entrada alta + stock alto."
         )
+        # --------------------------------------------------------
+        # DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
+        # --------------------------------------------------------
+    
+        st.subheader(
+            "🧠 Lectura analítica de los movimientos"
+        )
+    
+        df_lectura = df_mensual.copy()
+    
+        if len(df_lectura) > 0:
+    
+            umbral_entrada = df_lectura["Entradas"].quantile(
+                0.75
+            )
+    
+            umbral_stock = df_lectura[
+                "Stock de cierre"
+            ].quantile(
+                0.75
+            )
+    
+            df_lectura["Entrada alta"] = (
+                df_lectura["Entradas"]
+                >= umbral_entrada
+            )
+    
+            df_lectura["Stock alto"] = (
+                df_lectura["Stock de cierre"]
+                >= umbral_stock
+            )
+    
+            df_lectura["Coincidencia"] = (
+                df_lectura["Entrada alta"]
+                & df_lectura["Stock alto"]
+            )
+    
+            coincidencias = df_lectura[
+                df_lectura["Coincidencia"]
+            ]
+    
+            if len(coincidencias) > 0:
+    
+                st.warning(
+                        "⚠️ Se identificaron meses en los que "
+                        "las entradas estuvieron entre las más altas "
+                        "del periodo mientras el stock "
+                        "también estaba en niveles altos."
+                    )
+    
+                tabla_coincidencias = coincidencias[
+                    [
+                        "Mes",
+                        "Entradas",
+                        "Salidas",
+                        "Neto",
+                        "Stock de cierre"
+                    ]
+                ].copy()
+    
+                st.dataframe(
+                    tabla_coincidencias,
+                    use_container_width=True,
+                    hide_index=True
+                )
+    
+            else:
+    
+                st.success(
+                    "No se identificaron coincidencias entre "
+                    "entradas excepcionalmente altas y niveles "
+                    "altos de stock bajo el criterio estadístico "
+                    "utilizado."
+                )
 
     # --------------------------------------------------------
     # COSTOS Y ROTACIÓN
@@ -2487,7 +2832,7 @@ if len(df_lectura) > 0:
         )
 
 
-# ============================================================
+    # ============================================================
 # PÁGINA 4
 # RIESGOS Y DETALLE
 # ============================================================
@@ -2661,7 +3006,6 @@ elif pagina == "Riesgos y detalle":
         "Articulo",
         COL_STOCK,
         COL_COSTE,
-        COL_ROTACION,
         COL_DIAS,
         COL_ANTIGUEDAD
     ]
