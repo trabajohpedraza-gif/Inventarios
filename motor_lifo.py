@@ -622,7 +622,7 @@ def procesar_inventario(historico, kardex, mes_final=9):
             + hist[f"COSTO ENTRADA {sfx}"]
             + hist[f"COSTO SALIDA {sfx}"])
         hist[f"ROTACION {sfx}"] = np.where(
-            stock_prev > 0, hist[f"SALIDA {sfx}"].abs() / stock_prev.replace(0, np.nan), 0.0)
+            stock_prev > 0, hist[f"SALIDA {sfx}"].abs() / stock_prev.replace(0, np.nan), np.nan)
         hist[f"ANTIGUEDAD {sfx}"] = hist["LLAVE"].map(snapshots[nombre]).fillna("Sin stock")
         stock_prev, coste_prev = hist[f"STOCK {sfx}"], hist[f"COSTE {sfx}"]
 
