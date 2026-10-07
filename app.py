@@ -2114,7 +2114,21 @@ elif pagina == "Evolución":
         )
     )
     )
+# --------------------------------------------------------
+# INVENTARIO INICIAL DE CADA MES
+# --------------------------------------------------------
 
+        df_mensual["Inventario inicial"] = (
+            df_mensual["Stock de cierre"]
+            .shift(1)
+        )
+        
+        # Para el primer mes usamos 0 si no existe
+        # un mes anterior disponible
+        df_mensual["Inventario inicial"] = (
+            df_mensual["Inventario inicial"]
+            .fillna(0)
+        )
     # --------------------------------------------------------
     # STOCK DE CIERRE
     # --------------------------------------------------------
@@ -2134,21 +2148,7 @@ elif pagina == "Evolución":
             color=AZUL
         ),
         yaxis="y2",
-# --------------------------------------------------------
-# INVENTARIO INICIAL DE CADA MES
-# --------------------------------------------------------
 
-        df_mensual["Inventario inicial"] = (
-            df_mensual["Stock de cierre"]
-            .shift(1)
-        )
-        
-        # Para el primer mes usamos 0 si no existe
-        # un mes anterior disponible
-        df_mensual["Inventario inicial"] = (
-            df_mensual["Inventario inicial"]
-            .fillna(0)
-        )
         customdata=df_mensual[
             [
                 "Inventario inicial",
