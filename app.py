@@ -2661,7 +2661,6 @@ elif pagina == "Riesgos y detalle":
         "Articulo",
         COL_STOCK,
         COL_COSTE,
-        COL_ROTACION,
         COL_DIAS,
         COL_ANTIGUEDAD
     ]
