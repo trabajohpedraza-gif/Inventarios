@@ -2541,8 +2541,6 @@ elif pagina == "Evolución":
                         "Valor entradas críticas",
                     "Valor_inventario_actual":
                         "Valor inventario actual",
-                    "Stock_promedio":
-                        "Stock promedio",
                     "Stock_maximo":
                         "Stock máximo",
                     "Meses_criticos":
@@ -2566,12 +2564,6 @@ elif pagina == "Evolución":
                 "Valor inventario actual"
             ] = tabla_referencias[
                 "Valor inventario actual"
-            ].round(0)
-
-            tabla_referencias[
-                "Stock promedio"
-            ] = tabla_referencias[
-                "Stock promedio"
             ].round(0)
 
             tabla_referencias[
@@ -2620,12 +2612,6 @@ elif pagina == "Evolución":
                         st.column_config.NumberColumn(
                             "📊 Participación",
                             format="%.1f%%"
-                        ),
-
-                    "Stock promedio":
-                        st.column_config.NumberColumn(
-                            "Stock promedio",
-                            format="%,.0f"
                         ),
 
                     "Stock máximo":
