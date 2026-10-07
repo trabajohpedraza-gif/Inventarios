@@ -2312,7 +2312,7 @@ st.plotly_chart(
     # DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
     # --------------------------------------------------------
 
-    st.subheader(
+st.subheader(
         "🧠 Lectura analítica de los movimientos"
     )
 
