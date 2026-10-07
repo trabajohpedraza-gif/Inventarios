@@ -2050,37 +2050,37 @@ elif pagina == "Evolución":
     # GRÁFICO PRINCIPAL
     # --------------------------------------------------------
 
-# --------------------------------------------------------
-# GRÁFICO PRINCIPAL
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # GRÁFICO PRINCIPAL
+    # --------------------------------------------------------
 
-st.subheader(
+    st.subheader(
     "🔎 Entradas vs. nivel de inventario"
-)
+    )
 
-st.caption(
+    st.caption(
     "La línea representa el stock de cierre de cada mes. "
     "La franja azul identifica niveles altos de inventario. "
     "Los marcadores destacados muestran meses donde coincidieron "
     "entradas altas y stock elevado."
-)
+    )
 
-fig_evolucion = go.Figure()
+    fig_evolucion = go.Figure()
 
-# --------------------------------------------------------
-# UMBRALES ANALÍTICOS
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # UMBRALES ANALÍTICOS
+    # --------------------------------------------------------
 
-umbral_entrada = df_mensual["Entradas"].quantile(0.75)
-umbral_stock = df_mensual["Stock de cierre"].quantile(0.75)
+    umbral_entrada = df_mensual["Entradas"].quantile(0.75)
+    umbral_stock = df_mensual["Stock de cierre"].quantile(0.75)
 
-stock_max = df_mensual["Stock de cierre"].max()
+    stock_max = df_mensual["Stock de cierre"].max()
 
-# --------------------------------------------------------
-# ENTRADAS
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # ENTRADAS
+    # --------------------------------------------------------
 
-fig_evolucion.add_trace(
+    fig_evolucion.add_trace(
     go.Bar(
         x=df_mensual["Mes"],
         y=df_mensual["Entradas"],
@@ -2093,13 +2093,13 @@ fig_evolucion.add_trace(
             "<extra></extra>"
         )
     )
-)
+    )
 
-# --------------------------------------------------------
-# SALIDAS
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # SALIDAS
+    # --------------------------------------------------------
 
-fig_evolucion.add_trace(
+    fig_evolucion.add_trace(
     go.Bar(
         x=df_mensual["Mes"],
         y=-df_mensual["Salidas"],
@@ -2113,13 +2113,13 @@ fig_evolucion.add_trace(
             "<extra></extra>"
         )
     )
-)
+    )
 
-# --------------------------------------------------------
-# STOCK DE CIERRE
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # STOCK DE CIERRE
+    # --------------------------------------------------------
 
-fig_evolucion.add_trace(
+    fig_evolucion.add_trace(
     go.Scatter(
         x=df_mensual["Mes"],
         y=df_mensual["Stock de cierre"],
@@ -2150,60 +2150,60 @@ fig_evolucion.add_trace(
             "<extra></extra>"
         )
     )
-)
-
-# --------------------------------------------------------
-# IDENTIFICAR COINCIDENCIAS
-# ENTRADA ALTA + STOCK ALTO
-# --------------------------------------------------------
-
-df_marcados = df_mensual[
-    (df_mensual["Entradas"] >= umbral_entrada) &
-    (df_mensual["Stock de cierre"] >= umbral_stock)
-].copy()
-
-if len(df_marcados) > 0:
-
-    fig_evolucion.add_trace(
-        go.Scatter(
-            x=df_marcados["Mes"],
-            y=df_marcados["Stock de cierre"],
-            name="Entrada alta + stock alto",
-            mode="markers",
-            yaxis="y2",
-            marker=dict(
-                size=17,
-                symbol="diamond",
-                color=AZUL,
-                line=dict(
-                    width=2,
-                    color="white"
-                )
-            ),
-            customdata=df_marcados[
-                [
-                    "Entradas",
-                    "Salidas",
-                    "Neto"
-                ]
-            ],
-            hovertemplate=(
-                "<b>%{x}</b><br>"
-                "⚠️ <b>Entrada alta + stock alto</b><br>"
-                "📦 Stock: %{y:,.2f}<br>"
-                "📥 Entradas: %{customdata[0]:,.2f}<br>"
-                "📤 Salidas: %{customdata[1]:,.2f}<br>"
-                "📊 Neto: %{customdata[2]:,.2f}"
-                "<extra></extra>"
-            )
-        )
     )
 
-# --------------------------------------------------------
-# ZONA DE STOCK ALTO
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # IDENTIFICAR COINCIDENCIAS
+    # ENTRADA ALTA + STOCK ALTO
+    # --------------------------------------------------------
 
-fig_evolucion.add_hrect(
+    df_marcados = df_mensual[
+    (df_mensual["Entradas"] >= umbral_entrada) &
+    (df_mensual["Stock de cierre"] >= umbral_stock)
+    ].copy()
+
+    if len(df_marcados) > 0:
+
+        fig_evolucion.add_trace(
+            go.Scatter(
+                x=df_marcados["Mes"],
+                y=df_marcados["Stock de cierre"],
+                name="Entrada alta + stock alto",
+                mode="markers",
+                yaxis="y2",
+                marker=dict(
+                    size=17,
+                    symbol="diamond",
+                    color=AZUL,
+                    line=dict(
+                        width=2,
+                        color="white"
+                    )
+                ),
+                customdata=df_marcados[
+                    [
+                        "Entradas",
+                        "Salidas",
+                        "Neto"
+                    ]
+                ],
+                hovertemplate=(
+                    "<b>%{x}</b><br>"
+                    "⚠️ <b>Entrada alta + stock alto</b><br>"
+                    "📦 Stock: %{y:,.2f}<br>"
+                    "📥 Entradas: %{customdata[0]:,.2f}<br>"
+                    "📤 Salidas: %{customdata[1]:,.2f}<br>"
+                    "📊 Neto: %{customdata[2]:,.2f}"
+                    "<extra></extra>"
+                )
+            )
+        )
+
+    # --------------------------------------------------------
+    # ZONA DE STOCK ALTO
+    # --------------------------------------------------------
+
+    fig_evolucion.add_hrect(
     y0=umbral_stock,
     y1=stock_max * 1.05,
     yref="y2",
@@ -2211,13 +2211,13 @@ fig_evolucion.add_hrect(
     opacity=0.08,
     line_width=0,
     layer="below"
-)
+    )
 
-# --------------------------------------------------------
-# LÍNEA DE UMBRAL DE STOCK ALTO
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # LÍNEA DE UMBRAL DE STOCK ALTO
+    # --------------------------------------------------------
 
-fig_evolucion.add_shape(
+    fig_evolucion.add_shape(
     type="line",
     x0=0,
     x1=1,
@@ -2230,13 +2230,13 @@ fig_evolucion.add_shape(
         width=1.5,
         dash="dash"
     )
-)
+    )
 
-# --------------------------------------------------------
-# CONFIGURACIÓN
-# --------------------------------------------------------
+    # --------------------------------------------------------
+    # CONFIGURACIÓN
+    # --------------------------------------------------------
 
-fig_evolucion.update_layout(
+    fig_evolucion.update_layout(
     height=610,
     barmode="relative",
 
@@ -2302,17 +2302,17 @@ fig_evolucion.update_layout(
         t=85,
         b=55
     )
-)
+    )
 
-st.plotly_chart(
+    st.plotly_chart(
     fig_evolucion,
     use_container_width=True
-)
+    )
     # --------------------------------------------------------
     # DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
     # --------------------------------------------------------
 
-st.subheader(
+    st.subheader(
         "🧠 Lectura analítica de los movimientos"
     )
 
@@ -2351,12 +2351,12 @@ st.subheader(
 
         if len(coincidencias) > 0:
 
-        st.warning(
-                "⚠️ Se identificaron meses en los que "
-                "las entradas estuvieron entre las más altas "
-                "del periodo mientras el stock "
-                "también estaba en niveles altos."
-            )
+            st.warning(
+                    "⚠️ Se identificaron meses en los que "
+                    "las entradas estuvieron entre las más altas "
+                    "del periodo mientras el stock "
+                    "también estaba en niveles altos."
+                )
 
             tabla_coincidencias = coincidencias[
                 [
@@ -2487,7 +2487,7 @@ st.subheader(
         )
 
 
-# ============================================================
+    # ============================================================
 # PÁGINA 4
 # RIESGOS Y DETALLE
 # ============================================================
