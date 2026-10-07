@@ -2134,23 +2134,37 @@ elif pagina == "Evolución":
             color=AZUL
         ),
         yaxis="y2",
+# --------------------------------------------------------
+# INVENTARIO INICIAL DE CADA MES
+# --------------------------------------------------------
+
+        df_mensual["Inventario inicial"] = (
+            df_mensual["Stock de cierre"]
+            .shift(1)
+        )
+        
+        # Para el primer mes usamos 0 si no existe
+        # un mes anterior disponible
+        df_mensual["Inventario inicial"] = (
+            df_mensual["Inventario inicial"]
+            .fillna(0)
+        )
         customdata=df_mensual[
             [
+                "Inventario inicial",
                 "Entradas",
                 "Salidas",
-                "Neto"
+                "Stock de cierre"
             ]
         ],
         hovertemplate=(
             "<b>%{x}</b><br>"
-            "📦 Stock de cierre: %{y:,.2f}<br>"
-            "📥 Entradas: %{customdata[0]:,.2f}<br>"
-            "📤 Salidas: %{customdata[1]:,.2f}<br>"
-            "📊 Neto: %{customdata[2]:,.2f}"
+            "📦 Inventario inicial: %{customdata[0]:,.2f}<br>"
+            "📥 Entradas: %{customdata[1]:,.2f}<br>"
+            "📤 Salidas: %{customdata[2]:,.2f}<br>"
+            "📦 Inventario final: %{customdata[3]:,.2f}"
             "<extra></extra>"
         )
-    )
-    )
 
     # --------------------------------------------------------
     # IDENTIFICAR COINCIDENCIAS
