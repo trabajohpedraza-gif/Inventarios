@@ -2351,7 +2351,7 @@ st.subheader(
 
         if len(coincidencias) > 0:
 
-            st.warning(
+        st.warning(
                 "⚠️ Se identificaron meses en los que "
                 "las entradas estuvieron entre las más altas "
                 "del periodo mientras el stock "
