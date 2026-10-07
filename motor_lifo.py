@@ -724,14 +724,23 @@ def _secuencia_meses():
 
 
 def construir_esquema(df):
-    """Detecta qué meses y columnas existen y define las del tablero."""
+    """Detecta meses y columnas del tablero."""
+
     meses = []
+
     for nombre, anio in _secuencia_meses():
         sfx = f"{nombre} {anio}"
+
         stock = col_exacta(df, f"STOCK {sfx}")
+
         if stock is None:
             continue
-        coste = (col_exacta(df, f"COSTE TOTAL {sfx}") or col_exacta(df, f"COSTE {sfx}"))
+
+        coste = (
+            col_exacta(df, f"COSTE TOTAL {sfx}")
+            or col_exacta(df, f"COSTE {sfx}")
+        )
+
         meses.append({
             "label": f"{nombre[:3]} {str(anio)[2:]}",
             "sfx": sfx,
@@ -744,26 +753,50 @@ def construir_esquema(df):
             "rotacion": col_exacta(df, f"ROTACION {sfx}"),
             "antiguedad": col_exacta(df, f"ANTIGUEDAD {sfx}"),
         })
+
     if not meses:
-        raise ValueError("No se encontraron columnas 'STOCK <MES> <AÑO>' en los datos.")
+        raise ValueError(
+            "No se encontraron columnas 'STOCK <MES> <AÑO>' en los datos."
+        )
 
     ultimo = meses[-1]
+
     con_coste = [m for m in meses if m["coste"]]
     con_antig = [m for m in meses if m["antiguedad"]]
-    con_rot = [m for m in meses if m["rotacion"]]
+
+    # TODAS las columnas históricas de rotación
+    columnas_rotacion = [
+        m["rotacion"]
+        for m in meses
+        if m["rotacion"] is not None
+    ]
 
     return {
         "meses": meses,
         "etiquetas": [m["label"] for m in meses],
         "corte": ultimo["sfx"].title(),
-        "col_stock": ultimo["stock"],
-        "col_coste": (con_coste[-1]["coste"] if con_coste else None),
-        "col_antiguedad": (con_antig[-1]["antiguedad"] if con_antig
-                           else col_exacta(df, "MESES")),
-        "col_rotacion": (con_rot[-1]["rotacion"] if con_rot else None),
-        "mes_rotacion": (con_rot[-1] if con_rot else None),
-    }
 
+        "col_stock": ultimo["stock"],
+
+        # Valor monetario del último corte
+        "col_coste": (
+            col_exacta(df, "COSTE TOTAL AGOSTO 2026")
+            if col_exacta(df, "COSTE TOTAL AGOSTO 2026")
+            else (con_coste[-1]["coste"] if con_coste else None)
+        ),
+
+        "col_antiguedad": (
+            con_antig[-1]["antiguedad"]
+            if con_antig
+            else col_exacta(df, "MESES")
+        ),
+
+        # Se conservan TODAS las rotaciones
+        "columnas_rotacion": columnas_rotacion,
+
+        # Se mantiene para calcular días
+        "mes_rotacion": ultimo,
+    }
 
 def tipos_columnas_app(df):
     """Columnas que NO deben convertirse a número."""
@@ -773,21 +806,88 @@ def tipos_columnas_app(df):
 
 
 def kpis_corte(df_f, esq):
-    """Stock, valor, rotación promedio y días de inventario del último corte."""
-    stock = float(df_f[esq["col_stock"]].fillna(0).sum())
-    valor = float(df_f[esq["col_coste"]].fillna(0).sum()) if esq["col_coste"] else 0.0
-    rot, dias = 0.0, 0.0
-    if esq["col_rotacion"] and esq["col_rotacion"] in df_f.columns:
-        serie = df_f[esq["col_rotacion"]].dropna()
-        rot = float(serie.mean()) if len(serie) else 0.0
+    """Calcula los KPI del tablero."""
+
+    # ========================================================
+    # STOCK
+    # ========================================================
+    stock = float(
+        df_f[esq["col_stock"]]
+        .fillna(0)
+        .sum()
+    )
+
+    # ========================================================
+    # VALOR INVENTARIO
+    # COSTE TOTAL AGOSTO 2026
+    # ========================================================
+    valor = float(
+        df_f[esq["col_coste"]]
+        .fillna(0)
+        .sum()
+    ) if esq["col_coste"] else 0.0
+
+    # ========================================================
+    # PROMEDIO HISTÓRICO DE ROTACIÓN
+    # ========================================================
+
+    rot = 0.0
+
+    columnas_rotacion = esq.get("columnas_rotacion", [])
+
+    if columnas_rotacion:
+
+        # Copiamos solamente las columnas de rotación existentes
+        rotaciones = df_f[
+            [c for c in columnas_rotacion if c in df_f.columns]
+        ].apply(pd.to_numeric, errors="coerce")
+
+        # Promedio histórico por artículo
+        promedio_por_articulo = rotaciones.mean(axis=1, skipna=True)
+
+        # Promedio histórico general
+        rot = float(
+            promedio_por_articulo.mean()
+        ) if len(promedio_por_articulo.dropna()) else 0.0
+
+    # ========================================================
+    # DÍAS DE INVENTARIO
+    # ========================================================
+    dias = 0.0
+
     m = esq["mes_rotacion"]
+
     if m and m["salida"]:
-        salidas = abs(float(df_f[m["salida"]].fillna(0).sum()))
+
+        salidas = abs(
+            float(
+                pd.to_numeric(
+                    df_f[m["salida"]],
+                    errors="coerce"
+                )
+                .fillna(0)
+                .sum()
+            )
+        )
+
         idx = esq["meses"].index(m)
-        stock_prev = (float(df_f[esq["meses"][idx - 1]["stock"]].fillna(0).sum())
-                      if idx > 0 else 0.0)
-        if salidas > 0 and stock_prev > 0:
-            dias = 30.0 * stock_prev / salidas      # días de inventario (mensual)
+
+        if idx > 0:
+
+            stock_prev = float(
+                pd.to_numeric(
+                    df_f[
+                        esq["meses"][idx - 1]["stock"]
+                    ],
+                    errors="coerce"
+                )
+                .fillna(0)
+                .sum()
+            )
+
+            if salidas > 0 and stock_prev > 0:
+                dias = 30.0 * stock_prev / salidas
+
     return stock, valor, rot, dias
 
 
