@@ -2308,6 +2308,236 @@ elif pagina == "Evolución":
     fig_evolucion,
     use_container_width=True
     )
+
+    # --------------------------------------------------------
+# REFERENCIAS DETRÁS DE LOS MESES CRÍTICOS
+# ENTRADA ALTA + STOCK ALTO
+# --------------------------------------------------------
+
+st.subheader(
+    "🔎 Referencias detrás de los meses críticos"
+)
+
+st.caption(
+    "Muestra las referencias que concentran las entradas "
+    "durante los meses identificados en el gráfico como "
+    "entrada alta + stock alto."
+)
+
+if len(df_marcados) > 0:
+
+    filas_referencias = []
+
+    for mes_critico in df_marcados["Mes"]:
+
+        mes_info = next(
+            (
+                m
+                for m in ESQ["meses"]
+                if m["label"] == mes_critico
+            ),
+            None
+        )
+
+        if mes_info is None:
+            continue
+
+        col_entrada = mes_info["entrada"]
+        col_stock = mes_info["stock"]
+
+        if (
+            col_entrada is None
+            or col_stock is None
+            or col_entrada not in df_filtrado.columns
+            or col_stock not in df_filtrado.columns
+        ):
+            continue
+
+        columnas_base = [
+            "Codigo Articulo",
+            "Articulo",
+            "Bodega",
+            "AREA"
+        ]
+
+        columnas_disponibles = [
+            c
+            for c in columnas_base
+            if c in df_filtrado.columns
+        ]
+
+        datos_mes = df_filtrado[
+            columnas_disponibles
+            + [
+                col_entrada,
+                col_stock
+            ]
+        ].copy()
+
+        datos_mes = datos_mes.rename(
+            columns={
+                col_entrada: "Entradas mes",
+                col_stock: "Stock mes"
+            }
+        )
+
+        datos_mes["Mes crítico"] = mes_critico
+
+        datos_mes["Entradas mes"] = pd.to_numeric(
+            datos_mes["Entradas mes"],
+            errors="coerce"
+        ).fillna(0)
+
+        datos_mes["Stock mes"] = pd.to_numeric(
+            datos_mes["Stock mes"],
+            errors="coerce"
+        ).fillna(0)
+
+        # Solo referencias que realmente tuvieron
+        # movimiento de entrada en el mes crítico
+        datos_mes = datos_mes[
+            datos_mes["Entradas mes"] > 0
+        ].copy()
+
+        filas_referencias.append(
+            datos_mes
+        )
+
+    if len(filas_referencias) > 0:
+
+        detalle_criticos = pd.concat(
+            filas_referencias,
+            ignore_index=True
+        )
+
+        columnas_grupo = [
+            c
+            for c in [
+                "Codigo Articulo",
+                "Articulo",
+                "Bodega",
+                "AREA"
+            ]
+            if c in detalle_criticos.columns
+        ]
+
+        tabla_referencias = (
+            detalle_criticos
+            .groupby(
+                columnas_grupo,
+                as_index=False
+            )
+            .agg(
+                Entradas_criticas=(
+                    "Entradas mes",
+                    "sum"
+                ),
+                Entrada_maxima=(
+                    "Entradas mes",
+                    "max"
+                ),
+                Stock_promedio=(
+                    "Stock mes",
+                    "mean"
+                ),
+                Veces_critica=(
+                    "Mes crítico",
+                    "nunique"
+                )
+            )
+            .sort_values(
+                "Entradas_criticas",
+                ascending=False
+            )
+        )
+
+        total_entradas_criticas = (
+            tabla_referencias[
+                "Entradas_criticas"
+            ].sum()
+        )
+
+        tabla_referencias["Participación"] = (
+            tabla_referencias[
+                "Entradas_criticas"
+            ]
+            / total_entradas_criticas
+            * 100
+            if total_entradas_criticas > 0
+            else 0
+        )
+
+        tabla_referencias = tabla_referencias.rename(
+            columns={
+                "Codigo Articulo": "Referencia",
+                "Entradas_criticas": "Entradas meses críticos",
+                "Entrada_maxima": "Entrada máxima",
+                "Stock_promedio": "Stock promedio",
+                "Veces_critica": "Meses críticos"
+            }
+        )
+
+        tabla_referencias[
+            "Entradas meses críticos"
+        ] = tabla_referencias[
+            "Entradas meses críticos"
+        ].round(0)
+
+        tabla_referencias[
+            "Entrada máxima"
+        ] = tabla_referencias[
+            "Entrada máxima"
+        ].round(0)
+
+        tabla_referencias[
+            "Stock promedio"
+        ] = tabla_referencias[
+            "Stock promedio"
+        ].round(0)
+
+        tabla_referencias[
+            "Participación"
+        ] = tabla_referencias[
+            "Participación"
+        ].round(1)
+
+        st.dataframe(
+            tabla_referencias,
+            use_container_width=True,
+            hide_index=True,
+            column_config={
+                "Entradas meses críticos": st.column_config.NumberColumn(
+                    "Entradas meses críticos",
+                    format="%,.0f"
+                ),
+                "Entrada máxima": st.column_config.NumberColumn(
+                    "Entrada máxima",
+                    format="%,.0f"
+                ),
+                "Stock promedio": st.column_config.NumberColumn(
+                    "Stock promedio",
+                    format="%,.0f"
+                ),
+                "Participación": st.column_config.NumberColumn(
+                    "Participación",
+                    format="%.1f%%"
+                )
+            }
+        )
+
+    else:
+
+        st.info(
+            "No fue posible identificar referencias "
+            "con entradas en los meses críticos."
+        )
+
+else:
+
+    st.success(
+        "No se identificaron meses críticos de "
+        "entrada alta + stock alto."
+    )
     # --------------------------------------------------------
     # DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
     # --------------------------------------------------------
