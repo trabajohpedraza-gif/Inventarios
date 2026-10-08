@@ -28,6 +28,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+EPS = 1e-7
+
 # ============================================================
 # PALETA INSTITUCIONAL — REFERENCIA ÁREA LIMPIA
 # ============================================================
@@ -929,6 +931,25 @@ except Exception as e:
 
 
 # ============================================================
+# CORRECCIÓN 1 — COLUMNA DE COSTE DEL ÚLTIMO CORTE
+#
+# construir_esquema() tiene fijada "COSTE TOTAL AGOSTO 2026".
+# Eso hace que el stock sea del último mes (septiembre) pero el
+# valor del inventario sea el de agosto, y el valor por
+# antigüedad queda descuadrado. Aquí se fuerza la columna de
+# coste del MISMO mes que el stock del corte.
+#
+# Como kpis_corte() lee esq["col_coste"], también se actualiza
+# el diccionario ESQ.
+# ============================================================
+
+_ultimo_mes = ESQ["meses"][-1]
+
+if _ultimo_mes.get("coste"):
+    ESQ["col_coste"] = _ultimo_mes["coste"]
+
+
+# ============================================================
 # MAPEO DE BODEGAS
 # ============================================================
 
@@ -1021,21 +1042,50 @@ for columna in df.columns:
 COL_STOCK = ESQ["col_stock"]
 COL_COSTE = ESQ["col_coste"]
 COL_ROTACION = ESQ["columnas_rotacion"]
-COL_DIAS = None
 COL_ANTIGUEDAD = ESQ["col_antiguedad"]
+
+# ------------------------------------------------------------
+# CORRECCIÓN 2 — Indicadores de la nueva metodología
+# (antes COL_DIAS = None y el detalle nunca mostraba los días)
+# ------------------------------------------------------------
+COL_DIAS = ESQ.get("col_dias_rotacion_12_meses")
+COL_INV_PROMEDIO = ESQ.get("col_inventario_promedio")
+COL_CMV_12 = ESQ.get("col_cmv_12_meses")
+COL_ROT_12 = ESQ.get("col_rotacion_12_meses")
+COL_PERIODO = ESQ.get("col_periodo_inventario")
+
+# Período de análisis (texto) para mostrarlo en el tablero
+PERIODO_ANALISIS = ""
+
+if COL_PERIODO and COL_PERIODO in df.columns:
+
+    _periodos = (
+        df[COL_PERIODO]
+        .dropna()
+        .astype(str)
+        .unique()
+        .tolist()
+    )
+
+    if _periodos:
+        PERIODO_ANALISIS = _periodos[0]
 
 
 # ============================================================
 # ORDEN
+#
+# CORRECCIÓN 3 — La nueva metodología solo genera 4 categorías.
+# "Sin stock" y "Sin trazabilidad" ya no existen: dejarlas aquí
+# creaba columnas/filas vacías en la matriz y en los filtros.
+# Si se carga un archivo viejo que todavía las trae, se agregan
+# al final automáticamente (ver ordenar_antiguedades).
 # ============================================================
 
 ORDEN_ANTIGUEDAD = [
     "Entre 0 y 3 meses",
     "Entre 4 y 6 meses",
     "Entre 7 y 12 meses",
-    "Mayor a 12 meses",
-    "Sin trazabilidad",
-    "Sin stock"
+    "Mayor a 12 meses"
 ]
 
 ORDEN_AREAS = [
@@ -1044,6 +1094,24 @@ ORDEN_AREAS = [
     "RRHH",
     "Sin asignar"
 ]
+
+
+def ordenar_antiguedades(valores):
+    """Categorías oficiales primero; cualquier otra al final."""
+
+    valores = list(valores)
+
+    oficiales = [
+        e for e in ORDEN_ANTIGUEDAD
+        if e in valores
+    ]
+
+    extras = sorted(
+        v for v in valores
+        if v not in ORDEN_ANTIGUEDAD
+    )
+
+    return oficiales + extras
 
 
 # ============================================================
@@ -1237,6 +1305,12 @@ if pagina == "Actualizar Kardex":
 # ENCABEZADO PRINCIPAL
 # ============================================================
 
+_pill_periodo = (
+    f'<div class="header-pill">Antigüedad: {PERIODO_ANALISIS}</div>'
+    if PERIODO_ANALISIS
+    else ""
+)
+
 st.markdown(
     f"""
     <div class="dashboard-header">
@@ -1249,12 +1323,26 @@ st.markdown(
         <div class="header-pills">
             <div class="header-pill primary">Inventario actual</div>
             <div class="header-pill">Corte: {ESQ["corte"]}</div>
+            {_pill_periodo}
             <div class="header-pill success">Datos actualizados</div>
         </div>
     </div>
     """,
     unsafe_allow_html=True
 )
+
+# Aviso si el archivo cargado no trae la nueva metodología
+if (
+    not COL_ANTIGUEDAD
+    or COL_ANTIGUEDAD not in df.columns
+    or not COL_DIAS
+):
+
+    st.warning(
+        "El archivo cargado no contiene los indicadores de los "
+        "últimos 12 meses (días de rotación y antigüedad). "
+        "Procésalo de nuevo en «Actualizar Kardex» para calcularlos."
+    )
 
 
 # ============================================================
@@ -1403,11 +1491,9 @@ with st.container(border=True):
         else []
     )
 
-    antiguedades = [
-        edad
-        for edad in ORDEN_ANTIGUEDAD
-        if edad in antiguedades_existentes
-    ]
+    antiguedades = ordenar_antiguedades(
+        antiguedades_existentes
+    )
 
     with col4:
 
@@ -1430,6 +1516,28 @@ with st.container(border=True):
         f'<div class="filter-records">Registros analizados: {len(df_filtrado):,}'.replace(",", ".") + '</div>',
         unsafe_allow_html=True
     )
+
+
+# ============================================================
+# CORRECCIÓN 4 — SOLO REGISTROS CON INVENTARIO EN EL CORTE
+#
+# La nueva clasificación ya no genera "Sin stock": un artículo
+# con stock 0 en el último mes igual recibe una categoría de
+# antigüedad (por defecto "Entre 0 y 3 meses", o "Mayor a 12
+# meses" si tuvo inventario promedio y CMV cero). Para contar
+# registros, artículos o alertas hay que considerar únicamente
+# los que realmente tienen inventario al corte.
+# ============================================================
+
+if COL_STOCK in df_filtrado.columns:
+
+    df_con_stock = df_filtrado[
+        df_filtrado[COL_STOCK].fillna(0) > EPS
+    ].copy()
+
+else:
+
+    df_con_stock = df_filtrado.copy()
 
 
 # ============================================================
@@ -1466,17 +1574,25 @@ if pagina == "Resumen":
         "Lectura estratégica del estado actual del inventario."
     )
 
+    if PERIODO_ANALISIS:
+
+        st.caption(
+            f"Antigüedad según días de rotación "
+            f"(inventario promedio ÷ CMV × 365) del período "
+            f"{PERIODO_ANALISIS}."
+        )
+
     # --------------------------------------------------------
     # KPIs
     # --------------------------------------------------------
 
     valor_mayor_12 = 0
 
-    if COL_ANTIGUEDAD and COL_ANTIGUEDAD in df_filtrado.columns:
+    if COL_ANTIGUEDAD and COL_ANTIGUEDAD in df_con_stock.columns:
 
         valor_mayor_12 = suma_columna(
-            df_filtrado[
-                df_filtrado[COL_ANTIGUEDAD]
+            df_con_stock[
+                df_con_stock[COL_ANTIGUEDAD]
                 .astype(str)
                 .str.contains(
                     "Mayor a 12 meses",
@@ -1505,8 +1621,6 @@ if pagina == "Resumen":
             "💰 Valor inventario",
             formato_moneda(valor_total)
         )
-
-
 
     with k4:
         st.metric(
@@ -1674,62 +1788,88 @@ if pagina == "Resumen":
 
     with col_b:
 
-        resumen_edad = (
-            df_filtrado
-            .groupby(
-                COL_ANTIGUEDAD,
-                as_index=False
-            )[COL_COSTE]
-            .sum()
-        )
+        if (
+            COL_ANTIGUEDAD
+            and COL_ANTIGUEDAD in df_con_stock.columns
+            and len(df_con_stock) > 0
+        ):
 
-        resumen_edad["Orden"] = (
-            resumen_edad[COL_ANTIGUEDAD]
-            .map({
-                edad: i
-                for i, edad
-                in enumerate(ORDEN_ANTIGUEDAD)
-            })
-            .fillna(99)
-        )
-
-        resumen_edad = resumen_edad.sort_values(
-            "Orden"
-        )
-
-        fig_edad = px.bar(
-            resumen_edad,
-            x=COL_COSTE,
-            y=COL_ANTIGUEDAD,
-            orientation="h",
-            color=COL_ANTIGUEDAD,
-            color_discrete_map=COLORES_EDAD
-        )
-
-        fig_edad.update_traces(
-            hovertemplate=(
-                "<b>%{y}</b><br>"
-                "Valor: $%{x:,.0f}"
-                "<extra></extra>"
+            resumen_edad = (
+                df_con_stock
+                .groupby(
+                    COL_ANTIGUEDAD,
+                    as_index=False
+                )[COL_COSTE]
+                .sum()
             )
-        )
 
-        fig_edad.update_layout(
-            title="Envejecimiento del valor",
-            xaxis_title="Valor del inventario",
-            yaxis_title="",
-            showlegend=False
-        )
+            orden_edad = ordenar_antiguedades(
+                resumen_edad[COL_ANTIGUEDAD]
+                .astype(str)
+                .tolist()
+            )
 
-        configurar_figura(
-            fig_edad,
-            390
-        )
+            resumen_edad["Orden"] = (
+                resumen_edad[COL_ANTIGUEDAD]
+                .map({
+                    edad: i
+                    for i, edad
+                    in enumerate(orden_edad)
+                })
+                .fillna(99)
+            )
 
-        st.plotly_chart(
-            fig_edad,
-            use_container_width=True
-        )
+            resumen_edad = resumen_edad.sort_values(
+                "Orden"
+            )
+
+            fig_edad = px.bar(
+                resumen_edad,
+                x=COL_COSTE,
+                y=COL_ANTIGUEDAD,
+                orientation="h",
+                color=COL_ANTIGUEDAD,
+                color_discrete_map=COLORES_EDAD,
+                category_orders={
+                    COL_ANTIGUEDAD: orden_edad
+                }
+            )
+
+            fig_edad.update_traces(
+                hovertemplate=(
+                    "<b>%{y}</b><br>"
+                    "Valor: $%{x:,.0f}"
+                    "<extra></extra>"
+                )
+            )
+
+            fig_edad.update_layout(
+                title="Envejecimiento del valor",
+                xaxis_title="Valor del inventario",
+                yaxis_title="",
+                showlegend=False
+            )
+
+            fig_edad.update_yaxes(
+                autorange="reversed"
+            )
+
+            configurar_figura(
+                fig_edad,
+                390
+            )
+
+            st.plotly_chart(
+                fig_edad,
+                use_container_width=True
+            )
+
+        else:
+
+            st.info(
+                "No hay inventario con antigüedad calculada "
+                "para los filtros seleccionados."
+            )
 
 
 # ============================================================
@@ -1749,19 +1889,20 @@ elif pagina == "Inventario":
 
     # --------------------------------------------------------
     # KPIs DE INVENTARIO
+    # (solo artículos con stock al corte)
     # --------------------------------------------------------
 
     numero_articulos = (
-        df_filtrado["Articulo"]
+        df_con_stock["Articulo"]
         .nunique()
-        if "Articulo" in df_filtrado.columns
+        if "Articulo" in df_con_stock.columns
         else 0
     )
 
     numero_bodegas = (
-        df_filtrado["Bodega"]
+        df_con_stock["Bodega"]
         .nunique()
-        if "Bodega" in df_filtrado.columns
+        if "Bodega" in df_con_stock.columns
         else 0
     )
 
@@ -1883,34 +2024,55 @@ elif pagina == "Inventario":
         "🧭 ¿Dónde se concentra el inventario envejecido?"
     )
 
-    matriz = (
-        df_filtrado
-        .pivot_table(
-            index="AREA",
-            columns=COL_ANTIGUEDAD,
-            values=COL_COSTE,
-            aggfunc="sum",
-            fill_value=0
-        )
-        .reindex(
-            index=ORDEN_AREAS,
-            columns=ORDEN_ANTIGUEDAD,
-            fill_value=0
-        )
-    )
+    if (
+        COL_ANTIGUEDAD
+        and COL_ANTIGUEDAD in df_con_stock.columns
+        and len(df_con_stock) > 0
+    ):
 
-    matriz_mostrar = matriz.copy()
-
-    for columna in matriz_mostrar.columns:
-        matriz_mostrar[columna] = (
-            matriz_mostrar[columna]
-            .apply(formato_moneda)
+        columnas_edad = ordenar_antiguedades(
+            df_con_stock[COL_ANTIGUEDAD]
+            .dropna()
+            .astype(str)
+            .unique()
+            .tolist()
         )
 
-    st.dataframe(
-        matriz_mostrar,
-        use_container_width=True
-    )
+        matriz = (
+            df_con_stock
+            .pivot_table(
+                index="AREA",
+                columns=COL_ANTIGUEDAD,
+                values=COL_COSTE,
+                aggfunc="sum",
+                fill_value=0
+            )
+            .reindex(
+                index=ORDEN_AREAS,
+                columns=columnas_edad,
+                fill_value=0
+            )
+        )
+
+        matriz_mostrar = matriz.copy()
+
+        for columna in matriz_mostrar.columns:
+            matriz_mostrar[columna] = (
+                matriz_mostrar[columna]
+                .apply(formato_moneda)
+            )
+
+        st.dataframe(
+            matriz_mostrar,
+            use_container_width=True
+        )
+
+    else:
+
+        st.info(
+            "No hay inventario con antigüedad calculada "
+            "para los filtros seleccionados."
+        )
 
     # --------------------------------------------------------
     # BODEGAS
@@ -1969,6 +2131,13 @@ elif pagina == "Inventario":
 # ============================================================
 # PÁGINA 3
 # EVOLUCIÓN
+#
+# CORRECCIÓN 5 — En el código original esta página tenía los
+# bloques "Referencias con mayor impacto económico", "Lectura
+# analítica" y "Costos y rotación" repetidos (uno de ellos mal
+# indentado dentro de un else). Streamlit rechaza gráficos
+# idénticos duplicados (DuplicateElementId) y la tabla aparecía
+# dos veces. Aquí cada bloque aparece una sola vez.
 # ============================================================
 
 elif pagina == "Evolución":
@@ -2043,10 +2212,6 @@ elif pagina == "Evolución":
         )
 
     st.write("")
-
-    # --------------------------------------------------------
-    # GRÁFICO PRINCIPAL
-    # --------------------------------------------------------
 
     # --------------------------------------------------------
     # GRÁFICO PRINCIPAL
@@ -2260,10 +2425,6 @@ elif pagina == "Evolución":
             showgrid=False
         ),
 
-        # ----------------------------------------------------
-        # EJE IZQUIERDO
-        # ----------------------------------------------------
-
         yaxis=dict(
             title="Entradas / Salidas (unidades)",
             showgrid=True,
@@ -2271,10 +2432,6 @@ elif pagina == "Evolución":
             zeroline=True,
             zerolinecolor=GRIS_BORDE
         ),
-
-        # ----------------------------------------------------
-        # EJE DERECHO
-        # ----------------------------------------------------
 
         yaxis2=dict(
             title="Stock de cierre (unidades)",
@@ -2284,10 +2441,6 @@ elif pagina == "Evolución":
             rangemode="tozero",
             zeroline=False
         ),
-
-        # ----------------------------------------------------
-        # LEYENDA
-        # ----------------------------------------------------
 
         legend=dict(
             orientation="h",
@@ -2451,7 +2604,6 @@ elif pagina == "Evolución":
                         "Valor entradas mes",
                         "sum"
                     ),
-
                     Stock_maximo=(
                         "Stock mes",
                         "max"
@@ -2581,10 +2733,6 @@ elif pagina == "Evolución":
                 .head(20)
             )
 
-            # ------------------------------------------------
-            # TABLA
-            # ------------------------------------------------
-
             st.dataframe(
                 tabla_referencias,
                 use_container_width=True,
@@ -2638,38 +2786,9 @@ elif pagina == "Evolución":
         "🧠 Lectura analítica de los movimientos"
     )
 
-    df_lectura = df_mensual.copy()
+    if len(df_mensual) > 0:
 
-    if len(df_lectura) > 0:
-
-        umbral_entrada = df_lectura["Entradas"].quantile(
-            0.75
-        )
-
-        umbral_stock = df_lectura[
-            "Stock de cierre"
-        ].quantile(
-            0.75
-        )
-
-        df_lectura["Entrada alta"] = (
-            df_lectura["Entradas"]
-            >= umbral_entrada
-        )
-
-        df_lectura["Stock alto"] = (
-            df_lectura["Stock de cierre"]
-            >= umbral_stock
-        )
-
-        df_lectura["Coincidencia"] = (
-            df_lectura["Entrada alta"]
-            & df_lectura["Stock alto"]
-        )
-
-        coincidencias = df_lectura[
-            df_lectura["Coincidencia"]
-        ]
+        coincidencias = df_marcados
 
         if len(coincidencias) > 0:
 
@@ -2808,500 +2927,8 @@ elif pagina == "Evolución":
             use_container_width=True
         )
 
-    # --------------------------------------------------------
-# --------------------------------------------------------
-    # REFERENCIAS CON MAYOR IMPACTO ECONÓMICO
-    # ENTRADA ALTA + STOCK ALTO
-    # --------------------------------------------------------
-    
-    st.subheader(
-        "💰 Referencias con mayor impacto económico"
-    )
-    
-    st.caption(
-        "Muestra las referencias que concentran el mayor valor "
-        "económico de las entradas durante los meses identificados "
-        "como entrada alta + stock alto."
-    )
-    
-    if len(df_marcados) > 0:
-    
-        filas_referencias = []
-    
-        for mes_critico in df_marcados["Mes"]:
-    
-            mes_info = next(
-                (
-                    m
-                    for m in ESQ["meses"]
-                    if m["label"] == mes_critico
-                ),
-                None
-            )
-    
-            if mes_info is None:
-                continue
-    
-            col_entrada = mes_info["entrada"]
-            col_stock = mes_info["stock"]
-            col_costo_entrada = mes_info["costo_entrada"]
-    
-            if (
-                col_entrada is None
-                or col_entrada not in df_filtrado.columns
-                or col_stock is None
-                or col_stock not in df_filtrado.columns
-                or col_costo_entrada is None
-                or col_costo_entrada not in df_filtrado.columns
-            ):
-                continue
-    
-            columnas_base = [
-                "Codigo Articulo",
-                "Articulo",
-                "Bodega",
-                "AREA"
-            ]
-    
-            columnas_disponibles = [
-                c
-                for c in columnas_base
-                if c in df_filtrado.columns
-            ]
-    
-            datos_mes = df_filtrado[
-                columnas_disponibles
-                + [
-                    col_entrada,
-                    col_stock,
-                    col_costo_entrada
-                ]
-            ].copy()
-    
-            datos_mes = datos_mes.rename(
-                columns={
-                    col_entrada: "Entradas mes",
-                    col_stock: "Stock mes",
-                    col_costo_entrada: "Valor entradas mes"
-                }
-            )
-    
-            datos_mes["Mes crítico"] = mes_critico
-    
-            datos_mes["Entradas mes"] = pd.to_numeric(
-                datos_mes["Entradas mes"],
-                errors="coerce"
-            ).fillna(0)
-    
-            datos_mes["Stock mes"] = pd.to_numeric(
-                datos_mes["Stock mes"],
-                errors="coerce"
-            ).fillna(0)
-    
-            datos_mes["Valor entradas mes"] = pd.to_numeric(
-                datos_mes["Valor entradas mes"],
-                errors="coerce"
-            ).fillna(0)
-    
-            # Solo referencias que realmente tuvieron
-            # entradas en el mes crítico
-            datos_mes = datos_mes[
-                datos_mes["Entradas mes"] > 0
-            ].copy()
-    
-            filas_referencias.append(
-                datos_mes
-            )
-    
-        if len(filas_referencias) > 0:
-    
-            detalle_criticos = pd.concat(
-                filas_referencias,
-                ignore_index=True
-            )
-    
-            columnas_grupo = [
-                c
-                for c in [
-                    "Codigo Articulo",
-                    "Articulo",
-                    "Bodega",
-                    "AREA"
-                ]
-                if c in detalle_criticos.columns
-            ]
-    
-            tabla_referencias = (
-                detalle_criticos
-                .groupby(
-                    columnas_grupo,
-                    as_index=False
-                )
-                .agg(
-                    Valor_entradas_criticas=(
-                        "Valor entradas mes",
-                        "sum"
-                    ),
 
-                    Stock_maximo=(
-                        "Stock mes",
-                        "max"
-                    ),
-                    Meses_criticos=(
-                        "Mes crítico",
-                        "nunique"
-                    )
-                )
-                .sort_values(
-                    "Valor_entradas_criticas",
-                    ascending=False
-                )
-            )
-    
-            # ----------------------------------------------------
-            # VALOR ACTUAL DEL INVENTARIO
-            # ----------------------------------------------------
-    
-            if (
-                COL_COSTE is not None
-                and COL_COSTE in df_filtrado.columns
-            ):
-    
-                valor_actual = (
-                    df_filtrado
-                    .groupby(
-                        columnas_grupo,
-                        as_index=False
-                    )
-                    .agg(
-                        Valor_inventario_actual=(
-                            COL_COSTE,
-                            "sum"
-                        )
-                    )
-                )
-    
-                tabla_referencias = tabla_referencias.merge(
-                    valor_actual,
-                    on=columnas_grupo,
-                    how="left"
-                )
-    
-            else:
-    
-                tabla_referencias[
-                    "Valor_inventario_actual"
-                ] = 0
-    
-            # ----------------------------------------------------
-            # PARTICIPACIÓN ECONÓMICA
-            # ----------------------------------------------------
-    
-            total_valor_critico = (
-                tabla_referencias[
-                    "Valor_entradas_criticas"
-                ].sum()
-            )
-    
-            tabla_referencias[
-                "Participacion"
-            ] = (
-                tabla_referencias[
-                    "Valor_entradas_criticas"
-                ]
-                / total_valor_critico
-                * 100
-                if total_valor_critico > 0
-                else 0
-            )
-    
-            # ----------------------------------------------------
-            # RENOMBRAR
-            # ----------------------------------------------------
-    
-            tabla_referencias = tabla_referencias.rename(
-                columns={
-                    "Codigo Articulo": "Referencia",
-                    "Valor_entradas_criticas":
-                        "Valor entradas críticas",
-                    "Valor_inventario_actual":
-                        "Valor inventario actual",
-                    "Stock_maximo":
-                        "Stock máximo",
-                    "Meses_criticos":
-                        "Meses críticos",
-                    "Participacion":
-                        "Participación"
-                }
-            )
-    
-            # ----------------------------------------------------
-            # REDONDEAR
-            # ----------------------------------------------------
-    
-            tabla_referencias[
-                "Valor entradas críticas"
-            ] = tabla_referencias[
-                "Valor entradas críticas"
-            ].round(0)
-    
-            tabla_referencias[
-                "Valor inventario actual"
-            ] = tabla_referencias[
-                "Valor inventario actual"
-            ].round(0)
-    
-    
-            tabla_referencias[
-                "Stock máximo"
-            ] = tabla_referencias[
-                "Stock máximo"
-            ].round(0)
-    
-            tabla_referencias[
-                "Participación"
-            ] = tabla_referencias[
-                "Participación"
-            ].round(1)
-    
-            # ----------------------------------------------------
-            # TOP 20
-            # ----------------------------------------------------
-    
-            tabla_referencias = (
-                tabla_referencias
-                .head(20)
-            )
-    
-            # ----------------------------------------------------
-            # TABLA
-            # ----------------------------------------------------
-    
-            st.dataframe(
-                tabla_referencias,
-                use_container_width=True,
-                hide_index=True,
-                column_config={
-                    "Valor entradas críticas":
-                        st.column_config.NumberColumn(
-                            "💰 Valor entradas críticas",
-                            format="$%,.0f"
-                        ),
-    
-                    "Valor inventario actual":
-                        st.column_config.NumberColumn(
-                            "📦 Valor inventario actual",
-                            format="$%,.0f"
-                        ),
-    
-                    "Participación":
-                        st.column_config.NumberColumn(
-                            "📊 Participación",
-                            format="%.1f%%"
-                        ),
-    
-
-                    "Stock máximo":
-                        st.column_config.NumberColumn(
-                            "Stock máximo",
-                            format="%,.0f"
-                        )
-                }
-            )
-    
-        else:
-    
-            st.info(
-                "No fue posible identificar referencias con "
-                "valor económico en los meses críticos."
-            )
-    
-    else:
-    
-        st.success(
-            "No se identificaron meses críticos de "
-            "entrada alta + stock alto."
-        )
-        # --------------------------------------------------------
-        # DETECCIÓN DE MESES DE POSIBLE SOBREABASTECIMIENTO
-        # --------------------------------------------------------
-    
-        st.subheader(
-            "🧠 Lectura analítica de los movimientos"
-        )
-    
-        df_lectura = df_mensual.copy()
-    
-        if len(df_lectura) > 0:
-    
-            umbral_entrada = df_lectura["Entradas"].quantile(
-                0.75
-            )
-    
-            umbral_stock = df_lectura[
-                "Stock de cierre"
-            ].quantile(
-                0.75
-            )
-    
-            df_lectura["Entrada alta"] = (
-                df_lectura["Entradas"]
-                >= umbral_entrada
-            )
-    
-            df_lectura["Stock alto"] = (
-                df_lectura["Stock de cierre"]
-                >= umbral_stock
-            )
-    
-            df_lectura["Coincidencia"] = (
-                df_lectura["Entrada alta"]
-                & df_lectura["Stock alto"]
-            )
-    
-            coincidencias = df_lectura[
-                df_lectura["Coincidencia"]
-            ]
-    
-            if len(coincidencias) > 0:
-    
-                st.warning(
-                        "⚠️ Se identificaron meses en los que "
-                        "las entradas estuvieron entre las más altas "
-                        "del periodo mientras el stock "
-                        "también estaba en niveles altos."
-                    )
-    
-                tabla_coincidencias = coincidencias[
-                    [
-                        "Mes",
-                        "Entradas",
-                        "Salidas",
-                        "Neto",
-                        "Stock de cierre"
-                    ]
-                ].copy()
-    
-                st.dataframe(
-                    tabla_coincidencias,
-                    use_container_width=True,
-                    hide_index=True
-                )
-    
-            else:
-    
-                st.success(
-                    "No se identificaron coincidencias entre "
-                    "entradas excepcionalmente altas y niveles "
-                    "altos de stock bajo el criterio estadístico "
-                    "utilizado."
-                )
-
-    # --------------------------------------------------------
-    # COSTOS Y ROTACIÓN
-    # --------------------------------------------------------
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-
-        fig_costos = go.Figure()
-
-        fig_costos.add_trace(
-            go.Scatter(
-                x=df_mensual["Mes"],
-                y=df_mensual["Costo entradas"],
-                mode="lines+markers",
-                name="Costo entradas",
-                line=dict(
-                    color=AZUL,
-                    width=3
-                ),
-                hovertemplate=(
-                    "<b>%{x}</b><br>"
-                    "Costo entradas: $%{y:,.0f}"
-                    "<extra></extra>"
-                )
-            )
-        )
-
-        fig_costos.add_trace(
-            go.Scatter(
-                x=df_mensual["Mes"],
-                y=df_mensual["Costo salidas"],
-                mode="lines+markers",
-                name="Costo salidas",
-                line=dict(
-                    color=NARANJA,
-                    width=3
-                ),
-                hovertemplate=(
-                    "<b>%{x}</b><br>"
-                    "Costo salidas: $%{y:,.0f}"
-                    "<extra></extra>"
-                )
-            )
-        )
-
-        fig_costos.update_layout(
-            title="Valor de los movimientos",
-            xaxis_title="",
-            yaxis_title="Valor",
-        )
-
-        configurar_figura(
-            fig_costos,
-            400
-        )
-
-        st.plotly_chart(
-            fig_costos,
-            use_container_width=True
-        )
-
-    with col2:
-
-        fig_rotacion = go.Figure()
-
-        fig_rotacion.add_trace(
-            go.Scatter(
-                x=df_mensual["Mes"],
-                y=df_mensual["Rotacion"],
-                mode="lines+markers",
-                name="Rotación",
-                line=dict(
-                    color=MORADO,
-                    width=3
-                ),
-                marker=dict(
-                    size=8
-                ),
-                hovertemplate=(
-                    "<b>%{x}</b><br>"
-                    "Rotación: %{y:.2f}"
-                    "<extra></extra>"
-                )
-            )
-        )
-
-        fig_rotacion.update_layout(
-            title="Comportamiento de la rotación",
-            xaxis_title="",
-            yaxis_title="Rotación"
-        )
-
-        configurar_figura(
-            fig_rotacion,
-            400
-        )
-
-        st.plotly_chart(
-            fig_rotacion,
-            use_container_width=True
-        )
-
-
-    # ============================================================
+# ============================================================
 # PÁGINA 4
 # RIESGOS Y DETALLE
 # ============================================================
@@ -3318,9 +2945,14 @@ elif pagina == "Riesgos y detalle":
 
     # --------------------------------------------------------
     # FILTRO DE ANTIGÜEDAD
+    #
+    # CORRECCIÓN 6 — Antes se contaban como "riesgo" todos los
+    # registros clasificados > 12 meses, incluso los que tenían
+    # stock 0 en el corte. Ahora solo cuentan los que tienen
+    # inventario al corte.
     # --------------------------------------------------------
 
-    df_alertas = df_filtrado.copy()
+    df_alertas = df_con_stock.copy()
 
     if COL_ANTIGUEDAD and COL_ANTIGUEDAD in df_alertas.columns:
 
@@ -3462,6 +3094,9 @@ elif pagina == "Riesgos y detalle":
 
     # --------------------------------------------------------
     # TABLA DE DETALLE
+    #
+    # Ahora incluye los indicadores que explican la antigüedad:
+    # inventario promedio, CMV, rotación y días de rotación.
     # --------------------------------------------------------
 
     st.subheader(
@@ -3475,26 +3110,53 @@ elif pagina == "Riesgos y detalle":
         "Articulo",
         COL_STOCK,
         COL_COSTE,
+        COL_INV_PROMEDIO,
+        COL_CMV_12,
+        COL_ROT_12,
         COL_DIAS,
         COL_ANTIGUEDAD
     ]
 
-    columnas_disponibles = [
-        columna
-        for columna in columnas_detalle
-        if columna is not None
-        and columna in df_filtrado.columns
-    ]
+    columnas_disponibles = []
+
+    for columna in columnas_detalle:
+
+        if (
+            columna is not None
+            and columna in df_filtrado.columns
+            and columna not in columnas_disponibles
+        ):
+            columnas_disponibles.append(columna)
 
     df_detalle = df_filtrado[
         columnas_disponibles
     ].copy()
 
+    config_detalle = {}
+
+    for columna, formato in [
+        (COL_COSTE, "$ %,.0f"),
+        (COL_INV_PROMEDIO, "$ %,.0f"),
+        (COL_CMV_12, "$ %,.0f"),
+        (COL_ROT_12, "%.2f"),
+        (COL_DIAS, "%.0f"),
+    ]:
+
+        if columna and columna in df_detalle.columns:
+
+            config_detalle[columna] = (
+                st.column_config.NumberColumn(
+                    columna,
+                    format=formato
+                )
+            )
+
     st.dataframe(
         df_detalle,
         use_container_width=True,
         hide_index=True,
-        height=470
+        height=470,
+        column_config=config_detalle
     )
 
     # --------------------------------------------------------
