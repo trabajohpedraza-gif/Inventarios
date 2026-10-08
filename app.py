@@ -13,6 +13,7 @@ from motor_lifo import (
     cargar_base,
     firma_archivos,
     tipos_columnas_app,
+    col_exacta,
     kpis_corte,
     pagina_actualizar_kardex,
 )
@@ -1042,7 +1043,35 @@ for columna in df.columns:
 COL_STOCK = ESQ["col_stock"]
 COL_COSTE = ESQ["col_coste"]
 COL_ROTACION = ESQ["columnas_rotacion"]
-COL_ANTIGUEDAD = ESQ["col_antiguedad"]
+
+# ------------------------------------------------------------
+# CORRECCIÓN 7 — La columna de antigüedad en el Excel se llama
+# "ANTIGUEDAD 12 MESES", pero construir_esquema() solo reconoce
+# "ANTIGUEDAD ULTIMO MES DE ACTUALIZACIÓN" (o "ANTIGUEDAD <MES AÑO>").
+# Al no encontrarla, COL_ANTIGUEDAD quedaba en None y el tablero
+# decía que faltaban columnas. Se buscan ambos nombres
+# (sin importar tildes ni mayúsculas) y, solo si no aparece
+# ninguno, se usa lo que devuelva el esquema.
+# ------------------------------------------------------------
+
+COL_ANTIGUEDAD = None
+
+for _nombre in (
+    "ANTIGUEDAD 12 MESES",
+    "ANTIGUEDAD ULTIMO MES DE ACTUALIZACION",
+    "ANTIGUEDAD ULTIMO MES DE ACTUALIZACIÓN",
+):
+
+    _c = col_exacta(df, _nombre)
+
+    if _c is not None:
+        COL_ANTIGUEDAD = _c
+        break
+
+if COL_ANTIGUEDAD is None:
+    COL_ANTIGUEDAD = ESQ["col_antiguedad"]
+
+ESQ["col_antiguedad"] = COL_ANTIGUEDAD
 
 # ------------------------------------------------------------
 # CORRECCIÓN 2 — Indicadores de la nueva metodología
@@ -1332,16 +1361,37 @@ st.markdown(
 )
 
 # Aviso si el archivo cargado no trae la nueva metodología
-if (
-    not COL_ANTIGUEDAD
-    or COL_ANTIGUEDAD not in df.columns
-    or not COL_DIAS
-):
+_requeridas = {
+    "ANTIGUEDAD 12 MESES": COL_ANTIGUEDAD,
+    "INVENTARIO PROMEDIO 12 MESES": COL_INV_PROMEDIO,
+    "CMV 12 MESES": COL_CMV_12,
+    "ROTACION 12 MESES": COL_ROT_12,
+    "DIAS ROTACION 12 MESES": COL_DIAS,
+    "COSTE TOTAL (último mes)": COL_COSTE,
+}
+
+_faltantes = [
+    nombre
+    for nombre, col in _requeridas.items()
+    if not col or col not in df.columns
+]
+
+if _faltantes:
 
     st.warning(
-        "El archivo cargado no contiene los indicadores de los "
-        "últimos 12 meses (días de rotación y antigüedad). "
-        "Procésalo de nuevo en «Actualizar Kardex» para calcularlos."
+        "No se encontraron estas columnas en el archivo cargado: "
+        + ", ".join(_faltantes)
+        + ". Columnas detectadas que empiezan por "
+        "ANTIGUEDAD: "
+        + (
+            ", ".join(
+                str(c)
+                for c in df.columns
+                if str(c).upper().startswith("ANTIG")
+            )
+            or "ninguna"
+        )
+        + "."
     )
 
 
