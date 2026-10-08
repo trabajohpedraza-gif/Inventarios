@@ -61,6 +61,11 @@ FECHA_STOCK_INICIAL = pd.Timestamp("2025-05-31")
 MESES_ANALISIS = 12
 DIAS_ANIO = 365.0
 
+# Si el coste mensual está entre -1 y 1 (incluidos), para el
+# inventario promedio se utiliza el COSTO ENTRADA del mismo mes.
+# Esta sustitución NO modifica el CMV.
+LIMITE_COSTE_REEMPLAZO = 1.0
+
 CLASIFICACION_0_3 = "Entre 0 y 3 meses"
 CLASIFICACION_4_6 = "Entre 4 y 6 meses"
 CLASIFICACION_7_12 = "Entre 7 y 12 meses"
@@ -1041,9 +1046,26 @@ def calcular_indicadores_12_meses(
             costo_salida.abs() > EPS
         )
 
+        # ----------------------------------------------------
+        # COSTE UTILIZADO PARA EL INVENTARIO PROMEDIO
+        # ----------------------------------------------------
+        # Cuando el coste mensual está entre -1 y 1, incluidos,
+        # se reemplaza por el COSTO ENTRADA del mismo mes.
+        # Solo aplica al inventario promedio; el CMV conserva
+        # siempre el COSTO SALIDA original.
+        mascara_reemplazo = (
+            (coste >= -LIMITE_COSTE_REEMPLAZO)
+            & (coste <= LIMITE_COSTE_REEMPLAZO)
+        )
+
+        coste_reemplazado = coste.copy()
+        coste_reemplazado.loc[mascara_reemplazo] = costo_entrada.loc[
+            mascara_reemplazo
+        ]
+
         inventario_suma = (
             inventario_suma
-            + coste.where(
+            + coste_reemplazado.where(
                 valido,
                 0.0
             )
@@ -1176,127 +1198,61 @@ def calcular_indicadores_12_meses(
     )
 
     # --------------------------------------------------------
-    # CLASIFICACIÓN
+    # CLASIFICACIÓN DE ANTIGÜEDAD
+    # --------------------------------------------------------
+    # La clasificación se basa exclusivamente en los días de
+    # rotación calculados con el inventario promedio y el CMV.
+    # No depende del stock del último mes y no genera "Sin stock".
+    #
+    # Reglas especiales:
+    # - Días NaN por inventario promedio cero/sin rotación:
+    #   Entre 0 y 3 meses por defecto.
+    # - Inventario promedio positivo y CMV cero:
+    #   Mayor a 12 meses.
     # --------------------------------------------------------
 
     antiguedad = pd.Series(
-        "Sin stock",
+        CLASIFICACION_0_3,
         index=hist.index,
         dtype=object
     )
 
-    # Stock actual del último mes analizado
-    ultimo = meses_info[-1]
-
-    if ultimo["stock"] is not None:
-
-        stock_ultimo = a_numero(
-            hist[
-                ultimo["stock"]
-            ]
-        )
-
-    else:
-
-        stock_ultimo = pd.Series(
-            0.0,
-            index=hist.index
-        )
-
-    # Sin stock
-    mask_sin_stock = (
-        stock_ultimo
-        <= EPS
+    mask_inventario_positivo_sin_cmv = (
+        inventario_promedio.notna()
+        & (inventario_promedio > EPS)
+        & (cmv <= EPS)
     )
 
     antiguedad.loc[
-        mask_sin_stock
-    ] = "Sin stock"
-
-    # --------------------------------------------------------
-    # STOCK > 0 SIN CMV
-    #
-    # Si existe inventario pero no hubo costo de salida
-    # durante el período, no existe rotación observable.
-    #
-    # Se considera Mayor a 12 meses.
-    # --------------------------------------------------------
-
-    mask_sin_rotacion = (
-        (~mask_sin_stock)
-        & (
-            cmv
-            <= EPS
-        )
-    )
-
-    antiguedad.loc[
-        mask_sin_rotacion
+        mask_inventario_positivo_sin_cmv
     ] = CLASIFICACION_MAYOR_12
 
-    # --------------------------------------------------------
-    # CLASIFICACIÓN POR DÍAS
-    # --------------------------------------------------------
-
     mask_0_3 = (
-        (~mask_sin_stock)
-        & mask_dias
-        & (
-            dias_rotacion
-            <= 90
-        )
+        dias_rotacion.notna()
+        & (dias_rotacion <= 90)
     )
 
     mask_4_6 = (
-        (~mask_sin_stock)
-        & mask_dias
-        & (
-            dias_rotacion
-            > 90
-        )
-        & (
-            dias_rotacion
-            <= 180
-        )
+        dias_rotacion.notna()
+        & (dias_rotacion > 90)
+        & (dias_rotacion <= 180)
     )
 
     mask_7_12 = (
-        (~mask_sin_stock)
-        & mask_dias
-        & (
-            dias_rotacion
-            > 180
-        )
-        & (
-            dias_rotacion
-            <= 365
-        )
+        dias_rotacion.notna()
+        & (dias_rotacion > 180)
+        & (dias_rotacion <= 365)
     )
 
     mask_mayor_12 = (
-        (~mask_sin_stock)
-        & mask_dias
-        & (
-            dias_rotacion
-            > 365
-        )
+        dias_rotacion.notna()
+        & (dias_rotacion > 365)
     )
 
-    antiguedad.loc[
-        mask_0_3
-    ] = CLASIFICACION_0_3
-
-    antiguedad.loc[
-        mask_4_6
-    ] = CLASIFICACION_4_6
-
-    antiguedad.loc[
-        mask_7_12
-    ] = CLASIFICACION_7_12
-
-    antiguedad.loc[
-        mask_mayor_12
-    ] = CLASIFICACION_MAYOR_12
+    antiguedad.loc[mask_0_3] = CLASIFICACION_0_3
+    antiguedad.loc[mask_4_6] = CLASIFICACION_4_6
+    antiguedad.loc[mask_7_12] = CLASIFICACION_7_12
+    antiguedad.loc[mask_mayor_12] = CLASIFICACION_MAYOR_12
 
     # --------------------------------------------------------
     # COLUMNAS DE RESULTADO
