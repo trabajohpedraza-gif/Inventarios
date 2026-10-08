@@ -1,8 +1,23 @@
 # -*- coding: utf-8 -*-
 """
 motor_lifo.py
-Motor de actualización Histórico + Kardex (LIFO) y pestaña de Streamlit
+Motor de actualización Histórico + Kardex y pestaña de Streamlit
 "Actualizar Kardex" para el tablero Inventarios ALDC.
+
+La reconstrucción de stock y costos continúa utilizando el motor
+LIFO para conservar la trazabilidad y las hojas de control.
+
+IMPORTANTE:
+La ANTIGÜEDAD ya NO se determina mediante LIFO.
+
+La nueva metodología utiliza los últimos 12 meses disponibles
+en la base de datos y calcula:
+
+    Inventario Promedio
+    CMV
+    Rotación de Inventario
+    Días de Rotación
+    Clasificación de Antigüedad
 
 Uso desde app.py:
     from motor_lifo import (
@@ -38,6 +53,18 @@ MARCA_NUEVO = "NUEVO DESDE KARDEX"
 
 # Fecha que representa el stock inicial
 FECHA_STOCK_INICIAL = pd.Timestamp("2025-05-31")
+
+# ============================================================
+# PARÁMETROS NUEVA METODOLOGÍA DE INVENTARIO
+# ============================================================
+
+MESES_ANALISIS = 12
+DIAS_ANIO = 365.0
+
+CLASIFICACION_0_3 = "Entre 0 y 3 meses"
+CLASIFICACION_4_6 = "Entre 4 y 6 meses"
+CLASIFICACION_7_12 = "Entre 7 y 12 meses"
+CLASIFICACION_MAYOR_12 = "Mayor a 12 meses"
 
 
 def _fin_mes(anio, mes):
@@ -267,21 +294,12 @@ def crear_llave(bodega, cod):
 # ============================================================
 # ANTIGÜEDAD LIFO
 # ============================================================
+# Se conservan estas funciones por compatibilidad con el motor
+# y las hojas de control. YA NO SE UTILIZAN PARA CLASIFICAR
+# LA ANTIGÜEDAD DEL INVENTARIO.
+# ============================================================
 
 def bucket_antiguedad(fecha_lote, fecha_corte):
-    """
-    Clasifica un lote según su antigüedad al cierre.
-
-    IMPORTANTE:
-    La fecha corresponde a la fecha real del lote que todavía
-    permanece en inventario.
-
-    Rangos:
-        <= 3 meses   -> Entre 0 y 3 meses
-        <= 6 meses   -> Entre 4 y 6 meses
-        <= 12 meses  -> Entre 7 y 12 meses
-        > 12 meses   -> Mayor a 12 meses
-    """
 
     if fecha_lote is None or pd.isna(fecha_lote):
         return "Sin trazabilidad"
@@ -295,33 +313,18 @@ def bucket_antiguedad(fecha_lote, fecha_corte):
     ) / 30.4375
 
     if meses <= 3:
-        return "Entre 0 y 3 meses"
+        return CLASIFICACION_0_3
 
     if meses <= 6:
-        return "Entre 4 y 6 meses"
+        return CLASIFICACION_4_6
 
     if meses <= 12:
-        return "Entre 7 y 12 meses"
+        return CLASIFICACION_7_12
 
-    return "Mayor a 12 meses"
+    return CLASIFICACION_MAYOR_12
 
 
 def antiguedad_lifo(lotes, stock, fecha_corte):
-    """
-    Determina la antigüedad del stock actual utilizando TODOS
-    los lotes LIFO que todavía permanecen.
-
-    Regla:
-    - Sin stock -> Sin stock
-    - Sin lotes trazables -> Sin trazabilidad
-    - Si algún lote sobreviviente no tiene fecha -> Sin trazabilidad
-    - Si todos tienen fecha -> se toma el lote MÁS ANTIGUO
-      que todavía permanece en inventario.
-
-    Esto permite que un artículo que conserva unidades de 2025
-    siga siendo clasificado como Mayor a 12 meses aunque también
-    tenga entradas recientes durante 2026.
-    """
 
     if stock <= EPS:
         return "Sin stock"
@@ -696,6 +699,676 @@ def leer_kardex(origen):
 
 
 # ============================================================
+# NUEVA LÓGICA
+# IDENTIFICACIÓN DE LOS ÚLTIMOS 12 MESES
+# ============================================================
+
+def obtener_meses_disponibles(df):
+    """
+    Detecta automáticamente todos los meses que existen en la
+    base utilizando las columnas mensuales.
+
+    Se consideran meses disponibles aquellos que tengan al menos
+    una columna mensual reconocible, preferiblemente STOCK o
+    COSTE TOTAL.
+    """
+
+    encontrados = []
+
+    # Busca columnas del tipo:
+    # STOCK MAYO 2026
+    # COSTE TOTAL MAYO 2026
+    # ENTRADA MAYO 2026
+    patron = re.compile(
+        r"^(STOCK|COSTE TOTAL|COSTE|ENTRADA|SALIDA|"
+        r"COSTO ENTRADA|COSTO SALIDA)\s+"
+        r"(.+)\s+(\d{4})$"
+    )
+
+    for c in df.columns:
+
+        nc = norm(c)
+
+        m = patron.match(nc)
+
+        if not m:
+            continue
+
+        tipo = m.group(1)
+        nombre_mes = m.group(2)
+        anio = int(m.group(3))
+
+        if nombre_mes not in NOMBRES_MES:
+            continue
+
+        mes_num = NOMBRES_MES.index(
+            nombre_mes
+        ) + 1
+
+        encontrados.append(
+            {
+                "nombre": nombre_mes,
+                "anio": anio,
+                "mes": mes_num,
+                "fecha": _fin_mes(
+                    anio,
+                    mes_num
+                ),
+            }
+        )
+
+    # Eliminar duplicados por mes/año
+    unicos = {}
+
+    for x in encontrados:
+
+        clave = (
+            x["anio"],
+            x["mes"]
+        )
+
+        unicos[clave] = x
+
+    resultado = sorted(
+        unicos.values(),
+        key=lambda x: x["fecha"]
+    )
+
+    return resultado
+
+
+def obtener_ultimos_12_meses(df, avisos=None):
+    """
+    Obtiene los 12 meses cronológicamente más recientes
+    disponibles en la BBDD.
+
+    Si existen menos de 12, utiliza todos los disponibles.
+    """
+
+    if avisos is None:
+        avisos = []
+
+    disponibles = obtener_meses_disponibles(
+        df
+    )
+
+    if not disponibles:
+
+        raise ValueError(
+            "No se encontraron meses disponibles "
+            "en la base de datos."
+        )
+
+    ultimos = disponibles[
+        -MESES_ANALISIS:
+    ]
+
+    if len(ultimos) < MESES_ANALISIS:
+
+        avisos.append(
+            f"La base contiene únicamente "
+            f"{len(ultimos)} meses disponibles "
+            f"para el cálculo. Se utilizarán "
+            f"todos los meses disponibles en lugar "
+            f"de los {MESES_ANALISIS} meses requeridos."
+        )
+
+    return ultimos
+
+
+def columnas_mes(df, nombre, anio):
+    """
+    Detecta las columnas correspondientes a un mes.
+    """
+
+    sfx = f"{nombre} {anio}"
+
+    return {
+        "stock": col_exacta(
+            df,
+            f"STOCK {sfx}"
+        ),
+        "coste": (
+            col_exacta(
+                df,
+                f"COSTE TOTAL {sfx}"
+            )
+            or
+            col_exacta(
+                df,
+                f"COSTE {sfx}"
+            )
+        ),
+        "entrada": col_exacta(
+            df,
+            f"ENTRADA {sfx}"
+        ),
+        "salida": col_exacta(
+            df,
+            f"SALIDA {sfx}"
+        ),
+        "costo_entrada": col_exacta(
+            df,
+            f"COSTO ENTRADA {sfx}"
+        ),
+        "costo_salida": col_exacta(
+            df,
+            f"COSTO SALIDA {sfx}"
+        ),
+    }
+
+
+def calcular_indicadores_12_meses(
+    hist,
+    meses_analisis,
+    avisos=None
+):
+    """
+    Calcula para cada artículo:
+
+        Inventario Promedio
+        CMV
+        Rotación
+        Días de Rotación
+        Antigüedad
+
+    utilizando exclusivamente los últimos 12 meses disponibles.
+
+    REGLA DE MES VÁLIDO:
+
+    Un mes participa en el promedio del inventario si existe
+    valor de inventario/coste o evidencia de actividad mediante
+    stock, entradas o salidas.
+
+    Esto evita interpretar automáticamente como "mes sin
+    actividad" un período donde el inventario termina en cero
+    pero hubo movimientos.
+    """
+
+    if avisos is None:
+        avisos = []
+
+    meses_info = []
+
+    for periodo in meses_analisis:
+
+        nombre = periodo["nombre"]
+        anio = periodo["anio"]
+
+        cols = columnas_mes(
+            hist,
+            nombre,
+            anio
+        )
+
+        meses_info.append(
+            {
+                **periodo,
+                **cols
+            }
+        )
+
+    # --------------------------------------------------------
+    # ACUMULADORES
+    # --------------------------------------------------------
+
+    inventario_suma = pd.Series(
+        0.0,
+        index=hist.index
+    )
+
+    meses_validos = pd.Series(
+        0,
+        index=hist.index,
+        dtype="int64"
+    )
+
+    cmv = pd.Series(
+        0.0,
+        index=hist.index
+    )
+
+    # --------------------------------------------------------
+    # CONTROL DE MESES
+    # --------------------------------------------------------
+
+    detalle_validacion = []
+
+    # --------------------------------------------------------
+    # PROCESAMIENTO MES A MES
+    # --------------------------------------------------------
+
+    for m in meses_info:
+
+        coste = (
+            a_numero(
+                hist[m["coste"]]
+            )
+            if m["coste"] is not None
+            else pd.Series(
+                0.0,
+                index=hist.index
+            )
+        )
+
+        stock = (
+            a_numero(
+                hist[m["stock"]]
+            )
+            if m["stock"] is not None
+            else pd.Series(
+                0.0,
+                index=hist.index
+            )
+        )
+
+        entrada = (
+            a_numero(
+                hist[m["entrada"]]
+            )
+            if m["entrada"] is not None
+            else pd.Series(
+                0.0,
+                index=hist.index
+            )
+        )
+
+        salida = (
+            a_numero(
+                hist[m["salida"]]
+            )
+            if m["salida"] is not None
+            else pd.Series(
+                0.0,
+                index=hist.index
+            )
+        )
+
+        costo_entrada = (
+            a_numero(
+                hist[m["costo_entrada"]]
+            )
+            if m["costo_entrada"] is not None
+            else pd.Series(
+                0.0,
+                index=hist.index
+            )
+        )
+
+        costo_salida = (
+            a_numero(
+                hist[m["costo_salida"]]
+            )
+            if m["costo_salida"] is not None
+            else pd.Series(
+                0.0,
+                index=hist.index
+            )
+        )
+
+        # ----------------------------------------------------
+        # MES VÁLIDO
+        #
+        # Se considera válido si:
+        #
+        # 1. Tiene coste de inventario distinto de cero
+        # 2. Tiene stock distinto de cero
+        # 3. Tiene entrada
+        # 4. Tiene salida
+        # 5. Tiene costo de entrada
+        # 6. Tiene costo de salida
+        #
+        # De esta forma:
+        #
+        # Coste = 0
+        # Entrada = 300.000
+        # Salida = 300.000
+        #
+        # NO se elimina automáticamente del análisis.
+        # ----------------------------------------------------
+
+        valido = (
+            coste.abs() > EPS
+        ) | (
+            stock.abs() > EPS
+        ) | (
+            entrada.abs() > EPS
+        ) | (
+            salida.abs() > EPS
+        ) | (
+            costo_entrada.abs() > EPS
+        ) | (
+            costo_salida.abs() > EPS
+        )
+
+        inventario_suma = (
+            inventario_suma
+            + coste.where(
+                valido,
+                0.0
+            )
+        )
+
+        meses_validos = (
+            meses_validos
+            + valido.astype(int)
+        )
+
+        # ----------------------------------------------------
+        # CMV
+        #
+        # Se utiliza exclusivamente el COSTO SALIDA.
+        #
+        # ABS se aplica al resultado de la suma.
+        # ----------------------------------------------------
+
+        cmv = (
+            cmv
+            + costo_salida
+        )
+
+        detalle_validacion.append(
+            {
+                "mes": f"{m['nombre']} {m['anio']}",
+                "columna_coste": m["coste"],
+                "columna_stock": m["stock"],
+                "columna_entrada": m["entrada"],
+                "columna_salida": m["salida"],
+                "columna_costo_entrada": m["costo_entrada"],
+                "columna_costo_salida": m["costo_salida"],
+            }
+        )
+
+    # --------------------------------------------------------
+    # INVENTARIO PROMEDIO
+    # --------------------------------------------------------
+
+    inventario_promedio = pd.Series(
+        np.nan,
+        index=hist.index,
+        dtype=float
+    )
+
+    mask_promedio = (
+        meses_validos > 0
+    )
+
+    inventario_promedio.loc[
+        mask_promedio
+    ] = (
+        inventario_suma.loc[
+            mask_promedio
+        ]
+        /
+        meses_validos.loc[
+            mask_promedio
+        ]
+    )
+
+    # --------------------------------------------------------
+    # CMV
+    # --------------------------------------------------------
+
+    cmv = cmv.abs()
+
+    # --------------------------------------------------------
+    # ROTACIÓN
+    # --------------------------------------------------------
+
+    rotacion = pd.Series(
+        np.nan,
+        index=hist.index,
+        dtype=float
+    )
+
+    mask_rotacion = (
+        mask_promedio
+        & (
+            inventario_promedio
+            > EPS
+        )
+    )
+
+    rotacion.loc[
+        mask_rotacion
+    ] = (
+        cmv.loc[
+            mask_rotacion
+        ]
+        /
+        inventario_promedio.loc[
+            mask_rotacion
+        ]
+    )
+
+    # --------------------------------------------------------
+    # DÍAS DE ROTACIÓN
+    #
+    # Días = 365 / Rotación
+    #
+    # Equivalente a:
+    #
+    # Inventario Promedio * 365 / CMV
+    # --------------------------------------------------------
+
+    dias_rotacion = pd.Series(
+        np.nan,
+        index=hist.index,
+        dtype=float
+    )
+
+    mask_dias = (
+        mask_rotacion
+        & (
+            cmv
+            > EPS
+        )
+    )
+
+    dias_rotacion.loc[
+        mask_dias
+    ] = (
+        DIAS_ANIO
+        /
+        rotacion.loc[
+            mask_dias
+        ]
+    )
+
+    # --------------------------------------------------------
+    # CLASIFICACIÓN
+    # --------------------------------------------------------
+
+    antiguedad = pd.Series(
+        "Sin stock",
+        index=hist.index,
+        dtype=object
+    )
+
+    # Stock actual del último mes analizado
+    ultimo = meses_info[-1]
+
+    if ultimo["stock"] is not None:
+
+        stock_ultimo = a_numero(
+            hist[
+                ultimo["stock"]
+            ]
+        )
+
+    else:
+
+        stock_ultimo = pd.Series(
+            0.0,
+            index=hist.index
+        )
+
+    # Sin stock
+    mask_sin_stock = (
+        stock_ultimo
+        <= EPS
+    )
+
+    antiguedad.loc[
+        mask_sin_stock
+    ] = "Sin stock"
+
+    # --------------------------------------------------------
+    # STOCK > 0 SIN CMV
+    #
+    # Si existe inventario pero no hubo costo de salida
+    # durante el período, no existe rotación observable.
+    #
+    # Se considera Mayor a 12 meses.
+    # --------------------------------------------------------
+
+    mask_sin_rotacion = (
+        (~mask_sin_stock)
+        & (
+            cmv
+            <= EPS
+        )
+    )
+
+    antiguedad.loc[
+        mask_sin_rotacion
+    ] = CLASIFICACION_MAYOR_12
+
+    # --------------------------------------------------------
+    # CLASIFICACIÓN POR DÍAS
+    # --------------------------------------------------------
+
+    mask_0_3 = (
+        (~mask_sin_stock)
+        & mask_dias
+        & (
+            dias_rotacion
+            <= 90
+        )
+    )
+
+    mask_4_6 = (
+        (~mask_sin_stock)
+        & mask_dias
+        & (
+            dias_rotacion
+            > 90
+        )
+        & (
+            dias_rotacion
+            <= 180
+        )
+    )
+
+    mask_7_12 = (
+        (~mask_sin_stock)
+        & mask_dias
+        & (
+            dias_rotacion
+            > 180
+        )
+        & (
+            dias_rotacion
+            <= 365
+        )
+    )
+
+    mask_mayor_12 = (
+        (~mask_sin_stock)
+        & mask_dias
+        & (
+            dias_rotacion
+            > 365
+        )
+    )
+
+    antiguedad.loc[
+        mask_0_3
+    ] = CLASIFICACION_0_3
+
+    antiguedad.loc[
+        mask_4_6
+    ] = CLASIFICACION_4_6
+
+    antiguedad.loc[
+        mask_7_12
+    ] = CLASIFICACION_7_12
+
+    antiguedad.loc[
+        mask_mayor_12
+    ] = CLASIFICACION_MAYOR_12
+
+    # --------------------------------------------------------
+    # COLUMNAS DE RESULTADO
+    # --------------------------------------------------------
+
+    nombres_meses = [
+        f"{m['nombre']} {m['anio']}"
+        for m in meses_info
+    ]
+
+    etiqueta_periodo = (
+        f"{nombres_meses[0]} a "
+        f"{nombres_meses[-1]}"
+    )
+
+    hist[
+        "INVENTARIO PROMEDIO 12 MESES"
+    ] = inventario_promedio
+
+    hist[
+        "CMV 12 MESES"
+    ] = cmv
+
+    hist[
+        "ROTACION 12 MESES"
+    ] = rotacion
+
+    hist[
+        "DIAS ROTACION 12 MESES"
+    ] = dias_rotacion
+
+    hist[
+        "MESES VALIDOS INVENTARIO"
+    ] = meses_validos
+
+    hist[
+        "PERIODO ANALISIS INVENTARIO"
+    ] = etiqueta_periodo
+
+    hist[
+        "ANTIGUEDAD ULTIMO MES DE ACTUALIZACIÓN"
+    ] = antiguedad
+
+    # Compatibilidad con el tablero actual
+    hist[
+        "MESES"
+    ] = antiguedad
+
+    # --------------------------------------------------------
+    # CONTROL
+    # --------------------------------------------------------
+
+    control = pd.DataFrame(
+        detalle_validacion
+    )
+
+    info_periodo = {
+        "periodo": etiqueta_periodo,
+        "cantidad_meses": len(meses_info),
+        "meses": nombres_meses,
+        "mes_inicial": nombres_meses[0],
+        "mes_final": nombres_meses[-1],
+    }
+
+    return (
+        hist,
+        info_periodo,
+        control
+    )
+
+
+# ============================================================
 # MOTOR PRINCIPAL
 # ============================================================
 
@@ -708,6 +1381,14 @@ def procesar_inventario(
     historico: DataFrame ya preparado.
     kardex   : DataFrame crudo del Kardex detallado.
     mes_final: último mes de 2026 a calcular.
+
+    IMPORTANTE:
+    mes_final continúa existiendo por compatibilidad con la
+    interfaz actual.
+
+    La antigüedad, inventario promedio, CMV, rotación y días
+    utilizan posteriormente los 12 meses más recientes
+    disponibles en la BBDD.
     """
 
     avisos = []
@@ -1347,79 +2028,6 @@ def procesar_inventario(
     }
 
     # ========================================================
-    # FOTOS DE ANTIGÜEDAD
-    # ========================================================
-
-    snapshots = {}
-
-    def foto(nombre_mes, corte):
-
-        corte = pd.Timestamp(
-            corte
-        ).normalize()
-
-        snap = {}
-
-        for ll, st_ in stock_actual.items():
-
-            # ----------------------------------------------
-            # SIN STOCK
-            # ----------------------------------------------
-
-            if st_ <= EPS:
-
-                snap[ll] = "Sin stock"
-                continue
-
-            # ----------------------------------------------
-            # TOMAR TODOS LOS LOTES VIVOS
-            # ----------------------------------------------
-
-            vivos = [
-                lote
-                for lote in lotes_lifo.get(
-                    ll,
-                    []
-                )
-                if float(
-                    lote.get(
-                        "cantidad",
-                        0.0
-                    )
-                ) > EPS
-            ]
-
-            # ----------------------------------------------
-            # SIN LOTES
-            # ----------------------------------------------
-
-            if not vivos:
-
-                snap[ll] = "Sin trazabilidad"
-                continue
-
-            # ----------------------------------------------
-            # ANTIGÜEDAD LIFO
-            #
-            # Se consideran TODOS los lotes que todavía
-            # tienen stock.
-            #
-            # Si alguno no tiene fecha:
-            #     Sin trazabilidad
-            #
-            # Si todos tienen fecha:
-            #     se toma el más antiguo.
-            # ----------------------------------------------
-
-            snap[ll] = antiguedad_lifo(
-                vivos,
-                st_,
-                corte
-            )
-
-        snapshots[nombre_mes] = snap
-
-    # ========================================================
     # CIERRES MENSUALES
     # ========================================================
 
@@ -1474,22 +2082,6 @@ def procesar_inventario(
 
         ll = f["LLAVE"]
         fecha = f[k_fec]
-
-        # ----------------------------------------------------
-        # GENERAR FOTOS DE LOS MESES YA CERRADOS
-        # ----------------------------------------------------
-
-        while (
-            pendientes
-            and fecha > pendientes[0][1]
-        ):
-
-            n, fin = pendientes.pop(0)
-
-            foto(
-                n,
-                fin
-            )
 
         ent_ = float(
             f["ENT"]
@@ -1676,18 +2268,18 @@ def procesar_inventario(
             }
         )
 
-    # ========================================================
-    # FOTO DEL ÚLTIMO MES
-    # ========================================================
+        # ----------------------------------------------------
+        # FOTOS MENSUALES
+        # ----------------------------------------------------
 
-    while pendientes:
+        while (
+            pendientes
+            and fecha > pendientes[0][1]
+        ):
 
-        n, fin = pendientes.pop(0)
-
-        foto(
-            n,
-            fin
-        )
+            # La foto se conserva para compatibilidad,
+            # pero YA NO determina antigüedad.
+            pendientes.pop(0)
 
     # ========================================================
     # DATAFRAMES DE CONTROL
@@ -1774,8 +2366,6 @@ def procesar_inventario(
         keep="first"
     )
 
-    # CORRECCIÓN:
-    # El primer mes de actualización parte de MAYO 2026.
     stock_prev = hist[
         "STOCK MAYO 2026"
     ].copy()
@@ -1882,6 +2472,14 @@ def procesar_inventario(
             + hist[f"COSTO SALIDA {sfx}"]
         )
 
+        # ----------------------------------------------------
+        # ROTACIÓN MENSUAL
+        #
+        # Se conserva para compatibilidad con el tablero.
+        # La rotación oficial para antigüedad será la de
+        # los últimos 12 meses.
+        # ----------------------------------------------------
+
         hist[
             f"ROTACION {sfx}"
         ] = np.where(
@@ -1894,25 +2492,7 @@ def procesar_inventario(
             np.nan
         )
 
-        # ----------------------------------------------------
-        # ANTIGÜEDAD DEL MES
-        # ----------------------------------------------------
-
-        hist[
-            f"ANTIGUEDAD {sfx}"
-        ] = (
-            hist["LLAVE"]
-            .map(
-                snapshots.get(
-                    nombre,
-                    {}
-                )
-            )
-            .fillna("Sin stock")
-        )
-
-        # IMPORTANTE:
-        # Continuar con el stock/costo del mes actual.
+        # Continuar con stock/costo actual
         stock_prev = hist[
             f"STOCK {sfx}"
         ]
@@ -1922,24 +2502,35 @@ def procesar_inventario(
         ]
 
     # ========================================================
-    # ANTIGÜEDAD ÚLTIMO MES DE ACTUALIZACIÓN
+    # NUEVA METODOLOGÍA
+    # ÚLTIMOS 12 MESES DISPONIBLES
     # ========================================================
 
-    ultimo_nombre = meses[-1][0]
+    (
+        hist,
+        info_periodo,
+        control_periodo
+    ) = calcular_indicadores_12_meses(
+        hist,
+        obtener_ultimos_12_meses(
+            hist,
+            avisos
+        ),
+        avisos
+    )
 
-    col_antig_ultimo_mes = (
-        f"ANTIGUEDAD {ultimo_nombre} {ANIO}"
+    # ========================================================
+    # ANTIGÜEDAD CANÓNICA
+    # ========================================================
+
+    col_antig = (
+        "ANTIGUEDAD ULTIMO MES DE ACTUALIZACIÓN"
     )
 
     hist[
-        "ANTIGUEDAD ULTIMO MES DE ACTUALIZACIÓN"
+        "MESES"
     ] = hist[
-        col_antig_ultimo_mes
-    ]
-
-    # Se conserva MESES por compatibilidad
-    hist["MESES"] = hist[
-        "ANTIGUEDAD ULTIMO MES DE ACTUALIZACIÓN"
+        col_antig
     ]
 
     # ========================================================
@@ -1967,7 +2558,9 @@ def procesar_inventario(
                 "ENTRADA",
                 "SALIDA",
                 "NETO",
-                "ROTACION"
+                "ROTACION",
+                "CMV",
+                "DIAS"
             )
         ):
 
@@ -2082,6 +2675,26 @@ def procesar_inventario(
     )
 
     # ========================================================
+    # VERIFICACIÓN DE NUEVA METODOLOGÍA
+    # ========================================================
+
+    verif.append(
+        (
+            "Período de análisis de inventario",
+            True,
+            info_periodo["periodo"]
+        )
+    )
+
+    verif.append(
+        (
+            "Meses utilizados para inventario",
+            info_periodo["cantidad_meses"] > 0,
+            f"{info_periodo['cantidad_meses']} meses"
+        )
+    )
+
+    # ========================================================
     # ESTADÍSTICAS
     # ========================================================
 
@@ -2111,13 +2724,50 @@ def procesar_inventario(
                     f"COSTE TOTAL {sfx_f}"
                 ].sum()
             ),
-            "sin_trazabilidad": int(
-                (
+            "sin_trazabilidad": 0,
+
+            # ------------------------------------------------
+            # NUEVOS INDICADORES
+            # ------------------------------------------------
+
+            "periodo_inventario": (
+                info_periodo["periodo"]
+            ),
+
+            "meses_inventario": (
+                info_periodo["cantidad_meses"]
+            ),
+
+            "inventario_promedio_total": float(
+                hist[
+                    "INVENTARIO PROMEDIO 12 MESES"
+                ]
+                .fillna(0)
+                .sum()
+            ),
+
+            "cmv_12_meses_total": float(
+                hist[
+                    "CMV 12 MESES"
+                ]
+                .fillna(0)
+                .sum()
+            ),
+
+            "rotacion_12_meses": (
+                float(
                     hist[
-                        f"ANTIGUEDAD {sfx_f}"
-                    ]
-                    == "Sin trazabilidad"
-                ).sum()
+                        "CMV 12 MESES"
+                    ].sum()
+                    /
+                    hist[
+                        "INVENTARIO PROMEDIO 12 MESES"
+                    ].sum()
+                )
+                if hist[
+                    "INVENTARIO PROMEDIO 12 MESES"
+                ].sum() > EPS
+                else 0.0
             ),
         }
     )
@@ -2156,6 +2806,7 @@ def procesar_inventario(
         ),
 
         "control_historico": df_ch,
+        "control_periodo_12_meses": control_periodo,
         "duplicados": df_duplicados,
         "fechas_invalidas": df_fechas_invalidas,
         "avisos": avisos,
@@ -2213,6 +2864,16 @@ def resultado_a_excel(res):
             sheet_name="CONTROL_HISTORICO",
             index=False
         )
+
+        if "control_periodo_12_meses" in res:
+
+            res[
+                "control_periodo_12_meses"
+            ].to_excel(
+                w,
+                sheet_name="CONTROL_12_MESES",
+                index=False
+            )
 
         if len(
             res["duplicados"]
@@ -2411,7 +3072,7 @@ def construir_esquema(df):
     ]
 
     # ========================================================
-    # ANTIGÜEDAD CANÓNICA DEL ÚLTIMO MES
+    # ANTIGÜEDAD CANÓNICA
     # ========================================================
 
     col_antig_actual = col_exacta(
@@ -2479,6 +3140,40 @@ def construir_esquema(df):
         ),
 
         "mes_rotacion": ultimo,
+
+        # ----------------------------------------------------
+        # NUEVOS INDICADORES
+        # ----------------------------------------------------
+
+        "col_inventario_promedio": col_exacta(
+            df,
+            "INVENTARIO PROMEDIO 12 MESES"
+        ),
+
+        "col_cmv_12_meses": col_exacta(
+            df,
+            "CMV 12 MESES"
+        ),
+
+        "col_rotacion_12_meses": col_exacta(
+            df,
+            "ROTACION 12 MESES"
+        ),
+
+        "col_dias_rotacion_12_meses": col_exacta(
+            df,
+            "DIAS ROTACION 12 MESES"
+        ),
+
+        "col_meses_validos": col_exacta(
+            df,
+            "MESES VALIDOS INVENTARIO"
+        ),
+
+        "col_periodo_inventario": col_exacta(
+            df,
+            "PERIODO ANALISIS INVENTARIO"
+        ),
     }
 
 
@@ -2496,6 +3191,7 @@ def tipos_columnas_app(df):
         "AREA",
         "LLAVE",
         "OBSERVACION",
+        "PERIODO ANALISIS INVENTARIO",
     }
 
     return [
@@ -2545,83 +3241,98 @@ def kpis_corte(df_f, esq):
     )
 
     # ========================================================
-    # PROMEDIO HISTÓRICO DE ROTACIÓN
+    # ROTACIÓN 12 MESES
     # ========================================================
 
     rot = 0.0
 
-    columnas_rotacion = esq.get(
-        "columnas_rotacion",
-        []
+    col_rot_12 = esq.get(
+        "col_rotacion_12_meses"
     )
 
-    if columnas_rotacion:
+    if col_rot_12 and col_rot_12 in df_f.columns:
 
-        rotaciones = df_f[
-            [
-                c
-                for c in columnas_rotacion
-                if c in df_f.columns
-            ]
-        ].apply(
-            pd.to_numeric,
-            errors="coerce"
+        inventario_promedio = float(
+            pd.to_numeric(
+                df_f[
+                    esq[
+                        "col_inventario_promedio"
+                    ]
+                ],
+                errors="coerce"
+            )
+            .fillna(0)
+            .sum()
         )
 
-        promedio_por_articulo = (
-            rotaciones.mean(
-                axis=1,
-                skipna=True
+        cmv = float(
+            pd.to_numeric(
+                df_f[
+                    esq[
+                        "col_cmv_12_meses"
+                    ]
+                ],
+                errors="coerce"
             )
+            .fillna(0)
+            .sum()
         )
 
-        rot = (
-            float(
-                promedio_por_articulo.mean()
+        if inventario_promedio > EPS:
+
+            rot = (
+                cmv
+                /
+                inventario_promedio
             )
-            if len(
-                promedio_por_articulo.dropna()
-            )
-            else 0.0
-        )
 
     # ========================================================
-    # DÍAS DE INVENTARIO
+    # DÍAS DE ROTACIÓN 12 MESES
     # ========================================================
 
     dias = 0.0
 
-    m = esq[
-        "mes_rotacion"
-    ]
+    col_dias = esq.get(
+        "col_dias_rotacion_12_meses"
+    )
 
-    if m and m["salida"]:
+    if (
+        col_dias
+        and col_dias in df_f.columns
+    ):
 
-        salidas = abs(
-            float(
-                pd.to_numeric(
-                    df_f[
-                        m["salida"]
-                    ],
-                    errors="coerce"
-                )
-                .fillna(0)
-                .sum()
-            )
+        valores_dias = pd.to_numeric(
+            df_f[
+                col_dias
+            ],
+            errors="coerce"
         )
 
-        idx = esq[
-            "meses"
-        ].index(m)
+        # Para el KPI global es preferible calcular:
+        #
+        # Inventario promedio total * 365 / CMV total
+        #
+        # en lugar de promediar días por artículo.
+        #
+        # Así el indicador representa realmente el período
+        # global del inventario.
 
-        if idx > 0:
+        if (
+            col_rot_12
+            and esq.get(
+                "col_inventario_promedio"
+            )
+            and esq.get(
+                "col_cmv_12_meses"
+            )
+        ):
 
-            stock_prev = float(
+            inv_prom = float(
                 pd.to_numeric(
                     df_f[
                         esq[
-                            "meses"
-                        ][idx - 1]["stock"]
+                            "col_inventario_promedio"
+                        ]
                     ],
                     errors="coerce"
                 )
@@ -2629,16 +3340,34 @@ def kpis_corte(df_f, esq):
                 .sum()
             )
 
-            if (
-                salidas > 0
-                and stock_prev > 0
-            ):
+            cmv_total = float(
+                pd.to_numeric(
+                    df_f[
+                        esq[
+                            "col_cmv_12_meses"
+                        ]
+                    ],
+                    errors="coerce"
+                )
+                .fillna(0)
+                .sum()
+            )
+
+            if cmv_total > EPS:
 
                 dias = (
-                    30.0
-                    * stock_prev
-                    / salidas
+                    DIAS_ANIO
+                    * inv_prom
+                    / cmv_total
                 )
+
+        elif len(
+            valores_dias.dropna()
+        ):
+
+            dias = float(
+                valores_dias.mean()
+            )
 
     return (
         stock,
@@ -2696,8 +3425,8 @@ def pagina_actualizar_kardex(
     st.caption(
         "Carga el Kardex detallado y el tablero "
         "recalcula stock, costos, rotación y "
-        "antigüedad (LIFO) a partir del histórico "
-        "base de mayo 2026."
+        "antigüedad utilizando los últimos 12 meses "
+        "disponibles en la base de datos."
     )
 
     hay_base = bool(
@@ -2758,7 +3487,10 @@ def pagina_actualizar_kardex(
             "Se excluyen movimientos **5-ANULADO** "
             "y las bodegas 11, 12, 18, 19, 20 y 21. "
             "Las salidas que superan el stock se "
-            "registran como *salida sin existencia*."
+            "registran como *salida sin existencia*. "
+            "La antigüedad se determina mediante "
+            "indicadores de los últimos 12 meses "
+            "disponibles."
         )
 
     puede = (
@@ -2780,7 +3512,7 @@ def pagina_actualizar_kardex(
         try:
 
             with st.spinner(
-                "Procesando Kardex con metodología LIFO..."
+                "Procesando Kardex y calculando indicadores de inventario..."
             ):
 
                 origen_h = (
@@ -2872,8 +3604,9 @@ def pagina_actualizar_kardex(
     st.success(
         f"Tablero actualizado hasta "
         f"{s['mes_final'].title()} {ANIO}. "
-        "Revisa las demás pestañas para "
-        "ver los nuevos datos."
+        f"El análisis de inventario utiliza "
+        f"{s['meses_inventario']} meses: "
+        f"{s['periodo_inventario']}."
     )
 
     if not st.session_state.get(
@@ -2918,15 +3651,13 @@ def pagina_actualizar_kardex(
 
     m5.metric(
         "Sin trazabilidad",
-        f"{s['sin_trazabilidad']:,}"
-        .replace(",", ".")
+        "No aplica"
     )
 
     st.caption(
-        f"Rango de fechas del Kardex: "
-        f"{s['fecha_min']:%d/%m/%Y} a "
-        f"{s['fecha_max']:%d/%m/%Y} · "
-        f"Filas leídas: "
+        f"Período indicadores: "
+        f"{s['periodo_inventario']} · "
+        f"Filas Kardex leídas: "
         f"{s['filas_kardex']:,}"
         .replace(",", ".")
     )
