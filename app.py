@@ -1,4 +1,3 @@
-
 import os
 import re
 from datetime import datetime, timedelta
@@ -18,7 +17,6 @@ from motor_lifo import (
     pagina_actualizar_kardex,
 )
 
-
 # ============================================================
 # CONFIGURACIÓN GENERAL
 # ============================================================
@@ -29,7 +27,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
 
 # ============================================================
 # PALETA INSTITUCIONAL — REFERENCIA ÁREA LIMPIA
