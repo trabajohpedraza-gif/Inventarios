@@ -6,7 +6,7 @@ Motor de actualización Histórico + Kardex y pestaña de Streamlit
 
 La reconstrucción de stock y costos continúa utilizando el motor
 LIFO para conservar la trazabilidad y las hojas de control.
-""""
+"""
 import io
 import os
 import re
