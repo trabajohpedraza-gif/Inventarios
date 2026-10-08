@@ -6,26 +6,7 @@ Motor de actualización Histórico + Kardex y pestaña de Streamlit
 
 La reconstrucción de stock y costos continúa utilizando el motor
 LIFO para conservar la trazabilidad y las hojas de control.
-
-IMPORTANTE:
-La ANTIGÜEDAD ya NO se determina mediante LIFO.
-
-La nueva metodología utiliza los últimos 12 meses disponibles
-en la base de datos y calcula:
-
-    Inventario Promedio
-    CMV
-    Rotación de Inventario
-    Días de Rotación
-    Clasificación de Antigüedad
-
-Uso desde app.py:
-    from motor_lifo import (
-        cargar_base, construir_esquema, pagina_actualizar_kardex,
-        kpis_corte, tipos_columnas_app,
-    )
-"""
-
+""""
 import io
 import os
 import re
